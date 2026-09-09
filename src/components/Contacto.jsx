@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiService } from '../services/apiService';
 
 const Contacto = () => {
+  const { data: contacto } = useQuery({
+    queryKey: ['contacto'],
+    queryFn: apiService.getContacto
+  });
+
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
@@ -8,6 +15,15 @@ const Contacto = () => {
     mensaje: ''
   });
   const [submitted, setSubmitted] = useState(false);
+
+  const address = contacto?.address || 'Palacio Municipal, León, Nicaragua';
+  const phone = contacto?.phone || '+505 2315-0000';
+  const email = contacto?.email || 'info@alcaldaleon.gob.ni';
+  const schedule = contacto?.schedule || 'Lunes a Viernes: 8:00 AM - 4:00 PM';
+  const facebook = contacto?.facebook || '#';
+  const twitter = contacto?.twitter || '#';
+  const instagram = contacto?.instagram || '#';
+  const youtube = contacto?.youtube || '#';
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,36 +56,36 @@ const Contacto = () => {
                 <i className="fas fa-map-marker-alt"></i>
                 <div>
                   <h6>Dirección</h6>
-                  <p>Palacio Municipal, León, Nicaragua</p>
+                  <p>{address}</p>
                 </div>
               </div>
               <div className="contact-item">
                 <i className="fas fa-phone-alt"></i>
                 <div>
                   <h6>Teléfono</h6>
-                  <p>+505 2315-0000</p>
+                  <p>{phone}</p>
                 </div>
               </div>
               <div className="contact-item">
                 <i className="fas fa-envelope"></i>
                 <div>
                   <h6>Email</h6>
-                  <p>info@alcaldaleon.gob.ni</p>
+                  <p>{email}</p>
                 </div>
               </div>
               <div className="contact-item">
                 <i className="fas fa-clock"></i>
                 <div>
                   <h6>Horario</h6>
-                  <p>Lunes a Viernes: 8:00 AM - 4:00 PM</p>
+                  <p>{schedule}</p>
                 </div>
               </div>
 
               <div className="social-links mt-4">
-                <a href="#" className="social-link" aria-label="Facebook"><i className="fab fa-facebook-f"></i></a>
-                <a href="#" className="social-link" aria-label="Twitter"><i className="fab fa-twitter"></i></a>
-                <a href="#" className="social-link" aria-label="Instagram"><i className="fab fa-instagram"></i></a>
-                <a href="#" className="social-link" aria-label="YouTube"><i className="fab fa-youtube"></i></a>
+                <a href={facebook} className="social-link" aria-label="Facebook" target="_blank" rel="noreferrer"><i className="fab fa-facebook-f"></i></a>
+                <a href={twitter} className="social-link" aria-label="Twitter" target="_blank" rel="noreferrer"><i className="fab fa-twitter"></i></a>
+                <a href={instagram} className="social-link" aria-label="Instagram" target="_blank" rel="noreferrer"><i className="fab fa-instagram"></i></a>
+                <a href={youtube} className="social-link" aria-label="YouTube" target="_blank" rel="noreferrer"><i className="fab fa-youtube"></i></a>
               </div>
             </div>
           </div>

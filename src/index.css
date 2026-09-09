@@ -50,15 +50,26 @@
 
 html {
     scroll-behavior: smooth;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }
 
 body {
     font-family: 'Inter', 'Segoe UI', sans-serif;
     color: var(--text-dark);
     background: var(--bone-white);
-    overflow-x: hidden;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+#root, .app-container {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -156,7 +167,7 @@ img {
 /* ====================================================
    HEADER & LOGO MEJORADO
    ==================================================== */
-header {
+header#mainHeader {
     position: fixed;
     top: 0;
     left: 0;
@@ -169,18 +180,18 @@ header {
     border-bottom: 1px solid var(--bone-dark);
 }
 
-[data-bs-theme="dark"] header {
+[data-bs-theme="dark"] header#mainHeader {
     background: rgba(30, 29, 27, 0.95);
 }
 
-header.header-scrolled {
+header#mainHeader.header-scrolled {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     box-shadow: var(--shadow);
     padding: 10px 0;
 }
 
-[data-bs-theme="dark"] header.header-scrolled {
+[data-bs-theme="dark"] header#mainHeader.header-scrolled {
     background: rgba(30, 29, 27, 0.98);
 }
 
@@ -1982,21 +1993,21 @@ header.header-scrolled .sublogo-img-right {
 }
 
 /* ---------- Header: blanco, logo anclado a la izquierda ---------- */
-header {
+header#mainHeader {
     background: #FFFFFF;
     border-bottom: 1px solid #E5E7EB;
 }
 
-[data-bs-theme="dark"] header {
+[data-bs-theme="dark"] header#mainHeader {
     background: #1F2937;
 }
 
-header.header-scrolled {
+header#mainHeader.header-scrolled {
     background: #FFFFFF;
     box-shadow: 0 4px 20px rgba(11, 58, 111, 0.08);
 }
 
-[data-bs-theme="dark"] header.header-scrolled {
+[data-bs-theme="dark"] header#mainHeader.header-scrolled {
     background: #1F2937;
 }
 
@@ -2703,6 +2714,7 @@ header.header-scrolled {
    ==================================================== */
 html, body, #root, .app-container {
     overflow-x: hidden !important;
+    overflow-y: auto !important;
     width: 100%;
     max-width: 100%;
 }

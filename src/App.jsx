@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import Preloader from './components/Preloader';
 import Header from './components/Header';
@@ -18,7 +19,20 @@ import RedesSociales from './components/RedesSociales';
 import Contacto from './components/Contacto';
 import Footer from './components/Footer';
 
-function AppContent() {
+// Admin imports
+import ProtectedRoute from './admin/components/ProtectedRoute';
+import AdminLayout from './admin/components/AdminLayout';
+import LoginPage from './admin/pages/LoginPage';
+import DashboardOverview from './admin/pages/DashboardOverview';
+import HeroAdmin from './admin/pages/HeroAdmin';
+import NoticiasAdmin from './admin/pages/NoticiasAdmin';
+import ProyectosAdmin from './admin/pages/ProyectosAdmin';
+import TurismoAdmin from './admin/pages/TurismoAdmin';
+import CulturaAdmin from './admin/pages/CulturaAdmin';
+import EstadisticasAdmin from './admin/pages/EstadisticasAdmin';
+import ContactoAdmin from './admin/pages/ContactoAdmin';
+
+function PublicLanding() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
@@ -49,7 +63,36 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <Routes>
+        {/* Landing Page Pública */}
+        <Route path="/" element={<PublicLanding />} />
+
+        {/* Login de Administración */}
+        <Route path="/admin/login" element={<LoginPage />} />
+
+        {/* Panel Administrativo Protegido */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardOverview />} />
+          <Route path="hero" element={<HeroAdmin />} />
+          <Route path="noticias" element={<NoticiasAdmin />} />
+          <Route path="proyectos" element={<ProyectosAdmin />} />
+          <Route path="turismo" element={<TurismoAdmin />} />
+          <Route path="cultural" element={<CulturaAdmin />} />
+          <Route path="estadisticas" element={<EstadisticasAdmin />} />
+          <Route path="contacto" element={<ContactoAdmin />} />
+        </Route>
+
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </ThemeProvider>
   );
 }

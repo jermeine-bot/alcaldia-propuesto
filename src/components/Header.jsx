@@ -111,8 +111,9 @@ const Header = ({ onOpenSearch }) => {
             </ul>
           </div>
 
-          {/* GRUPO EN EL EXTREMO DERECHO: LOGO INSTITUCIONAL */}
-          <div className="header-right-group">
+          {/* GRUPO EN EL EXTREMO DERECHO: LOGO INSTITUCIONAL Y ACCESO ADMIN */}
+          <div className="header-right-group d-flex align-items-center gap-2">
+           
             <div className="header-sublogos-right">
               <img 
                 src="/img/nav_logo/logo%20nav2.png" 
