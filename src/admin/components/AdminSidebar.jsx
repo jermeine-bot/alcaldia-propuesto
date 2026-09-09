@@ -9,6 +9,7 @@ import {
   CalendarDays,
   BarChart3,
   PhoneCall,
+  Briefcase,
   ArrowLeft
 } from 'lucide-react';
  
@@ -16,6 +17,7 @@ const AdminSidebar = () => {
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/hero', label: 'Portada / Hero', icon: Image },
+    { path: '/admin/servicios', label: 'Trámites y Servicios', icon: Briefcase },
     { path: '/admin/noticias', label: 'Noticias', icon: Newspaper },
     { path: '/admin/proyectos', label: 'Proyectos Municipales', icon: Building2 },
     { path: '/admin/turismo', label: 'Turismo', icon: Palmtree },

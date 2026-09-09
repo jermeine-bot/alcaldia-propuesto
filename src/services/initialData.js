@@ -360,3 +360,155 @@ export const initialContactoData = {
   youtube_url: 'https://www.youtube.com/@AlcaldiaLeon',
   twitter_url: 'https://twitter.com/alcaldia_leon'
 };
+
+export const initialServiciosData = [
+  {
+    id: 'tramites',
+    title: 'Trámites Municipales',
+    badgeIcon: '🏛️',
+    icon: 'fa-landmark',
+    subtitle: 'Permisos, licencias y gestiones',
+    desc: 'Gestiona autorizaciones urbanas, licencias comerciales y certificaciones sin complicaciones.',
+    count: 3,
+    opciones: [
+      {
+        id: 'opt-1',
+        icon: 'fa-file-signature',
+        title: 'Permisos de Construcción y Obras',
+        desc: 'Solicitud y aprobación de proyectos de edificación, remodelación y licencias urbanísticas.',
+        linkText: 'Solicitar Permiso',
+        linkUrl: '#contacto'
+      },
+      {
+        id: 'opt-2',
+        icon: 'fa-certificate',
+        title: 'Licencias de Funcionamiento',
+        desc: 'Registro, apertura y renovación de licencias para establecimientos comerciales e industriales.',
+        linkText: 'Tramitar Licencia',
+        linkUrl: '#contacto'
+      },
+      {
+        id: 'opt-3',
+        icon: 'fa-stamp',
+        title: 'Gestiones y Constancias Administrativas',
+        desc: 'Emisión de solidez catastral, constancia de residencia y certificaciones municipales.',
+        linkText: 'Obtener Constancia',
+        linkUrl: '#contacto'
+      }
+    ]
+  },
+  {
+    id: 'impuestos',
+    title: 'Impuestos y Pagos',
+    badgeIcon: '💰',
+    icon: 'fa-hand-holding-usd',
+    subtitle: 'Consulta y paga tus obligaciones',
+    desc: 'Realiza tus pagos municipales de forma rápida, segura y transparente desde cualquier lugar.',
+    count: 3,
+    opciones: [
+      {
+        id: 'opt-4',
+        icon: 'fa-home',
+        title: 'Impuesto sobre Bienes Inmuebles (IBI)',
+        desc: 'Consulta tu estado de cuenta de IBI y realiza pagos en línea o en cajas autorizadas.',
+        linkText: 'Pagar IBI',
+        linkUrl: '#contacto'
+      },
+      {
+        id: 'opt-5',
+        icon: 'fa-receipt',
+        title: 'Impuesto sobre Ingresos y Matrícula',
+        desc: 'Declaración mensual de ventas, matriculación anual y solvencias municipales.',
+        linkText: 'Declarar / Pagar',
+        linkUrl: '#contacto'
+      },
+      {
+        id: 'opt-6',
+        icon: 'fa-calculator',
+        title: 'Consulta de Saldos y Solvencias',
+        desc: 'Verifica el historial de pagos y solicita tu certificado de solvencia municipal al día.',
+        linkText: 'Consultar Saldo',
+        linkUrl: '#contacto'
+      }
+    ]
+  },
+  {
+    id: 'propiedades',
+    title: 'Propiedades y Comercio',
+    badgeIcon: '🏠',
+    icon: 'fa-store',
+    subtitle: 'Catastro, mercados y comercio',
+    desc: 'Accede a servicios catastrales, regulación de mercados locales y fomento al emprendimiento.',
+    count: 3,
+    opciones: [
+      {
+        id: 'opt-7',
+        icon: 'fa-map-marked-alt',
+        title: 'Consultas Catastrales y Planos',
+        desc: 'Información sobre delimitación de terrenos, avalúos catastrales y mapas del municipio.',
+        linkText: 'Ver Catastro',
+        linkUrl: '#contacto'
+      },
+      {
+        id: 'opt-8',
+        icon: 'fa-store-alt',
+        title: 'Comercio y Mercados Municipales',
+        desc: 'Asignación y canon de tramos en mercados como Central, Santos Bárcenas y Sutiaba.',
+        linkText: 'Info Mercados',
+        linkUrl: '#contacto'
+      },
+      {
+        id: 'opt-9',
+        icon: 'fa-chart-line',
+        title: 'Fomento al Emprendimiento Local',
+        desc: 'Asesoría para nuevos comerciantes, ferias comunitarias y registro de PyMES.',
+        linkText: 'Registrar Negocio',
+        linkUrl: '#contacto'
+      }
+    ]
+  },
+  {
+    id: 'servicios',
+    title: 'Servicios y Atención',
+    badgeIcon: '🛠️',
+    icon: 'fa-hand-holding-heart',
+    subtitle: 'Basura, cementerios, denuncias y citas',
+    desc: 'Servicios comunitarios directos para mejorar la calidad de vida y atención al ciudadano.',
+    count: 4,
+    opciones: [
+      {
+        id: 'opt-10',
+        icon: 'fa-trash-alt',
+        title: 'Recolección de Basura y Limpieza Urbana',
+        desc: 'Consulta los días, rutas y horarios de recolección en tu barrio o comarca.',
+        linkText: 'Ver Rutas',
+        linkUrl: '#contacto'
+      },
+      {
+        id: 'opt-11',
+        icon: 'fa-church',
+        title: 'Servicios de Cementerios',
+        desc: 'Trámites de mantenimiento, títulos de propiedad y servicios funerarios municipales.',
+        linkText: 'Trámites Cementerio',
+        linkUrl: '#contacto'
+      },
+      {
+        id: 'opt-12',
+        icon: 'fa-exclamation-triangle',
+        title: 'Reportes y Denuncias Ciudadanas',
+        desc: 'Informa sobre fallas en alumbrado público, baches, fugas o perturbación de paz.',
+        linkText: 'Hacer Reporte',
+        linkUrl: '#contacto'
+      },
+      {
+        id: 'opt-13',
+        icon: 'fa-calendar-check',
+        title: 'Agenda de Citas y Atención Presencial',
+        desc: 'Reserva tu horario para trámites presenciales en el Palacio Municipal sin filas.',
+        linkText: 'Agendar Cita',
+        linkUrl: '#contacto'
+      }
+    ]
+  }
+];
+

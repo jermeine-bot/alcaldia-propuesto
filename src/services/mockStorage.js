@@ -5,7 +5,8 @@ import {
   initialTurismoData,
   initialCulturaData,
   initialStatsData,
-  initialContactoData
+  initialContactoData,
+  initialServiciosData
 } from './initialData';
 
 const KEYS = {
@@ -16,6 +17,7 @@ const KEYS = {
   CULTURA: 'alcaldia_leon_cultura',
   STATS: 'alcaldia_leon_stats',
   CONTACTO: 'alcaldia_leon_contacto',
+  SERVICIOS: 'alcaldia_leon_servicios',
   AUTH: 'alcaldia_leon_auth'
 };
 
@@ -41,6 +43,9 @@ const initStorage = () => {
   }
   if (!localStorage.getItem(KEYS.CONTACTO)) {
     localStorage.setItem(KEYS.CONTACTO, JSON.stringify(initialContactoData));
+  }
+  if (!localStorage.getItem(KEYS.SERVICIOS)) {
+    localStorage.setItem(KEYS.SERVICIOS, JSON.stringify(initialServiciosData));
   }
 };
 
@@ -278,6 +283,89 @@ export const mockStorage = {
     return updated;
   },
 
+  // TRÁMITES Y SERVICIOS
+  getServicios: async () => {
+    await delay();
+    return JSON.parse(localStorage.getItem(KEYS.SERVICIOS)) || initialServiciosData;
+  },
+
+  saveServicio: async (categoriaData) => {
+    await delay();
+    const items = JSON.parse(localStorage.getItem(KEYS.SERVICIOS)) || initialServiciosData;
+    if (categoriaData.id) {
+      const index = items.findIndex((c) => c.id === categoriaData.id);
+      if (index !== -1) {
+        items[index] = {
+          ...items[index],
+          ...categoriaData,
+          opciones: categoriaData.opciones || items[index].opciones || [],
+          count: (categoriaData.opciones || items[index].opciones || []).length,
+          updated_at: new Date().toISOString()
+        };
+      }
+    } else {
+      const newCat = {
+        ...categoriaData,
+        id: `cat-${Date.now()}`,
+        opciones: categoriaData.opciones || [],
+        count: (categoriaData.opciones || []).length,
+        created_at: new Date().toISOString()
+      };
+      items.push(newCat);
+    }
+    localStorage.setItem(KEYS.SERVICIOS, JSON.stringify(items));
+    return items;
+  },
+
+  deleteServicio: async (id) => {
+    await delay();
+    let items = JSON.parse(localStorage.getItem(KEYS.SERVICIOS)) || initialServiciosData;
+    items = items.filter((c) => c.id !== id);
+    localStorage.setItem(KEYS.SERVICIOS, JSON.stringify(items));
+    return items;
+  },
+
+  saveSubservicio: async (categoriaId, subservicioData) => {
+    await delay();
+    const items = JSON.parse(localStorage.getItem(KEYS.SERVICIOS)) || initialServiciosData;
+    const catIndex = items.findIndex((c) => c.id === categoriaId);
+    if (catIndex !== -1) {
+      const cat = items[catIndex];
+      const opciones = cat.opciones || [];
+      if (subservicioData.id) {
+        const subIndex = opciones.findIndex((s) => s.id === subservicioData.id);
+        if (subIndex !== -1) {
+          opciones[subIndex] = { ...opciones[subIndex], ...subservicioData };
+        }
+      } else {
+        const newSub = {
+          ...subservicioData,
+          id: `opt-${Date.now()}`
+        };
+        opciones.push(newSub);
+      }
+      cat.opciones = opciones;
+      cat.count = opciones.length;
+      items[catIndex] = cat;
+      localStorage.setItem(KEYS.SERVICIOS, JSON.stringify(items));
+    }
+    return items;
+  },
+
+  deleteSubservicio: async (categoriaId, subservicioId) => {
+    await delay();
+    const items = JSON.parse(localStorage.getItem(KEYS.SERVICIOS)) || initialServiciosData;
+    const catIndex = items.findIndex((c) => c.id === categoriaId);
+    if (catIndex !== -1) {
+      const cat = items[catIndex];
+      cat.opciones = (cat.opciones || []).filter((s) => s.id !== subservicioId);
+      cat.count = cat.opciones.length;
+      items[catIndex] = cat;
+      localStorage.setItem(KEYS.SERVICIOS, JSON.stringify(items));
+    }
+    return items;
+  },
+
   // Restablecer almacenamiento a datos por defecto
   resetToDefault: async () => {
     localStorage.setItem(KEYS.HERO, JSON.stringify(initialHeroData));
@@ -287,6 +375,7 @@ export const mockStorage = {
     localStorage.setItem(KEYS.CULTURA, JSON.stringify(initialCulturaData));
     localStorage.setItem(KEYS.STATS, JSON.stringify(initialStatsData));
     localStorage.setItem(KEYS.CONTACTO, JSON.stringify(initialContactoData));
+    localStorage.setItem(KEYS.SERVICIOS, JSON.stringify(initialServiciosData));
     return true;
   }
 };

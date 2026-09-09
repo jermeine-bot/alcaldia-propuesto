@@ -865,6 +865,119 @@ header.header-scrolled .sublogo-img-right {
     box-shadow: var(--shadow-hover);
 }
 
+.servicio-categoria-card {
+    background: var(--white);
+    border: 1px solid var(--bone-dark);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.servicio-categoria-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--red-madame);
+    box-shadow: 0 12px 30px rgba(178, 34, 34, 0.15);
+}
+
+.servicio-categoria-card:hover .servicio-icon {
+    transform: scale(1.1) rotate(-6deg);
+    background: var(--red-dark);
+}
+
+.categoria-badge {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(178, 34, 34, 0.08);
+    color: var(--red-madame);
+    border: 1px solid rgba(178, 34, 34, 0.15);
+}
+
+.categoria-title {
+    font-family: 'Poppins', serif;
+    font-size: 1.18rem;
+}
+
+.categoria-subtitle {
+    font-size: 0.88rem;
+    line-height: 1.4;
+}
+
+/* Modal Custom styling */
+.modal-backdrop-custom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 14, 13, 0.75);
+    backdrop-filter: blur(6px);
+    z-index: 1050;
+    padding: 20px;
+    animation: fadeInModal 0.25s ease-out;
+}
+
+.servicio-modal-content {
+    background: #FFFFFF;
+    width: 100%;
+    max-width: 820px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid var(--bone-dark);
+    position: relative;
+    animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-icon-glow {
+    box-shadow: 0 4px 15px rgba(178, 34, 34, 0.3);
+}
+
+.btn-close-custom {
+    width: 36px;
+    height: 36px;
+    background: var(--bone-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.btn-close-custom:hover {
+    background: rgba(178, 34, 34, 0.15);
+    color: var(--red-madame) !important;
+}
+
+.subservicio-item {
+    background: var(--white);
+    transition: var(--transition);
+}
+
+.subservicio-item:hover {
+    border-color: var(--red-madame) !important;
+    background: var(--bone-light);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.subservicio-icon-box {
+    background: rgba(178, 34, 34, 0.1);
+    color: var(--red-madame);
+    font-size: 1.1rem;
+    min-width: 40px;
+    height: 40px;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUpModal {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .servicio-icon {
     width: 60px;
     height: 60px;

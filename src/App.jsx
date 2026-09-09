@@ -25,6 +25,7 @@ import AdminLayout from './admin/components/AdminLayout';
 import LoginPage from './admin/pages/LoginPage';
 import DashboardOverview from './admin/pages/DashboardOverview';
 import HeroAdmin from './admin/pages/HeroAdmin';
+import ServiciosAdmin from './admin/pages/ServiciosAdmin';
 import NoticiasAdmin from './admin/pages/NoticiasAdmin';
 import ProyectosAdmin from './admin/pages/ProyectosAdmin';
 import TurismoAdmin from './admin/pages/TurismoAdmin';
@@ -82,6 +83,7 @@ export default function App() {
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardOverview />} />
           <Route path="hero" element={<HeroAdmin />} />
+          <Route path="servicios" element={<ServiciosAdmin />} />
           <Route path="noticias" element={<NoticiasAdmin />} />
           <Route path="proyectos" element={<ProyectosAdmin />} />
           <Route path="turismo" element={<TurismoAdmin />} />

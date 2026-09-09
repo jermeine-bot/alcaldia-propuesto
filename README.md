@@ -12,12 +12,13 @@ Este proyecto se compone de una **Arquitectura Fullstack Profesional**:
 
 ## 📋 Tabla de Contenidos
 1. [Ficha Técnica y Tecnologías](#-ficha-técnica-y-tecnologías)
-2. [Estructura Completa del Proyecto](#-estructura-completa-del-proyecto)
-3. [Arquitectura del Backend (Node.js + Firebase)](#-arquitectura-del-backend-nodejs--firebase)
-4. [Módulo de Sincronización con Facebook Graph API](#-módulo-de-sincronización-con-facebook-graph-api)
-5. [Seguridad Avanzada, Roles (RBAC) y Bitácora de Auditoría](#-seguridad-avanzada-roles-rbac-y-bit%C3%A1cora-de-auditor%C3%ADa)
-6. [Autenticación y Credenciales Admin](#-autenticación-y-credenciales-admin)
-7. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
+2. [Módulo de Trámites y Servicios Simplificados](#-módulo-de-trámites-y-servicios-simplificados)
+3. [Estructura Completa del Proyecto](#-estructura-completa-del-proyecto)
+4. [Arquitectura del Backend (Node.js + Firebase)](#-arquitectura-del-backend-nodejs--firebase)
+5. [Módulo de Sincronización con Facebook Graph API](#-módulo-de-sincronización-con-facebook-graph-api)
+6. [Seguridad Avanzada, Roles (RBAC) y Bitácora de Auditoría](#-seguridad-avanzada-roles-rbac-y-bit%C3%A1cora-de-auditor%C3%ADa)
+7. [Autenticación y Credenciales Admin](#-autenticación-y-credenciales-admin)
+8. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
 
 ---
 
@@ -43,6 +44,23 @@ Este proyecto se compone de una **Arquitectura Fullstack Profesional**:
 | **Almacenamiento Multimedia** | Firebase Storage | `^11.3.1` / Admin SDK | Subida y alojamiento de imágenes con URLs públicas |
 | **Seguridad & Token** | JWT + bcryptjs | `^9.0.2` / `^3.0.3` | Encriptación de contraseñas y firma de tokens de sesión |
 | **Social Sync** | Facebook Graph API | `v19.0` | Importación automática de noticias desde Facebook |
+
+---
+
+## 🏛️ Módulo de Trámites y Servicios Simplificados
+
+Se implementó una reestructuración de la sección **Trámites y Servicios** para mejorar la experiencia de usuario (*UX*) y simplificar la navegación:
+
+1. **4 Categorías Principales**:
+   - 🏛️ **Trámites Municipales**: Permisos de construcción, licencias de funcionamiento y constancias.
+   - 💰 **Impuestos y Pagos**: Pago de IBI, impuesto sobre ingresos/matrícula y solvencias.
+   - 🏠 **Propiedades y Comercio**: Consultas catastrales, mercados municipales y registro de negocios.
+   - 🛠️ **Servicios y Atención**: Recolección de basura, cementerios, denuncias y reserva de citas.
+2. **Visor Modal Interactivo**:
+   - Desenfoque de fondo (*Glassmorphism*), selector rápido entre categorías y tarjetas de sub-servicios con soporte para enlaces externos o redirección interna a `#contacto`.
+3. **Módulo CMS Administrativo (`/admin/servicios`)**:
+   - Gestión integral de categorías (crear, editar, eliminar).
+   - CRUD de trámites y sub-servicios con configuración de **texto de botón** y **URL/link de destino** personalizado.
 
 ---
 
@@ -97,9 +115,13 @@ alcaldia-leon-react/
     ├── App.jsx
     ├── index.css
     ├── services/
-    │   └── apiService.js          ← Cliente API unificado que consume http://localhost:5000/api
-    ├── components/                ← Portal público (Hero, Noticias, Proyectos, etc.)
+    │   ├── apiService.js          ← Cliente API unificado
+    │   ├── mockStorage.js         ← Almacenamiento local asíncrono (Fallback)
+    │   └── initialData.js         ← Datos por defecto de la aplicación
+    ├── components/                ← Portal público (Hero, Servicios [4 Categorías + Modal], Noticias, etc.)
     └── admin/                     ← Panel CMS Administrativo (/admin)
+        ├── components/            ← Layout, Sidebar y Header de Administración
+        └── pages/                 ← Dashboard, HeroAdmin, ServiciosAdmin, NoticiasAdmin, etc.
 ```
 
 ---

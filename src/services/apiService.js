@@ -515,5 +515,94 @@ export const apiService = {
     }
   },
 
+  // 11. TRÁMITES Y SERVICIOS
+  getServicios: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/servicios`);
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('Backend servicios no disponible, usando mockStorage:', e.message);
+    }
+    return mockStorage.getServicios();
+  },
+
+  saveServicio: async (data) => {
+    const token = getAuthToken();
+    const mockUpdatedList = await mockStorage.saveServicio(data);
+    try {
+      const isEdit = Boolean(data.id);
+      const url = isEdit ? `${API_BASE_URL}/servicios/${data.id}` : `${API_BASE_URL}/servicios`;
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('Error backend saveServicio:', e.message);
+    }
+    return mockUpdatedList;
+  },
+
+  deleteServicio: async (id) => {
+    const token = getAuthToken();
+    const mockUpdatedList = await mockStorage.deleteServicio(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/servicios/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('Error backend deleteServicio:', e.message);
+    }
+    return mockUpdatedList;
+  },
+
+  saveSubservicio: async (categoriaId, subservicioData) => {
+    const token = getAuthToken();
+    const mockUpdatedList = await mockStorage.saveSubservicio(categoriaId, subservicioData);
+    try {
+      const isEdit = Boolean(subservicioData.id);
+      const url = isEdit
+        ? `${API_BASE_URL}/servicios/${categoriaId}/subservicios/${subservicioData.id}`
+        : `${API_BASE_URL}/servicios/${categoriaId}/subservicios`;
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(subservicioData)
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('Error backend saveSubservicio:', e.message);
+    }
+    return mockUpdatedList;
+  },
+
+  deleteSubservicio: async (categoriaId, subservicioId) => {
+    const token = getAuthToken();
+    const mockUpdatedList = await mockStorage.deleteSubservicio(categoriaId, subservicioId);
+    try {
+      const res = await fetch(`${API_BASE_URL}/servicios/${categoriaId}/subservicios/${subservicioId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('Error backend deleteSubservicio:', e.message);
+    }
+    return mockUpdatedList;
+  },
+
   resetToDefault: () => mockStorage.resetToDefault()
 };
