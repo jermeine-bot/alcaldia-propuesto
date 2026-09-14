@@ -1,10 +1,10 @@
 /* ESTILOS DEL PANEL ADMINISTRATIVO - ALCALDÍA DE LEÓN */
 
 :root {
-  --admin-sidebar-bg: #181716;
-  --admin-sidebar-hover: #262422;
-  --admin-sidebar-active: #B22222;
-  --admin-primary: #B22222;
+  --admin-sidebar-bg: #0D1B2A;
+  --admin-sidebar-hover: #1B2A4A;
+  --admin-sidebar-active: #9E1B22;
+  --admin-primary: #9E1B22;
   --admin-primary-hover: #8B0000;
   --admin-bg-light: #F4F6F9;
   --admin-card-bg: #FFFFFF;
@@ -433,5 +433,13 @@ html.admin-html, body.admin-body {
 
   .admin-sidebar-footer {
     display: block; /* Oculto o visible según prefieras, ahora se mantiene dentro del drawer móvil */
+  }
+}
+
+/*Esto es para el boton*/
+
+@media (max-width: 991.98px) {
+  .admin-page-title {
+    padding-left: 45px; /* Deja espacio para que el botón hamburguesa flote al lado sin tapar el texto */
   }
 }

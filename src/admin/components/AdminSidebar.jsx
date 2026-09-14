@@ -10,8 +10,7 @@ import {
   BarChart3,
   PhoneCall,
   Briefcase,
-  Menu,
-  X
+  Menu
 } from 'lucide-react';
 
 const AdminSidebar = () => {
@@ -21,12 +20,8 @@ const AdminSidebar = () => {
     setIsOpen(!isOpen);
   };
 
-  // Función para cerrar el aside específicamente al hacer clic en logo2 (en móviles/tablets o en general)
   const handleLogo2Click = () => {
-    // Si estamos en vista móvil/tablet o queremos que toggle funcione, podemos usar toggleSidebar o forzar cierre si prefieres:
-    // Para cumplir con "a la hora de cerrar el aside se toque la imagen logo2":
     setIsOpen(false);
-    // Si deseas que también actúe como interruptor (abrir/cerrar), puedes cambiarlo por toggleSidebar();
   };
 
   const menuItems = [
@@ -43,16 +38,18 @@ const AdminSidebar = () => {
 
   return (
     <>
-      {/* Botón hamburguesa para móvil y tablet */}
-      <button 
-        className="admin-mobile-toggle-btn" 
-        onClick={toggleSidebar}
-        aria-label="Abrir menú"
-      >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+      {/* Botón hamburguesa solo se muestra si el aside está CERRADO (!isOpen) */}
+      {!isOpen && (
+        <button 
+          className="admin-mobile-toggle-btn" 
+          onClick={toggleSidebar}
+          aria-label="Abrir menú"
+        >
+          <Menu size={24} />
+        </button>
+      )}
 
-      {/* Overlay para oscurecer el fondo al abrir en móvil (opcional para UX, pero seguro) */}
+      {/* Overlay para oscurecer el fondo al abrir en móvil */}
       {isOpen && <div className="admin-sidebar-overlay" onClick={toggleSidebar}></div>}
 
       <aside className={`admin-sidebar ${isOpen ? 'open' : 'closed'}`}>
@@ -68,7 +65,7 @@ const AdminSidebar = () => {
           />
         </div>
 
-        {/* Imagen centrada que actúa para cerrar el aside al tocarla */}
+        {/* Imagen centrada para cerrar el aside al tocarla */}
         <div className="admin-sidebar-logo2-container">
           <img
             src="/img/nav_logo/leon2d.png"
@@ -86,7 +83,7 @@ const AdminSidebar = () => {
               <li key={item.path} className="admin-nav-item">
                 <NavLink
                   to={item.path}
-                  onClick={() => setIsOpen(false)} // Cierra el menú al hacer clic en una opción en móvil
+                  onClick={() => setIsOpen(false)}
                   className={({ isActive }) =>
                     `admin-nav-link ${isActive ? 'active' : ''}`
                   }
