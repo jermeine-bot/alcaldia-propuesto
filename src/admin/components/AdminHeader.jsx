@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ExternalLink, LogOut, User } from 'lucide-react';
+import { ExternalLink, LogOut, User, Menu, X } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 
-const AdminHeader = ({ title }) => {
+const AdminHeader = ({ title, toggleSidebar, isSidebarOpen }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const user = apiService.getCurrentUser()?.user || {
@@ -18,6 +18,14 @@ const AdminHeader = ({ title }) => {
   return (
     <header className="admin-topbar">
       <div className="d-flex align-items-center gap-3">
+        {/* Botón integrado en el header para que empuje el título y nunca se ponga encima */}
+        <button 
+          className="admin-header-toggle-btn d-lg-none" 
+          onClick={toggleSidebar}
+          aria-label="Alternar menú"
+        >
+          {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
         <h1 className="admin-page-title">{title || 'Panel Administrativo'}</h1>
       </div>
 
