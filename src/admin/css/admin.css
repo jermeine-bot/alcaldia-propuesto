@@ -66,6 +66,27 @@ html.admin-html, body.admin-body {
   object-fit: contain;
 }
 
+/* CONTENEDOR Y CENTRADO DE LOGO2 */
+.admin-sidebar-logo2-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0;
+  width: 100%;
+  cursor: pointer;
+}
+
+.admin-sidebar-logo2 {
+  width: 7rem;
+  height: auto;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.admin-sidebar-logo2:hover {
+  transform: scale(1.05);
+}
+
 .admin-brand-title {
   font-size: 0.95rem;
   font-weight: 700;
@@ -121,7 +142,7 @@ html.admin-html, body.admin-body {
   flex-shrink: 0;
 }
 
-/* ÁREA PRINCIPAL CON SCROLL VERTICAL PROPIO */
+/* ÁREA PRINCIPAL CON SCROLL VERTICAL PROPIO (INTACTA) */
 .admin-main {
   flex: 1;
   height: 100vh;
@@ -325,52 +346,92 @@ html.admin-html, body.admin-body {
   color: #ffffff;
 }
 
+/* BOTÓN HAMBURGUESA OCULTO EN DESKTOP */
+.admin-mobile-toggle-btn {
+  display: none;
+}
+
+.admin-sidebar-overlay {
+  display: none;
+}
+
 /* REGLAS RESPONSIVAS PARA MÓVILES Y TABLETS (<992px) */
 @media (max-width: 991.98px) {
+  /* Botón hamburguesa flotante o visible para móvil/tablet */
+  .admin-mobile-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 1050;
+    background-color: var(--admin-sidebar-bg);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  /* Overlay transparente para oscurecer pantalla al abrir aside en móvil */
+  .admin-sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1035;
+  }
+
   .admin-wrapper {
-    flex-direction: column;
+    flex-direction: row; /* Mantiene la estructura base del layout sin romper contenido */
     height: 100vh;
     overflow: hidden;
   }
+
+  /* El aside se comporta como un menú deslizante lateral oculto por defecto */
   .admin-sidebar {
-    width: 100%;
-    height: auto;
-    max-height: 160px;
-    flex-shrink: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    max-width: 80%;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    z-index: 1040;
   }
-  .admin-sidebar-header {
-    padding: 0.5rem 1rem;
+
+  .admin-sidebar.open {
+    transform: translateX(0);
   }
+
   .admin-sidebar-menu {
     display: flex;
-    overflow-x: auto;
-    padding: 0.5rem;
-    gap: 0.5rem;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-  }
-  .admin-nav-item {
-    margin-bottom: 0;
-    flex-shrink: 0;
-  }
-  .admin-nav-link {
-    padding: 0.5rem 0.85rem;
-    font-size: 0.82rem;
-    white-space: nowrap;
-  }
-  .admin-sidebar-footer {
-    display: none;
-  }
-  .admin-main {
-    flex: 1;
-    height: calc(100vh - 160px);
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-  }
-  .admin-content {
+    flex-direction: column;
+    overflow-y: auto;
     padding: 1rem;
+    gap: 0.35rem;
+    white-space: normal;
   }
-  .admin-topbar {
+
+  .admin-nav-item {
+    margin-bottom: 0.35rem;
+    flex-shrink: unset;
+  }
+
+  .admin-nav-link {
     padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    white-space: normal;
+  }
+
+  .admin-sidebar-footer {
+    display: block; /* Oculto o visible según prefieras, ahora se mantiene dentro del drawer móvil */
   }
 }
