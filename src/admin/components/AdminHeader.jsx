@@ -18,7 +18,6 @@ const AdminHeader = ({ title, toggleSidebar, isSidebarOpen }) => {
   return (
     <header className="admin-topbar">
       <div className="d-flex align-items-center gap-3">
-        {/* Botón integrado en el header para que empuje el título y nunca se ponga encima */}
         <button 
           className="admin-header-toggle-btn d-lg-none" 
           onClick={toggleSidebar}
@@ -62,16 +61,24 @@ const AdminHeader = ({ title, toggleSidebar, isSidebarOpen }) => {
           
           {dropdownOpen && (
             <ul
-              className="dropdown-menu dropdown-menu-end shadow-sm show d-block position-absolute"
-              style={{ top: '100%', right: 0, marginTop: '0.5rem', zIndex: 1050 }}
+              className="dropdown-menu dropdown-menu-end shadow-sm show position-absolute"
+              style={{ 
+                top: '100%', 
+                right: '0px', 
+                left: 'auto',
+                marginTop: '0.5rem', 
+                zIndex: 1050,
+                width: '220px',
+                maxWidth: 'calc(100vw - 2rem)'
+              }}
             >
               <li className="px-3 py-2 border-bottom">
-                <div className="fw-bold" style={{ fontSize: '0.85rem' }}>{user.name}</div>
-                <div className="text-muted" style={{ fontSize: '0.75rem' }}>{user.email}</div>
+                <div className="fw-bold text-truncate" style={{ fontSize: '0.85rem' }}>{user.name}</div>
+                <div className="text-muted text-truncate" style={{ fontSize: '0.75rem' }}>{user.email}</div>
               </li>
               <li>
                 <button
-                  className="dropdown-item text-danger d-flex align-items-center gap-2 py-2"
+                  className="dropdown-item text-danger d-flex align-items-center gap-2 py-2 w-100"
                   onClick={handleLogout}
                 >
                   <LogOut size={16} />
