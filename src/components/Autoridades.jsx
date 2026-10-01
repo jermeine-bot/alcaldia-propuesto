@@ -113,7 +113,10 @@ const Autoridades = () => {
                 />
               </div>
               <div className="col-md-7">
-                <span className="autoridad-badge mb-2 d-inline-block">{selectedAutoridad.badge}</span>
+                {/* Solución al solapamiento con posición estática/bloque clara */}
+                <div className="mb-2">
+                  <span className="badge bg-danger px-3 py-2">{selectedAutoridad.badge}</span>
+                </div>
                 <h3 className="fw-bold mb-1" style={{ color: 'var(--text-dark)' }}>{selectedAutoridad.nombre}</h3>
                 <h6 className="text-danger fw-semibold mb-3">{selectedAutoridad.cargo}</h6>
                 <p className="fst-italic text-muted small mb-3">{selectedAutoridad.frase}</p>
