@@ -65,19 +65,31 @@ const Header = ({ onOpenSearch }) => {
             </div>
           </a>
 
-          {/* BOTÓN MÓVIL TOGGLER */}
-          <button
-            className="navbar-toggler"
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle navigation"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
+          {/* CONTENEDOR DERECHO: AGRUPA EL LOGO SECUNDARIO Y EL BOTÓN HAMBURGUESA EN MÓVIL */}
+          <div className="d-flex align-items-center ms-auto">
+            <div className="header-sublogos-right me-2">
+              <img 
+                src="/img/nav_logo/logo%20nav2.png" 
+                alt="Escudo Alcaldía de León" 
+                className="logo-img sublogo-img-right" 
+                onError={(e) => { e.target.style.display = 'none'; }} 
+              />
+            </div>
+
+            {/* BOTÓN MÓVIL TOGGLER (AHORA FIJO EN LA ESQUINA DERECHA) */}
+            <button
+              className="navbar-toggler ms-2"
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle navigation"
+            >
+              <span className="navbar-toggler-icon"></span>
+            </button>
+          </div>
 
           {/* MENÚ NAVEGACIÓN CENTRADO Y ACOMODADO */}
           <div className={`collapse navbar-collapse ${mobileMenuOpen ? 'show' : ''}`} id="mainNav">
-            <ul className="navbar-nav">
+            <ul className="navbar-nav mx-auto">
               <li className="nav-item">
                 <a className={`nav-link ${activeSection === 'hero' ? 'active' : ''}`} href="#hero" onClick={(e) => handleNavClick(e, 'hero')}>Inicio</a>
               </li>
@@ -111,19 +123,6 @@ const Header = ({ onOpenSearch }) => {
             </ul>
           </div>
 
-          {/* GRUPO EN EL EXTREMO DERECHO: LOGO INSTITUCIONAL Y ACCESO ADMIN */}
-          <div className="header-right-group d-flex align-items-center gap-2">
-           
-            <div className="header-sublogos-right">
-              <img 
-                src="/img/nav_logo/logo%20nav2.png" 
-                alt="Escudo Alcaldía de León" 
-                className="logo-img sublogo-img-right" 
-                onError={(e) => { e.target.style.display = 'none'; }} 
-              />
-            </div>
-          </div>
-
         </div>
       </nav>
     </header>
@@ -131,6 +130,3 @@ const Header = ({ onOpenSearch }) => {
 };
 
 export default Header;
-
-
-
