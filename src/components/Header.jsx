@@ -114,9 +114,7 @@ const Header = ({ onOpenSearch }) => {
               <li className="nav-item">
                 <a className={`nav-link ${activeSection === 'turismo' ? 'active' : ''}`} href="#turismo" onClick={(e) => handleNavClick(e, 'turismo')}>Turismo</a>
               </li>
-              <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'transparencia' ? 'active' : ''}`} href="#transparencia" onClick={(e) => handleNavClick(e, 'transparencia')}>Transparencia</a>
-              </li>
+              
               <li className="nav-item">
                 <a className={`nav-link ${activeSection === 'contacto' ? 'active' : ''}`} href="#contacto" onClick={(e) => handleNavClick(e, 'contacto')}>Contacto</a>
               </li>
