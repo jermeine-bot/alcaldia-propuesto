@@ -88,7 +88,7 @@ const Footer = () => {
             <ul className="footer-links">
               <li><a href="#estadisticas"><i className="fas fa-chevron-right me-1 small text-danger"></i>Población y Datos</a></li>
               <li><a href="#turismo"><i className="fas fa-chevron-right me-1 small text-danger"></i>Turismo y Cultura</a></li>
-              <li><a href="#transparencia"><i className="fas fa-chevron-right me-1 small text-danger"></i>Transparencia</a></li>
+              <li><a href="#centros-atencion"><i className="fas fa-chevron-right me-1 small text-danger"></i>Centros de Atención</a></li>
               <li><a href="#redes-sociales"><i className="fas fa-chevron-right me-1 small text-danger"></i>Comunidad Digital</a></li>
               <li><a href="#contacto"><i className="fas fa-chevron-right me-1 small text-danger"></i>Atención al Ciudadano</a></li>
             </ul>
