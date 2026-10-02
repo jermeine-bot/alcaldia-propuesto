@@ -75,40 +75,49 @@ const Hero = () => {
           opacity: Math.max(0, 1 - offsetY / 700)
         }}
       >
-        <div className="row hero-inner-row align-items-center">
-          <div className="col-lg-8">
+        {/* Usamos px-3 en móvil para evitar que el contenido pegue en las esquinas, y mx-auto para centrar */}
+        <div className="row hero-inner-row align-items-center justify-content-center text-center">
+          <div className="col-lg-9 col-xl-8 px-4 px-md-3">
             {badgeText && (
-              <span className="badge bg-danger mb-2 px-3 py-2 text-uppercase letter-spacing-1">
+              <span className="badge bg-danger mb-3 px-3 py-2 text-uppercase letter-spacing-1">
                 {badgeText}
               </span>
             )}
-            <h1 className="hero-title">{title}</h1>
-            <p className="hero-subtitle">{subtitle}</p>
+            <h1 className="hero-title" style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)' }}>{title}</h1>
+            <p className="hero-subtitle mb-4" style={{ fontSize: 'clamp(0.95rem, 1.5vw, 1.15rem)' }}>{subtitle}</p>
 
-            {/* MOTOR DE BÚSQUEDA CON SUGERENCIAS */}
-            <div className="hero-search-container position-relative mb-4" ref={searchRef} style={{ maxWidth: '600px' }}>
-              <div className="input-group input-group-lg shadow-sm">
-                <span className="input-group-text bg-white border-0 text-danger">
+            {/* MOTOR DE BÚSQUEDA TRANSPARENTE ADAPTADO A MÓVIL */}
+            <div className="hero-search-container position-relative mb-4 mx-auto" ref={searchRef} style={{ maxWidth: '650px', width: '100%' }}>
+              <div 
+                className="input-group input-group-lg shadow-lg rounded-pill overflow-hidden"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.35)'
+                }}
+              >
+                <span className="input-group-text bg-transparent border-0 text-white ps-3 ps-md-4">
                   <i className="fas fa-search"></i>
                 </span>
                 <input
                   type="text"
-                  className="form-control border-0 ps-0 shadow-none"
-                  placeholder="¿Qué servicio, trámite o lugar buscas en León?"
+                  className="form-control bg-transparent border-0 text-white shadow-none ps-2 py-3"
+                  placeholder="¿Qué buscas? (Trámites, turismo...)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onFocus={() => setIsFocused(true)}
-                  style={{ fontSize: '0.95rem' }}
+                  style={{ fontSize: '0.95rem', color: '#fff' }}
                 />
               </div>
 
               {/* LISTA DE SUGERENCIAS DESPLEGABLE */}
               {isFocused && (
                 <div 
-                  className="suggestions-dropdown position-absolute w-100 bg-white shadow-lg rounded-bottom mt-1 overflow-hidden" 
-                  style={{ zIndex: 1000, maxHeight: '280px', overflowY: 'auto' }}
+                  className="suggestions-dropdown position-absolute w-100 bg-white shadow-lg rounded-4 mt-2 overflow-hidden text-start" 
+                  style={{ zIndex: 1000, maxHeight: '260px', overflowY: 'auto' }}
                 >
-                  <div className="p-2 bg-light border-bottom text-muted small fw-bold">
+                  <div className="p-2 bg-light border-bottom text-muted small fw-bold px-3">
                     {searchTerm ? 'Resultados sugeridos' : 'Sugerencias populares'}
                   </div>
                   {filteredSuggestions.length > 0 ? (
@@ -120,8 +129,8 @@ const Hero = () => {
                         onClick={() => setIsFocused(false)}
                         style={{ cursor: 'pointer' }}
                       >
-                        <span className="text-truncate me-2">{item.title}</span>
-                        <span className="badge bg-secondary text-white font-monospace" style={{ fontSize: '0.75rem' }}>
+                        <span className="text-truncate me-2 fw-medium" style={{ fontSize: '0.9rem' }}>{item.title}</span>
+                        <span className="badge bg-danger text-white font-monospace flex-shrink-0" style={{ fontSize: '0.7rem' }}>
                           {item.category}
                         </span>
                       </a>
@@ -135,7 +144,7 @@ const Hero = () => {
               )}
             </div>
 
-            <div className="hero-buttons">
+            <div className="hero-buttons d-flex justify-content-center flex-wrap gap-2">
               <a href={primaryBtnLink} className="btn btn-outline-light btn-lg">
                 <i className="fas fa-compass"></i> {primaryBtnText}
               </a>
