@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
+import { initialServiciosSettings } from '../services/initialData';
 
 const Servicios = () => {
   const [selectedCategoria, setSelectedCategoria] = useState(null);
@@ -9,6 +10,12 @@ const Servicios = () => {
   const { data: categoriasServicios = [] } = useQuery({
     queryKey: ['servicios'],
     queryFn: apiService.getServicios
+  });
+
+  const { data: sectionSettings = initialServiciosSettings } = useQuery({
+    queryKey: ['servicios-settings'],
+    queryFn: apiService.getServiciosSettings,
+    initialData: initialServiciosSettings
   });
 
   // Mantener seleccionada la categoría actualizada si cambia el arreglo en tiempo real
@@ -59,11 +66,9 @@ const Servicios = () => {
     <section id="servicios" className="servicios-section py-5">
       <div className="container">
         <div className="section-header text-center mb-5">
-          <span className="section-subtitle">Servicios</span>
-          <h2 className="section-title">Trámites y Servicios Municipales</h2>
-          <p className="section-description">
-            Hemos simplificado nuestras gestiones en categorías principales para tu comodidad
-          </p>
+          <span className="section-subtitle">{sectionSettings.eyebrow}</span>
+          <h2 className="section-title">{sectionSettings.title}</h2>
+          <p className="section-description">{sectionSettings.description}</p>
         </div>
 
         {/* CONTENEDOR DE LAS CATEGORÍAS PRINCIPALES */}
@@ -196,7 +201,7 @@ const Servicios = () => {
             {/* FOOTER MODAL */}
             <div className="modal-footer-custom mt-4 pt-3 border-top text-center text-md-between d-flex flex-column flex-md-row align-items-center gap-3">
               <span className="small text-muted">
-                <i className="fas fa-info-circle me-1 text-danger"></i> Para orientación directa en ventanilla llama al <strong>+505 2315-0000</strong>
+                <i className="fas fa-info-circle me-1 text-danger"></i> Para orientación directa en ventanilla llama al <strong>{sectionSettings.phone}</strong>
               </span>
               <button
                 className="btn btn-secondary btn-sm px-4 rounded-pill"

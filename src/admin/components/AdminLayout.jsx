@@ -13,6 +13,8 @@ const titleMap = {
   '/admin/turismo': 'Gestión de Lugares Turísticos',
   '/admin/cultural': 'Agenda Cultural y Tradiciones',
   '/admin/estadisticas': 'Indicadores y Estadísticas de León',
+  '/admin/centros-atencion': 'Gestión de Centros de Atención',
+  '/admin/redes-sociales': 'Gestión de Redes Sociales',
   '/admin/contacto': 'Información Institucional y Contacto',
 };
 

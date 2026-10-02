@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import Preloader from './components/Preloader';
@@ -32,16 +32,52 @@ import TurismoAdmin from './admin/pages/TurismoAdmin';
 import CulturaAdmin from './admin/pages/CulturaAdmin';
 import EstadisticasAdmin from './admin/pages/EstadisticasAdmin';
 import ContactoAdmin from './admin/pages/ContactoAdmin';
+import CentrosAtencionAdmin from './admin/pages/CentrosAtencionAdmin';
+import RedesSocialesAdmin from './admin/pages/RedesSocialesAdmin';
 
 function PublicLanding() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const mainRef = useRef(null);
+
+  useEffect(() => {
+    const sections = mainRef.current?.querySelectorAll(':scope > section:not(:first-child)');
+    if (!sections?.length || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    if (!('IntersectionObserver' in window)) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('scroll-reveal-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.08,
+      rootMargin: '0px 0px -6% 0px'
+    });
+
+    sections.forEach((section, index) => {
+      section.classList.add('scroll-reveal');
+      section.style.setProperty('--scroll-reveal-delay', `${Math.min(index, 4) * 55}ms`);
+      observer.observe(section);
+    });
+
+    return () => {
+      observer.disconnect();
+      sections.forEach((section) => {
+        section.classList.remove('scroll-reveal', 'scroll-reveal-visible');
+        section.style.removeProperty('--scroll-reveal-delay');
+      });
+    };
+  }, []);
 
   return (
     <div className="app-container">
       <Preloader />
       <Header onOpenSearch={() => setIsSearchOpen(true)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-      <main>
+      <main ref={mainRef}>
         <Hero />
         <Noticias />
         <Autoridades />
@@ -90,6 +126,8 @@ export default function App() {
           <Route path="cultural" element={<CulturaAdmin />} />
           <Route path="estadisticas" element={<EstadisticasAdmin />} />
           <Route path="contacto" element={<ContactoAdmin />} />
+          <Route path="centros-atencion" element={<CentrosAtencionAdmin />} />
+          <Route path="redes-sociales" element={<RedesSocialesAdmin />} />
         </Route>
 
         {/* Catch-all */}

@@ -1,5 +1,5 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore/lite';
+import { initializeApp, getApps, getApp } from '@firebase/app';
+import { getFirestore } from '@firebase/firestore/lite';
 import dotenv from 'dotenv';
 
 dotenv.config();

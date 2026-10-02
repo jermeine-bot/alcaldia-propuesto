@@ -10,7 +10,9 @@ import {
   BarChart3,
   PhoneCall,
   Briefcase,
-  Menu
+  Menu,
+  MapPin,
+  Share2
 } from 'lucide-react';
 
 const AdminSidebar = () => {
@@ -33,6 +35,8 @@ const AdminSidebar = () => {
     { path: '/admin/turismo', label: 'Turismo', icon: Palmtree },
     { path: '/admin/cultural', label: 'Agenda Cultural', icon: CalendarDays },
     { path: '/admin/estadisticas', label: 'Estadísticas', icon: BarChart3 },
+    { path: '/admin/centros-atencion', label: 'Centros de Atención', icon: MapPin },
+    { path: '/admin/redes-sociales', label: 'Redes Sociales', icon: Share2 },
     { path: '/admin/contacto', label: 'Información de Contacto', icon: PhoneCall },
   ];
 

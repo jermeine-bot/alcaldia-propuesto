@@ -361,6 +361,13 @@ export const initialContactoData = {
   twitter_url: 'https://twitter.com/alcaldia_leon'
 };
 
+export const initialServiciosSettings = {
+  eyebrow: 'Servicios',
+  title: 'Trámites y Servicios Municipales',
+  description: 'Hemos simplificado nuestras gestiones en categorías principales para tu comodidad',
+  phone: '+505 2315-0000'
+};
+
 export const initialServiciosData = [
   {
     id: 'tramites',
@@ -511,4 +518,65 @@ export const initialServiciosData = [
     ]
   }
 ];
+
+export const initialCentrosAtencionData = [
+  {
+    id: 'centro-1',
+    serviceLabel: 'Atención tributaria',
+    title: 'Plantel Augusto C. Sandino - Fundeci',
+    description: 'Centro de atención tributaria para realizar consultas y recibir orientación sobre los tributos municipales.',
+    image: 'https://s3.laprensani.com/wp-content/uploads/2020/08/20200827_054944-1536x1152.jpg',
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Centro+de+Atenci%C3%B3n+Tributaria+Plantel+Augusto+C.+Sandino+Fundeci%2C+Le%C3%B3n%2C+Nicaragua',
+    coordinates: ''
+  },
+  {
+    id: 'centro-2',
+    serviceLabel: 'Atención tributaria',
+    title: 'Cabildo de Sutiava',
+    description: 'Punto de atención tributaria para acercar las gestiones y la orientación municipal a las familias de Sutiava.',
+    image: 'https://scontent-mia3-2.xx.fbcdn.net/v/t1.6435-9/53316618_394104814483648_4424533071907258368_n.jpg?stp=dst-jpg_tt6&cstp=mx960x720&ctp=s960x720&_nc_cat=103&ccb=1-7&_nc_sid=833d8c&_nc_ohc=3PcCQj0ryUEQ7kNvwG3XSx2&_nc_oc=AdoxAGoshRtNEGX_QHNMI9aD6lIi_chPm-o43ljxO_Oz7pAu_UuOdJsClIbSZYgYYWU&_nc_zt=23&_nc_ht=scontent-mia3-2.xx&_nc_gid=jxOMDZYlSyA9Zk_-543mfg&_nc_ss=7b289&oh=00_AQOXamRbOgltC3qL1kyyigzMPEhiGYW5FWAJdpNVF9_nXg&oe=6AE759F1',
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=12.4334625%2C-86.8962656',
+    coordinates: '12.4334625, -86.8962656'
+  },
+  {
+    id: 'centro-3',
+    serviceLabel: 'Atención tributaria',
+    title: 'Plantel Rigoberto López Pérez - San Felipe',
+    description: 'Centro de atención para consultas y orientación sobre servicios y obligaciones tributarias municipales.',
+    image: 'https://scontent-mia3-3.xx.fbcdn.net/v/t39.30808-6/476904691_939569444988682_3573219317361155107_n.jpg?stp=dst-jpg_tt6&cstp=mx1280x853&ctp=s1280x853&_nc_cat=107&ccb=1-7&_nc_sid=833d8c&_nc_ohc=JUqxMr1TfV4Q7kNvwHq84HC&_nc_oc=AdqTkGA-CddnuwnmLiLVVF5GRm_yIa2PR9IzcLvpi3AuwLuILReCEtsqg0IzI2K33z8&_nc_zt=23&_nc_ht=scontent-mia3-3.xx&_nc_gid=9qlya_IIbWhNiapJLGy3JQ&_nc_ss=7b289&oh=00_AQOcOsbnWkS47JJEu-B-MWKRNPkijxlszF7SReE7XtHUCg&oe=6AC5CA98',
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Centro+de+Atenci%C3%B3n+Tributaria+Plantel+Rigoberto+L%C3%B3pez+P%C3%A9rez+San+Felipe%2C+Le%C3%B3n%2C+Nicaragua',
+    coordinates: ''
+  },
+  {
+    id: 'centro-4',
+    serviceLabel: 'Atención tributaria',
+    title: 'Parque Forestal - León Sureste',
+    description: 'Punto de atención tributaria para facilitar el acceso a las gestiones municipales en el sector sureste de León.',
+    image: 'https://scontent-mia3-3.xx.fbcdn.net/v/t1.6435-9/118441073_170572441204275_3221589260549251588_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1072&ctp=s2048x1072&_nc_cat=107&ccb=1-7&_nc_sid=833d8c&_nc_ohc=o_gqKv5d38QQ7kNvwGrxh47&_nc_oc=AdrpB7QL_pU3b6N3tpaH5qdG2D0anL2q_DXP4xhDddj2ZxpBIhnIoYcCewIn6u3_M60&_nc_zt=23&_nc_ht=scontent-mia3-3.xx&_nc_gid=RPn-oKU82s85HMVwN8954g&_nc_ss=7b289&oh=00_AQOe8C_lAr16C0-AtBbqyBUhKAxKLf1gy3Ya1rKoiZVgNg&oe=6AE73BC9',
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=12.4283875%2C-86.8527031',
+    coordinates: '12.4283875, -86.8527031'
+  },
+  {
+    id: 'centro-5',
+    serviceLabel: 'Atención tributaria',
+    title: 'Edificio Central - Alcaldía Municipal de León',
+    description: 'Sede central de la Alcaldía para recibir atención y orientación sobre los servicios tributarios municipales.',
+    image: 'https://scontent-mia5-2.xx.fbcdn.net/v/t39.99422-6/789388685_1815192082973542_1054571313588336725_n.png?stp=dst-jpg_tt6&cstp=mx1599x1066&ctp=s1599x1066&_nc_cat=100&ccb=1-7&_nc_sid=833d8c&_nc_ohc=BTdimcd-Jz4Q7kNvwFmNTTs&_nc_oc=AdpigJop75FwQOgIn0j8Lp6ysRNptMFKlbISmHKSCGOS61BcwI-VJbQQyttWMpzkyCA&_nc_zt=14&_nc_ht=scontent-mia5-2.xx&_nc_gid=Wyae-OVUEYma3uKbK6Jjzg&_nc_ss=7b289&oh=00_AQOfn-jQ1FnmOHa3S0r8MoExqUkKDh5gKgk25b1oOtNVSQ&oe=6AC5BDD7',
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=12.4354141%2C-86.8789709',
+    coordinates: '12.4354141, -86.8789709'
+  }
+];
+
+export const initialRedesSocialesData = {
+  eyebrow: 'COMUNIDAD DIGITAL EN VIVO',
+  title: 'Síguenos en Redes Sociales',
+  description: 'Conéctate con la Alcaldía de León en todas nuestras plataformas oficiales para enterarte al instante de obras, noticias y eventos culturales.',
+  platforms: [
+    { id: 'facebook', name: 'Facebook', handle: '@AlcaldiaLeon', url: 'https://www.facebook.com/share/1EJ2g1UpjY/', icon: 'fa-facebook-f', buttonClass: 'facebook', statTarget: 15234, statLabel: 'Seguidores Facebook', color: '#1877F2', profileDescription: 'Transmisiones en directo, comunicados oficiales y avisos comunitarios.', images: ['/img/Redes sociales/captura de facebook.png', '/img/Redes sociales/captura de facebook1.png', '/img/Redes sociales/captura de facebook3.png', '/img/Redes sociales/captura de facebook4.png'] },
+    { id: 'instagram', name: 'Instagram', handle: '@alcaldia_leon', url: 'https://www.instagram.com/alcaldia_leon', icon: 'fa-instagram', buttonClass: 'instagram', statTarget: 8756, statLabel: 'Seguidores Instagram', color: '#E4405F', profileDescription: 'Fotografías de León, actividades municipales y vida comunitaria.', images: ['/img/Redes sociales/instagram-1.jpg', '/img/Redes sociales/instagram-2.jpg', '/img/Redes sociales/instagram-3.jpg', '/img/Redes sociales/instagram-4.jpg', '/img/Redes sociales/instagram-5.jpg', '/img/Redes sociales/instagram-6.jpg'] },
+    { id: 'tiktok', name: 'TikTok', handle: '@alcaldia_leon', url: 'https://www.tiktok.com/@leonalcaldia?_r=1&_t=ZS-98pfIgmPYhg', icon: 'fa-tiktok', buttonClass: 'tiktok', statTarget: 12345, statLabel: 'Seguidores TikTok', color: '#000000', profileDescription: 'Reportajes dinámicos, eventos culturales y resumen de obras.', images: ['/img/Redes sociales/captura de tiktok.png', '/img/Redes sociales/captura de tiktok2.png', '/img/Redes sociales/captura de tiktok3.png', '/img/Redes sociales/captura de tiktok4.png'] },
+    { id: 'youtube', name: 'YouTube', handle: '@AlcaldiaLeon', url: 'https://www.youtube.com/@AlcaldiaLeon', icon: 'fa-youtube', buttonClass: 'youtube', statTarget: 5432, statLabel: 'Suscriptores YouTube', color: '#FF0000', profileDescription: 'Canal oficial de videos y transmisiones municipales.', images: [] },
+    { id: 'twitter', name: 'Twitter/X', handle: '@Alcaldia_Leon', url: 'https://twitter.com/Alcaldia_Leon', icon: 'fa-twitter', buttonClass: 'twitter', statTarget: null, statLabel: '', color: '#111111', profileDescription: 'Comunicados y actualizaciones de la Alcaldía.', images: [] }
+  ]
+};
 

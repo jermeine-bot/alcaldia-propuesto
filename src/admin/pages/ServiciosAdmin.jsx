@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
-import { Briefcase, Plus, Edit, Trash2, Search, Link as LinkIcon, Layers, FileText } from 'lucide-react';
+import { Briefcase, Plus, Edit, Trash2, Search, Link as LinkIcon, Layers, FileText, Save } from 'lucide-react';
 import { apiService } from '../../services/apiService';
+import { initialServiciosSettings } from '../../services/initialData';
 
 const ServiciosAdmin = () => {
   const queryClient = useQueryClient();
@@ -12,6 +13,16 @@ const ServiciosAdmin = () => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingSub, setEditingSub] = useState(null);
   const [selectedCatId, setSelectedCatId] = useState(null);
+  const [sectionFormData, setSectionFormData] = useState(initialServiciosSettings);
+
+  const showMutationError = (error) => {
+    Swal.fire({
+      icon: 'error',
+      title: 'No se pudo guardar',
+      text: error.message || 'Verifica la conexión y los permisos de tu cuenta.',
+      confirmButtonColor: '#B22222'
+    });
+  };
 
   // Form State para Categoría
   const [categoryFormData, setCategoryFormData] = useState({
@@ -37,11 +48,37 @@ const ServiciosAdmin = () => {
     queryFn: apiService.getServicios
   });
 
+  const { data: sectionSettings = initialServiciosSettings } = useQuery({
+    queryKey: ['servicios-settings'],
+    queryFn: apiService.getServiciosSettings,
+    initialData: initialServiciosSettings
+  });
+
+  useEffect(() => {
+    setSectionFormData(sectionSettings);
+  }, [sectionSettings]);
+
+  const saveSectionMutation = useMutation({
+    mutationFn: apiService.saveServiciosSettings,
+    onSuccess: (savedSettings) => {
+      queryClient.setQueryData(['servicios-settings'], savedSettings);
+      Swal.fire({
+        icon: 'success',
+        title: 'Sección actualizada',
+        text: 'Los textos de Servicios se guardaron correctamente.',
+        confirmButtonColor: '#B22222',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    },
+    onError: showMutationError
+  });
+
   // Mutations Categoría
   const saveCategoryMutation = useMutation({
     mutationFn: apiService.saveServicio,
     onSuccess: () => {
-      queryClient.invalidateQueries(['servicios']);
+      queryClient.invalidateQueries({ queryKey: ['servicios'] });
       setShowCategoryModal(false);
       resetCategoryForm();
       Swal.fire({
@@ -52,13 +89,14 @@ const ServiciosAdmin = () => {
         timer: 1500,
         showConfirmButton: false
       });
-    }
+    },
+    onError: showMutationError
   });
 
   const deleteCategoryMutation = useMutation({
     mutationFn: apiService.deleteServicio,
     onSuccess: () => {
-      queryClient.invalidateQueries(['servicios']);
+      queryClient.invalidateQueries({ queryKey: ['servicios'] });
       Swal.fire({
         icon: 'success',
         title: 'Categoría Eliminada',
@@ -67,14 +105,15 @@ const ServiciosAdmin = () => {
         timer: 1500,
         showConfirmButton: false
       });
-    }
+    },
+    onError: showMutationError
   });
 
   // Mutations Sub-servicio
   const saveSubMutation = useMutation({
     mutationFn: ({ catId, subData }) => apiService.saveSubservicio(catId, subData),
     onSuccess: () => {
-      queryClient.invalidateQueries(['servicios']);
+      queryClient.invalidateQueries({ queryKey: ['servicios'] });
       setShowSubModal(false);
       resetSubForm();
       Swal.fire({
@@ -85,13 +124,14 @@ const ServiciosAdmin = () => {
         timer: 1500,
         showConfirmButton: false
       });
-    }
+    },
+    onError: showMutationError
   });
 
   const deleteSubMutation = useMutation({
     mutationFn: ({ catId, subId }) => apiService.deleteSubservicio(catId, subId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['servicios']);
+      queryClient.invalidateQueries({ queryKey: ['servicios'] });
       Swal.fire({
         icon: 'success',
         title: 'Trámite Eliminado',
@@ -100,7 +140,8 @@ const ServiciosAdmin = () => {
         timer: 1500,
         showConfirmButton: false
       });
-    }
+    },
+    onError: showMutationError
   });
 
   // Helpers de Reset Form
@@ -240,6 +281,62 @@ const ServiciosAdmin = () => {
 
   return (
     <div>
+      <div className="admin-card mb-4">
+        <div className="admin-card-header">
+          <h5 className="admin-card-title mb-0">Textos de la sección pública</h5>
+        </div>
+        <form onSubmit={(event) => {
+          event.preventDefault();
+          saveSectionMutation.mutate(sectionFormData);
+        }}>
+          <div className="row g-3">
+            <div className="col-12 col-md-4">
+              <label className="form-label fw-semibold small">Etiqueta superior</label>
+              <input
+                className="form-control"
+                value={sectionFormData.eyebrow}
+                onChange={(event) => setSectionFormData({ ...sectionFormData, eyebrow: event.target.value })}
+                required
+              />
+            </div>
+            <div className="col-12 col-md-8">
+              <label className="form-label fw-semibold small">Título principal</label>
+              <input
+                className="form-control"
+                value={sectionFormData.title}
+                onChange={(event) => setSectionFormData({ ...sectionFormData, title: event.target.value })}
+                required
+              />
+            </div>
+            <div className="col-12 col-md-8">
+              <label className="form-label fw-semibold small">Descripción</label>
+              <textarea
+                className="form-control"
+                rows={2}
+                value={sectionFormData.description}
+                onChange={(event) => setSectionFormData({ ...sectionFormData, description: event.target.value })}
+                required
+              />
+            </div>
+            <div className="col-12 col-md-4">
+              <label className="form-label fw-semibold small">Teléfono de orientación</label>
+              <input
+                className="form-control"
+                value={sectionFormData.phone}
+                onChange={(event) => setSectionFormData({ ...sectionFormData, phone: event.target.value })}
+                required
+              />
+            </div>
+          </div>
+          <div className="d-flex justify-content-end mt-3">
+            <button type="submit" className="btn btn-admin-primary btn-sm d-flex align-items-center gap-2" disabled={saveSectionMutation.isPending}>
+              <Save size={15} />
+              <span>{saveSectionMutation.isPending ? 'Guardando...' : 'Guardar textos'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
       <div className="admin-card mb-4">
         <div className="admin-card-header flex-wrap gap-2">
           <div className="d-flex align-items-center gap-2">

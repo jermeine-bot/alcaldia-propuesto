@@ -14,6 +14,7 @@ import contactoRoutes from './routes/contactoRoutes.js';
 import facebookRoutes from './routes/facebookRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
 import usersRoutes from './routes/usersRoutes.js';
+import serviciosRoutes from './routes/serviciosRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,6 +68,7 @@ app.use('/api/contacto', contactoRoutes);
 app.use('/api/facebook', facebookRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/servicios', serviciosRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {

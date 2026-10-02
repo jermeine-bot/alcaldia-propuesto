@@ -1,17 +1,36 @@
 import { mockStorage } from './mockStorage';
+import { initialServiciosSettings } from './initialData';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
 
 const getAuthToken = () => {
   const authData = localStorage.getItem('alcaldia_leon_auth');
   if (authData) {
     try {
-      return JSON.parse(authData).token;
-    } catch (e) {
-      return 'jwt_mock_token_alcaldia_leon_2026';
+      return JSON.parse(authData).token || null;
+    } catch {
+      return null;
     }
   }
-  return 'jwt_mock_token_alcaldia_leon_2026';
+  return null;
+};
+
+const requestServices = async (path, { method = 'GET', data } = {}) => {
+  const token = getAuthToken();
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (data !== undefined) headers['Content-Type'] = 'application/json';
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body: data === undefined ? undefined : JSON.stringify(data)
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.error || 'No se pudo guardar el contenido de servicios.');
+  }
+  return result;
 };
 
 export const apiService = {
@@ -516,93 +535,55 @@ export const apiService = {
   },
 
   // 11. TRÁMITES Y SERVICIOS
+  getServiciosSettings: async () => {
+    try {
+      return await requestServices('/servicios/settings');
+    } catch (e) {
+      console.warn('Backend configuración de servicios no disponible:', e.message);
+      return initialServiciosSettings;
+    }
+  },
+
+  saveServiciosSettings: async (data) => requestServices('/servicios/settings', {
+    method: 'PUT',
+    data
+  }),
+
   getServicios: async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/servicios`);
-      if (res.ok) return await res.json();
+      return await requestServices('/servicios');
     } catch (e) {
       console.warn('Backend servicios no disponible, usando mockStorage:', e.message);
+      return mockStorage.getServicios();
     }
-    return mockStorage.getServicios();
   },
 
   saveServicio: async (data) => {
-    const token = getAuthToken();
-    const mockUpdatedList = await mockStorage.saveServicio(data);
-    try {
-      const isEdit = Boolean(data.id);
-      const url = isEdit ? `${API_BASE_URL}/servicios/${data.id}` : `${API_BASE_URL}/servicios`;
-      const method = isEdit ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(data)
-      });
-      if (res.ok) return await res.json();
-    } catch (e) {
-      console.warn('Error backend saveServicio:', e.message);
-    }
-    return mockUpdatedList;
+    const isEdit = Boolean(data.id);
+    const path = isEdit ? `/servicios/${encodeURIComponent(data.id)}` : '/servicios';
+    return requestServices(path, { method: isEdit ? 'PUT' : 'POST', data });
   },
 
   deleteServicio: async (id) => {
-    const token = getAuthToken();
-    const mockUpdatedList = await mockStorage.deleteServicio(id);
-    try {
-      const res = await fetch(`${API_BASE_URL}/servicios/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) return await res.json();
-    } catch (e) {
-      console.warn('Error backend deleteServicio:', e.message);
-    }
-    return mockUpdatedList;
+    return requestServices(`/servicios/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 
   saveSubservicio: async (categoriaId, subservicioData) => {
-    const token = getAuthToken();
-    const mockUpdatedList = await mockStorage.saveSubservicio(categoriaId, subservicioData);
-    try {
-      const isEdit = Boolean(subservicioData.id);
-      const url = isEdit
-        ? `${API_BASE_URL}/servicios/${categoriaId}/subservicios/${subservicioData.id}`
-        : `${API_BASE_URL}/servicios/${categoriaId}/subservicios`;
-      const method = isEdit ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(subservicioData)
-      });
-      if (res.ok) return await res.json();
-    } catch (e) {
-      console.warn('Error backend saveSubservicio:', e.message);
-    }
-    return mockUpdatedList;
+    const isEdit = Boolean(subservicioData.id);
+    const categoryPath = `/servicios/${encodeURIComponent(categoriaId)}/subservicios`;
+    const path = isEdit ? `${categoryPath}/${encodeURIComponent(subservicioData.id)}` : categoryPath;
+    return requestServices(path, { method: isEdit ? 'PUT' : 'POST', data: subservicioData });
   },
 
   deleteSubservicio: async (categoriaId, subservicioId) => {
-    const token = getAuthToken();
-    const mockUpdatedList = await mockStorage.deleteSubservicio(categoriaId, subservicioId);
-    try {
-      const res = await fetch(`${API_BASE_URL}/servicios/${categoriaId}/subservicios/${subservicioId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) return await res.json();
-    } catch (e) {
-      console.warn('Error backend deleteSubservicio:', e.message);
-    }
-    return mockUpdatedList;
+    const path = `/servicios/${encodeURIComponent(categoriaId)}/subservicios/${encodeURIComponent(subservicioId)}`;
+    return requestServices(path, { method: 'DELETE' });
   },
+
+  getCentrosAtencion: () => mockStorage.getCentrosAtencion(),
+  saveCentrosAtencion: (data) => mockStorage.saveCentrosAtencion(data),
+  getRedesSociales: () => mockStorage.getRedesSociales(),
+  saveRedesSociales: (data) => mockStorage.saveRedesSociales(data),
 
   resetToDefault: () => mockStorage.resetToDefault()
 };

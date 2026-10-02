@@ -1,34 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-
-const instagramImages = [
-  '/img/Redes sociales/instagram-1.jpg',
-  '/img/Redes sociales/instagram-2.jpg',
-  '/img/Redes sociales/instagram-3.jpg',
-  '/img/Redes sociales/instagram-4.jpg',
-  '/img/Redes sociales/instagram-5.jpg',
-  '/img/Redes sociales/instagram-6.jpg'
-];
-
-const tiktokCaptures = [
-  '/img/Redes sociales/captura de tiktok.png',
-  '/img/Redes sociales/captura de tiktok2.png',
-  '/img/Redes sociales/captura de tiktok3.png',
-  '/img/Redes sociales/captura de tiktok4.png'
-];
-
-const facebookCaptures = [
-  '/img/Redes sociales/captura de facebook.png',
-  '/img/Redes sociales/captura de facebook1.png',
-  '/img/Redes sociales/captura de facebook3.png',
-  '/img/Redes sociales/captura de facebook4.png'
-];
-
-const socialStats = [
-  { id: 1, icon: 'fa-facebook-f', target: 15234, label: 'Seguidores Facebook', color: '#1877F2' },
-  { id: 2, icon: 'fa-instagram', target: 8756, label: 'Seguidores Instagram', color: '#E4405F' },
-  { id: 3, icon: 'fa-tiktok', target: 12345, label: 'Seguidores TikTok', color: '#000000' },
-  { id: 4, icon: 'fa-youtube', target: 5432, label: 'Suscriptores YouTube', color: '#FF0000' }
-];
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiService } from '../services/apiService';
+import { initialRedesSocialesData } from '../services/initialData';
 
 const AnimatedCounter = ({ target, duration = 2000, start = false }) => {
   const [count, setCount] = useState(0);
@@ -60,6 +33,35 @@ const RedesSociales = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [selectedImage, setSelectedImage] = useState(null);
+  const queryClient = useQueryClient();
+  const { data: socialData = initialRedesSocialesData } = useQuery({
+    queryKey: ['redes-sociales'],
+    queryFn: apiService.getRedesSociales,
+    staleTime: 0
+  });
+
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key === 'alcaldia_leon_redes_sociales') {
+        queryClient.invalidateQueries({ queryKey: ['redes-sociales'] });
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [queryClient]);
+  const platforms = socialData.platforms;
+  const getPlatform = (id) => platforms.find((platform) => platform.id === id) || initialRedesSocialesData.platforms.find((platform) => platform.id === id);
+  const instagramImages = getPlatform('instagram').images.filter(Boolean);
+  const tiktokCaptures = getPlatform('tiktok').images.filter(Boolean);
+  const facebookCaptures = getPlatform('facebook').images.filter(Boolean);
+  const socialStats = platforms.filter((platform) => platform.statTarget !== null && platform.statTarget !== '').map((platform) => ({
+    id: platform.id,
+    icon: platform.icon,
+    target: Number(platform.statTarget) || 0,
+    label: platform.statLabel,
+    color: platform.color
+  }));
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -87,12 +89,10 @@ const RedesSociales = () => {
       <div className="container position-relative z-1">
         <div className="section-header text-center mb-5">
           <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-danger-subtle text-danger mb-3 font-mono small fw-semibold">
-            <span className="live-dot-pulse"></span> COMUNIDAD DIGITAL EN VIVO
+            <span className="live-dot-pulse"></span> {socialData.eyebrow}
           </div>
-          <h2 className="section-title">Síguenos en Redes Sociales</h2>
-          <p className="section-description">
-            Conéctate con la Alcaldía de León en todas nuestras plataformas oficiales para enterarte al instante de obras, noticias y eventos culturales.
-          </p>
+          <h2 className="section-title">{socialData.title}</h2>
+          <p className="section-description">{socialData.description}</p>
         </div>
 
         {/* CONTADORES ANIMADOS DE SEGUIDORES */}
@@ -125,31 +125,13 @@ const RedesSociales = () => {
         <div className="row g-3 mb-5">
           <div className="col-12">
             <div className="social-buttons-wrapper">
-              <a href="https://www.facebook.com/share/1EJ2g1UpjY/" target="_blank" rel="noreferrer" className="social-btn facebook">
-                <i className="fab fa-facebook-f"></i>
-                <span>Facebook</span>
-                <i className="fas fa-arrow-right"></i>
-              </a>
-              <a href="https://www.instagram.com/alcaldia_leon" target="_blank" rel="noreferrer" className="social-btn instagram">
-                <i className="fab fa-instagram"></i>
-                <span>Instagram</span>
-                <i className="fas fa-arrow-right"></i>
-              </a>
-              <a href="https://www.tiktok.com/@leonalcaldia?_r=1&_t=ZS-98pfIgmPYhg" target="_blank" rel="noreferrer" className="social-btn tiktok">
-                <i className="fab fa-tiktok"></i>
-                <span>TikTok</span>
-                <i className="fas fa-arrow-right"></i>
-              </a>
-              <a href="https://www.youtube.com/@AlcaldiaLeon" target="_blank" rel="noreferrer" className="social-btn youtube">
-                <i className="fab fa-youtube"></i>
-                <span>YouTube</span>
-                <i className="fas fa-arrow-right"></i>
-              </a>
-              <a href="https://twitter.com/Alcaldia_Leon" target="_blank" rel="noreferrer" className="social-btn twitter">
-                <i className="fab fa-twitter"></i>
-                <span>Twitter/X</span>
-                <i className="fas fa-arrow-right"></i>
-              </a>
+              {platforms.map((platform) => (
+                <a key={platform.id} href={platform.url} target="_blank" rel="noreferrer" className={`social-btn ${platform.buttonClass}`}>
+                  <i className={`fab ${platform.icon}`}></i>
+                  <span>{platform.name}</span>
+                  <i className="fas fa-arrow-right"></i>
+                </a>
+              ))}
             </div>
           </div>
         </div>
@@ -191,7 +173,7 @@ const RedesSociales = () => {
                 <div className="social-card-header">
                   <div className="d-flex align-items-center gap-2">
                     <i className="fab fa-facebook-f"></i>
-                    <h5 className="mb-0">Facebook</h5>
+                    <h5 className="mb-0">{getPlatform('facebook').name}</h5>
                   </div>
                   <span className="social-badge badge-fb"><i className="fas fa-check-circle me-1"></i>Oficial</span>
                 </div>
@@ -212,13 +194,13 @@ const RedesSociales = () => {
                   </div>
                   <div className="facebook-profile mt-3">
                     <i className="fab fa-facebook-f me-2"></i>
-                    <h6 className="fw-bold mb-0">@AlcaldiaLeon</h6>
+                    <h6 className="fw-bold mb-0">{getPlatform('facebook').handle}</h6>
                   </div>
-                  <p className="text-muted small mb-0">Transmisiones en directo, comunicados oficiales y avisos comunitarios.</p>
+                    <p className="text-muted small mb-0">{getPlatform('facebook').profileDescription}</p>
                 </div>
                 <div className="social-card-footer">
-                  <a href="https://www.facebook.com/share/1EJ2g1UpjY/" target="_blank" rel="noreferrer" className="social-link-btn">
-                    Ir a Facebook <i className="fas fa-external-link-alt ms-1"></i>
+                  <a href={getPlatform('facebook').url} target="_blank" rel="noreferrer" className="social-link-btn">
+                    Ir a {getPlatform('facebook').name} <i className="fas fa-external-link-alt ms-1"></i>
                   </a>
                 </div>
               </div>
@@ -232,7 +214,7 @@ const RedesSociales = () => {
                 <div className="social-card-header">
                   <div className="d-flex align-items-center gap-2">
                     <i className="fab fa-instagram"></i>
-                    <h5 className="mb-0">Instagram</h5>
+                    <h5 className="mb-0">{getPlatform('instagram').name}</h5>
                   </div>
                   <span className="social-badge badge-ig"><i className="fas fa-camera me-1"></i>Fotos</span>
                 </div>
@@ -256,10 +238,14 @@ const RedesSociales = () => {
                       </div>
                     ))}
                   </div>
+                  <div className="instagram-profile mt-3">
+                    <i className="fab fa-instagram me-2"></i>
+                    <h6 className="fw-bold mb-0">{getPlatform('instagram').handle}</h6>
+                  </div>
                 </div>
                 <div className="social-card-footer">
-                  <a href="https://www.instagram.com/alcaldia_leon" target="_blank" rel="noreferrer" className="social-link-btn">
-                    Ir a Instagram <i className="fas fa-external-link-alt ms-1"></i>
+                  <a href={getPlatform('instagram').url} target="_blank" rel="noreferrer" className="social-link-btn">
+                    Ir a {getPlatform('instagram').name} <i className="fas fa-external-link-alt ms-1"></i>
                   </a>
                 </div>
               </div>
@@ -273,7 +259,7 @@ const RedesSociales = () => {
                 <div className="social-card-header">
                   <div className="d-flex align-items-center gap-2">
                     <i className="fab fa-tiktok"></i>
-                    <h5 className="mb-0">TikTok</h5>
+                    <h5 className="mb-0">{getPlatform('tiktok').name}</h5>
                   </div>
                   <span className="social-badge badge-tt"><i className="fas fa-video me-1"></i>Videos</span>
                 </div>
@@ -294,13 +280,13 @@ const RedesSociales = () => {
                   </div>
                   <div className="tiktok-profile mt-3">
                     <i className="fab fa-tiktok me-2"></i>
-                    <h6 className="fw-bold mb-0">@alcaldia_leon</h6>
+                    <h6 className="fw-bold mb-0">{getPlatform('tiktok').handle}</h6>
                   </div>
-                  <p className="text-muted small mb-0">Reportajes dinámicos, eventos culturales y resumen de obras.</p>
+                  <p className="text-muted small mb-0">{getPlatform('tiktok').profileDescription}</p>
                 </div>
                 <div className="social-card-footer">
-                  <a href="https://www.tiktok.com/@leonalcaldia?_r=1&_t=ZS-98pfIgmPYhg" target="_blank" rel="noreferrer" className="social-link-btn">
-                    Ir a TikTok <i className="fas fa-external-link-alt ms-1"></i>
+                  <a href={getPlatform('tiktok').url} target="_blank" rel="noreferrer" className="social-link-btn">
+                    Ir a {getPlatform('tiktok').name} <i className="fas fa-external-link-alt ms-1"></i>
                   </a>
                 </div>
               </div>

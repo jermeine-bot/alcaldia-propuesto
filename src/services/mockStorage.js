@@ -6,7 +6,9 @@ import {
   initialCulturaData,
   initialStatsData,
   initialContactoData,
-  initialServiciosData
+  initialServiciosData,
+  initialCentrosAtencionData,
+  initialRedesSocialesData
 } from './initialData';
 
 const KEYS = {
@@ -18,6 +20,8 @@ const KEYS = {
   STATS: 'alcaldia_leon_stats',
   CONTACTO: 'alcaldia_leon_contacto',
   SERVICIOS: 'alcaldia_leon_servicios',
+  CENTROS_ATENCION: 'alcaldia_leon_centros_atencion',
+  REDES_SOCIALES: 'alcaldia_leon_redes_sociales',
   AUTH: 'alcaldia_leon_auth'
 };
 
@@ -46,6 +50,12 @@ const initStorage = () => {
   }
   if (!localStorage.getItem(KEYS.SERVICIOS)) {
     localStorage.setItem(KEYS.SERVICIOS, JSON.stringify(initialServiciosData));
+  }
+  if (!localStorage.getItem(KEYS.CENTROS_ATENCION)) {
+    localStorage.setItem(KEYS.CENTROS_ATENCION, JSON.stringify(initialCentrosAtencionData));
+  }
+  if (!localStorage.getItem(KEYS.REDES_SOCIALES)) {
+    localStorage.setItem(KEYS.REDES_SOCIALES, JSON.stringify(initialRedesSocialesData));
   }
 };
 
@@ -366,6 +376,28 @@ export const mockStorage = {
     return items;
   },
 
+  getCentrosAtencion: async () => {
+    await delay();
+    return JSON.parse(localStorage.getItem(KEYS.CENTROS_ATENCION)) || initialCentrosAtencionData;
+  },
+
+  saveCentrosAtencion: async (items) => {
+    await delay();
+    localStorage.setItem(KEYS.CENTROS_ATENCION, JSON.stringify(items));
+    return items;
+  },
+
+  getRedesSociales: async () => {
+    await delay();
+    return JSON.parse(localStorage.getItem(KEYS.REDES_SOCIALES)) || initialRedesSocialesData;
+  },
+
+  saveRedesSociales: async (data) => {
+    await delay();
+    localStorage.setItem(KEYS.REDES_SOCIALES, JSON.stringify(data));
+    return data;
+  },
+
   // Restablecer almacenamiento a datos por defecto
   resetToDefault: async () => {
     localStorage.setItem(KEYS.HERO, JSON.stringify(initialHeroData));
@@ -376,6 +408,8 @@ export const mockStorage = {
     localStorage.setItem(KEYS.STATS, JSON.stringify(initialStatsData));
     localStorage.setItem(KEYS.CONTACTO, JSON.stringify(initialContactoData));
     localStorage.setItem(KEYS.SERVICIOS, JSON.stringify(initialServiciosData));
+    localStorage.setItem(KEYS.CENTROS_ATENCION, JSON.stringify(initialCentrosAtencionData));
+    localStorage.setItem(KEYS.REDES_SOCIALES, JSON.stringify(initialRedesSocialesData));
     return true;
   }
 };
