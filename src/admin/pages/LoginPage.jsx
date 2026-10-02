@@ -54,7 +54,7 @@ const LoginPage = () => {
       <div className="admin-login-card">
         <div className="text-center mb-4">
           <img
-            src="/img/logo.png"
+            src="/img/nav_logo/leon2d.png"
             alt="Alcaldía de León"
             className="admin-login-logo mb-2"
             onError={(e) => {
@@ -69,14 +69,6 @@ const LoginPage = () => {
           <p className="text-muted small">Panel Administrativo de Control Institucional</p>
         </div>
 
-        <div className="alert alert-info py-2 px-3 small mb-4 border-0 bg-light text-secondary d-flex align-items-center gap-2">
-          <ShieldAlert size={18} className="text-danger flex-shrink-0" />
-          <div>
-            <strong>Credenciales Demo:</strong>
-            <br />
-            <code>admin@alcaldaleon.gob.ni</code> / <code>admin123</code>
-          </div>
-        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
