@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Footer = () => {
+  const navigate = useNavigate();
   const [subscribedEmail, setSubscribedEmail] = useState('');
   const [subscribedMessage, setSubscribedMessage] = useState(false);
+
+  // Función que redirige al panel de login administrativo al hacer doble clic
+  const handleDoubleClick = () => {
+    navigate('/admin/login'); 
+  };
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -31,7 +38,18 @@ const Footer = () => {
                   onError={(e) => { e.target.src = '/img/logo.png'; }} 
                 />
               </a>
-              <h4 className="fw-bold text-white mb-2">Alcaldía Municipal de <span className="text-danger">León</span></h4>
+              <h4 className="fw-bold text-white mb-2">
+                Alcaldía Municipal de{' '}
+                <Link>
+                  <span 
+                    className="text-danger"
+                    onDoubleClick={handleDoubleClick}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    León
+                  </span>
+                </Link>
+              </h4>
               <p className="text-white-50 small mb-3">
                 Santiago de los Caballeros de León. Gobierno local comprometido con el desarrollo sostenible, la cultura y la transparencia.
               </p>
@@ -142,7 +160,3 @@ const Footer = () => {
 };
 
 export default Footer;
-
-
-
-
