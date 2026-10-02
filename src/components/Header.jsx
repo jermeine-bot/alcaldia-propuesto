@@ -16,7 +16,7 @@ const Header = ({ onOpenSearch }) => {
       }
 
       // Highlight active section
-      const sections = ['hero', 'noticias', 'autoridades', 'servicios', 'estadisticas', 'proyectos', 'redes-sociales', 'turismo', 'transparencia', 'contacto'];
+      const sections = ['hero', 'noticias', 'autoridades', 'servicios', 'estadisticas', 'proyectos', 'redes-sociales', 'turismo', 'centros-atencion', 'contacto'];
       const scrollPosition = window.scrollY + 120;
 
       for (let i = sections.length - 1; i >= 0; i--) {
@@ -114,7 +114,9 @@ const Header = ({ onOpenSearch }) => {
               <li className="nav-item">
                 <a className={`nav-link ${activeSection === 'turismo' ? 'active' : ''}`} href="#turismo" onClick={(e) => handleNavClick(e, 'turismo')}>Turismo</a>
               </li>
-              
+              <li className="nav-item">
+                <a className={`nav-link ${activeSection === 'centros-atencion' ? 'active' : ''}`} href="#centros-atencion" onClick={(e) => handleNavClick(e, 'centros-atencion')}>Centros de Atención</a>
+              </li>
               <li className="nav-item">
                 <a className={`nav-link ${activeSection === 'contacto' ? 'active' : ''}`} href="#contacto" onClick={(e) => handleNavClick(e, 'contacto')}>Contacto</a>
               </li>

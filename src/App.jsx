@@ -13,7 +13,7 @@ import Proyectos from './components/Proyectos';
 import Turismo from './components/Turismo';
 import MapaLeon from './components/MapaLeon';
 import Cultura from './components/Cultura';
-import Transparencia from './components/Transparencia';
+import CentrosAtencion from './components/CentrosAtencion';
 import Galeria from './components/Galeria';
 import RedesSociales from './components/RedesSociales';
 import Contacto from './components/Contacto';
@@ -51,7 +51,7 @@ function PublicLanding() {
         <Turismo />
         <MapaLeon />
         <Cultura />
-        <Transparencia />
+        <CentrosAtencion />
         <Galeria />
         <RedesSociales />
         <Contacto />
