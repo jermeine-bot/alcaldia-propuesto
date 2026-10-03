@@ -38,7 +38,7 @@ Este proyecto se compone de una aplicación web fullstack:
 | **Notificaciones** | SweetAlert2 | `^11.26.25` | Modales interactivos de confirmación |
 | **Carruseles / Mapas** | Swiper + Leaflet | `^14.1.0` / `^1.9.4` | Slider táctil y cartografía interactiva |
 
-### 🚀 Backend (Node.js + Express + Firebase)
+###  Backend (Node.js + Express + Firebase)
 | Categoría | Tecnología | Versión | Propósito |
 |---|---|---|---|
 | **Entorno de Servidor** | Node.js (ESM) | `v20+` | Entorno de ejecución de lado del servidor |
