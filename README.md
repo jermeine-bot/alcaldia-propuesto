@@ -1,4 +1,4 @@
-#  Portal Institucional, Panel Administrativo y Backend — Alcaldía Municipal de León, Nicaragua
+#  Portal Institucional, Panel Administrativo — Alcaldía Municipal de León, Nicaragua
 
 Bienvenido a la documentación oficial y actualizada del sistema web completo de la **Alcaldía Municipal de León, Nicaragua**. 
 
