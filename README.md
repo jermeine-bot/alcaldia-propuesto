@@ -1,4 +1,4 @@
-# 🏛️ Portal Institucional, Panel Administrativo y Backend — Alcaldía Municipal de León, Nicaragua
+#  Portal Institucional, Panel Administrativo y Backend — Alcaldía Municipal de León, Nicaragua
 
 Bienvenido a la documentación oficial y actualizada del sistema web completo de la **Alcaldía Municipal de León, Nicaragua**. 
 
@@ -10,7 +10,7 @@ Este proyecto se compone de una aplicación web fullstack:
 
 ---
 
-## 📋 Tabla de Contenidos
+## Tabla de Contenidos
 1. [Ficha Técnica y Tecnologías](#-ficha-técnica-y-tecnologías)
 2. [Módulo CMS de Trámites y Servicios](#-módulo-cms-de-trámites-y-servicios)
 3. [CMS de Centros de Atención](#-cms-de-centros-de-atención)
@@ -25,9 +25,9 @@ Este proyecto se compone de una aplicación web fullstack:
 
 ---
 
-## 🚀 Ficha Técnica y Tecnologías
+## Ficha Técnica y Tecnologías
 
-### 🎨 Frontend (React + Vite)
+###  Frontend (React + Vite)
 | Categoría | Tecnología | Versión | Propósito |
 |---|---|---|---|
 | **Framework Core** | React | `^19.2.8` | Interfaz de usuario reactiva basada en componentes |
@@ -50,15 +50,15 @@ Este proyecto se compone de una aplicación web fullstack:
 
 ---
 
-## 🏛️ Módulo CMS de Trámites y Servicios
+##  Módulo CMS de Trámites y Servicios
 
 Se implementó una reestructuración de la sección **Trámites y Servicios** para mejorar la experiencia de usuario (*UX*) y simplificar la navegación:
 
 1. **4 Categorías Principales**:
-   - 🏛️ **Trámites Municipales**: Permisos de construcción, licencias de funcionamiento y constancias.
-   - 💰 **Impuestos y Pagos**: Pago de IBI, impuesto sobre ingresos/matrícula y solvencias.
-   - 🏠 **Propiedades y Comercio**: Consultas catastrales, mercados municipales y registro de negocios.
-   - 🛠️ **Servicios y Atención**: Recolección de basura, cementerios, denuncias y reserva de citas.
+   - **Trámites Municipales**: Permisos de construcción, licencias de funcionamiento y constancias.
+   -  **Impuestos y Pagos**: Pago de IBI, impuesto sobre ingresos/matrícula y solvencias.
+   -  **Propiedades y Comercio**: Consultas catastrales, mercados municipales y registro de negocios.
+   -  **Servicios y Atención**: Recolección de basura, cementerios, denuncias y reserva de citas.
 2. **Visor Modal Interactivo**:
    - Desenfoque de fondo (*Glassmorphism*), selector rápido entre categorías y tarjetas de sub-servicios con soporte para enlaces externos o redirección interna a `#contacto`.
 3. **Módulo CMS Administrativo (`/admin/servicios`)**:
@@ -69,17 +69,17 @@ Se implementó una reestructuración de la sección **Trámites y Servicios** pa
 
 La API expone `GET /api/servicios`, `GET/PUT /api/servicios/settings`, operaciones de categorías en `/api/servicios` y operaciones de trámites en `/api/servicios/:id/subservicios`. Las escrituras requieren JWT válido y rol `superadmin` o `editor`. El controlador usa la colección Firestore `servicios`; los textos de sección se guardan en `cmsMetadata/servicios`. Al inicializar una colección vacía se copian las categorías de ejemplo definidas en `src/services/initialData.js`.
 
-## 📍 CMS de Centros de Atención
+##  CMS de Centros de Atención
 
 La pantalla `/admin/centros-atencion` permite agregar, editar y eliminar puntos de atención. Cada registro incluye nombre, etiqueta, descripción, URL de fotografía, coordenadas y enlace a Google Maps. La landing muestra esos registros en la sección `#centros-atencion`.
 
-## 📣 CMS de Redes Sociales
+##  CMS de Redes Sociales
 
 La pantalla `/admin/redes-sociales` administra el rótulo, título y descripción de la sección, además de las plataformas configuradas (Facebook, Instagram, TikTok, YouTube y Twitter/X). Para cada plataforma se pueden editar nombre, usuario, enlace oficial, contador manual, texto del contador, color, descripción de perfil e imágenes de galería.
 
 Los enlaces, contadores y galerías de la landing se leen desde esta configuración. Los contadores son valores ingresados manualmente; no se consultan automáticamente a las redes sociales.
 
-## 💾 Persistencia y configuración del CMS
+##  Persistencia y configuración del CMS
 
 - **Trámites y Servicios**: las lecturas y escrituras usan la API `/api/servicios` y Firestore. Firestore debe estar habilitado y configurado para que el guardado remoto funcione; si Firestore está desactivado, las escrituras fallan y el CMS muestra el error.
 - **Centros de Atención**: se guardan en `localStorage` bajo `alcaldia_leon_centros_atencion`.
@@ -90,7 +90,7 @@ Los enlaces, contadores y galerías de la landing se leen desde esta configuraci
 
 ---
 
-## 📂 Estructura Completa del Proyecto
+##  Estructura Completa del Proyecto
 
 ```text
 alcaldia-leon-react/
@@ -152,13 +152,13 @@ alcaldia-leon-react/
          └── pages/                 ← Incluye ServiciosAdmin, CentrosAtencionAdmin y RedesSocialesAdmin
 ```
 
-## 🧩 Arquitectura del Backend
+##  Arquitectura del Backend
 
 El backend Express se inicia desde `backend/server.js`, monta sus endpoints en `/api` y usa Firebase Firestore para los controladores que lo integran. La disponibilidad de una colección depende de que Firestore esté habilitado en el proyecto y de la configuración de credenciales y reglas correspondiente.
 
 ---
 
-## 🛡️ Seguridad, roles y bitácora
+##  Seguridad, roles y bitácora
 
 ### Matriz de Roles (RBAC)
 * **`superadmin`**: Acceso total al sistema (gestión de usuarios, auditoría, contenidos y configuración).
@@ -173,7 +173,7 @@ El middleware valida la firma y expiración del JWT, y rechaza solicitudes priva
 
 ---
 
-## 🔷 Módulo de Sincronización con Facebook Graph API
+##  Módulo de Sincronización con Facebook Graph API
 
 * **Cron Job en Segundo Plano**: Cada 30 minutos, el servidor Node.js consulta la página oficial de la Alcaldía de León en Facebook.
 * **Filtro Anti-Duplicación**: Utiliza la clave `external_id` (ID de publicación de Facebook) para ignorar publicaciones ya registradas.
@@ -181,7 +181,7 @@ El middleware valida la firma y expiración del JWT, y rechaza solicitudes priva
 
 ---
 
-## 🔑 Autenticación y credenciales de desarrollo
+##  Autenticación y credenciales de desarrollo
 
 * **URL predeterminada de la API Backend**: `http://localhost:5000/api`
 * **URL predeterminada del Frontend React**: `http://localhost:5173`
@@ -193,7 +193,7 @@ El middleware de autenticación rechaza solicitudes privadas sin un JWT válido.
 
 ---
 
-## 🛠️ Guía de Instalación y Ejecución
+##  Guía de Instalación y Ejecución
 
 ### 1. Iniciar el Backend (Node.js)
 ```bash
