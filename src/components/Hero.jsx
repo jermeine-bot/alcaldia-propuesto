@@ -2,14 +2,14 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 
-// Lista de ejemplo para las sugerencias de búsqueda (puedes adaptarla o traerla de tu API)
+// Lista enriquecida con sinónimos y palabras clave relacionadas
 const searchSuggestionsList = [
-  { title: 'Trámite de Alcantarillado y Agua', category: 'Servicios', link: '#servicios' },
-  { title: 'Catedral de León (Patrimonio)', category: 'Turismo', link: '#turismo' },
-  { title: 'Noticias Municipales Recientes', category: 'Noticias', link: '#noticias' },
-  { title: 'Proyectos de Desarrollo Urbano', category: 'Proyectos', link: '#proyectos' },
-  { title: 'Horarios de Atención Ciudadana', category: 'Contacto', link: '#contacto' },
-  { title: 'Estadísticas de Población', category: 'Información', link: '#estadisticas' }
+  { title: 'Trámite de Alcantarillado y Agua', category: 'Servicios', link: '#servicios', synonyms: ['agua', 'alcantarillado', 'pago', 'agua potable'] },
+  { title: 'Catedral de León (Patrimonio)', category: 'Turismo', link: '#turismo', synonyms: ['turismo', 'catedral', 'iglesia', 'visitar', 'patrimonio'] },
+  { title: 'Noticias Municipales Recientes', category: 'Noticias', link: '#noticias', synonyms: ['noticias', 'actualidad', 'alcaldia', 'comunicados'] },
+  { title: 'Proyectos de Desarrollo Urbano', category: 'Proyectos', link: '#proyectos', synonyms: ['proyectos', 'obras', 'desarrollo', 'construccion'] },
+  { title: 'Horarios de Atención Ciudadana', category: 'Contacto', link: '#contacto', synonyms: ['contacto', 'horarios', 'telefono', 'atencion', 'ayuda'] },
+  { title: 'Estadísticas de Población', category: 'Información', link: '#estadisticas', synonyms: ['estadisticas', 'poblacion', 'datos', 'cifras'] }
 ];
 
 const Hero = () => {
@@ -42,11 +42,14 @@ const Hero = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filtrar sugerencias según lo que escriba el usuario (o mostrar todas si el campo está vacío al tocarlo)
-  const filteredSuggestions = searchSuggestionsList.filter((item) =>
-    item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrado avanzado con soporte de sinónimos
+  const filteredSuggestions = searchSuggestionsList.filter((item) => {
+    const term = searchTerm.toLowerCase();
+    const matchTitle = item.title.toLowerCase().includes(term);
+    const matchCategory = item.category.toLowerCase().includes(term);
+    const matchSynonyms = item.synonyms?.some(syn => syn.toLowerCase().includes(term));
+    return matchTitle || matchCategory || matchSynonyms;
+  });
 
   const badgeText = hero?.badgeText || 'Alcaldía Municipal de León';
   const title = hero?.title || 'BIENVENIDOS A LA CIUDAD UNIVERSITARIA Y METROPOLITANA';
@@ -59,63 +62,53 @@ const Hero = () => {
   const secondaryBtnLink = hero?.secondaryBtnLink || '#servicios';
 
   return (
-    <section id="hero" className="hero-section">
-      <div className="hero-video-wrapper">
-        <video autoPlay muted loop playsInline className="hero-video" key={videoUrl}>
+    <section id="hero" className="hero-section position-relative overflow-hidden w-100">
+      <div className="hero-video-wrapper position-absolute w-100 h-100 top-0 start-0">
+        <video autoPlay muted loop playsInline className="hero-video w-100 h-100 object-fit-cover" key={videoUrl}>
           <source src={videoUrl} type="video/mp4" />
-          <img src={fallbackImg} alt="León Nicaragua" className="hero-fallback" />
+          <img src={fallbackImg} alt="León Nicaragua" className="hero-fallback w-100 h-100 object-fit-cover" />
         </video>
-        <div className="hero-overlay"></div>
+        <div className="hero-overlay position-absolute w-100 h-100 top-0 start-0 bg-dark opacity-50"></div>
       </div>
 
       <div
-        className="hero-content container"
+        className="hero-content container position-relative d-flex align-items-center justify-content-center min-vh-100 py-5"
         style={{
           transform: `translateY(${offsetY * 0.35}px)`,
-          opacity: Math.max(0, 1 - offsetY / 700)
+          opacity: Math.max(0, 1 - offsetY / 700),
+          zIndex: 2
         }}
       >
-        {/* Usamos px-3 en móvil para evitar que el contenido pegue en las esquinas, y mx-auto para centrar */}
-        <div className="row hero-inner-row align-items-center justify-content-center text-center">
-          <div className="col-lg-9 col-xl-8 px-4 px-md-3">
+        <div className="row hero-inner-row align-items-center justify-content-center text-center w-100 m-0">
+          <div className="col-12 col-md-10 col-lg-9 col-xl-8 px-3">
             {badgeText && (
-              <span className="badge bg-danger mb-3 px-3 py-2 text-uppercase letter-spacing-1">
+              <span className="badge bg-danger mb-3 px-3 py-2 text-uppercase letter-spacing-1 d-inline-block">
                 {badgeText}
               </span>
             )}
-            <h1 className="hero-title" style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)' }}>{title}</h1>
-            <p className="hero-subtitle mb-4" style={{ fontSize: 'clamp(0.95rem, 1.5vw, 1.15rem)' }}>{subtitle}</p>
+            
+            <h1 className="hero-title text-white fw-bold mb-3" style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', lineHeight: '1.2' }}>
+              {title}
+            </h1>
+            
+            {/* Subtítulo cambiado a texto completamente blanco */}
+            <p className="hero-subtitle text-white mb-4 mx-auto" style={{ fontSize: 'clamp(0.95rem, 1.5vw, 1.15rem)', maxWidth: '700px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+              {subtitle}
+            </p>
 
-            {/* MOTOR DE BÚSQUEDA TRANSPARENTE ADAPTADO A MÓVIL */}
+            {/* MOTOR DE BÚSQUEDA CON DESPLAZAMIENTO HACIA ARRIBA (DROPUP) */}
             <div className="hero-search-container position-relative mb-4 mx-auto" ref={searchRef} style={{ maxWidth: '650px', width: '100%' }}>
-              <div 
-                className="input-group input-group-lg shadow-lg rounded-pill overflow-hidden"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.35)'
-                }}
-              >
-                <span className="input-group-text bg-transparent border-0 text-white ps-3 ps-md-4">
-                  <i className="fas fa-search"></i>
-                </span>
-                <input
-                  type="text"
-                  className="form-control bg-transparent border-0 text-white shadow-none ps-2 py-3"
-                  placeholder="¿Qué buscas? (Trámites, turismo...)"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  style={{ fontSize: '0.95rem', color: '#fff' }}
-                />
-              </div>
-
-              {/* LISTA DE SUGERENCIAS DESPLEGABLE */}
+              
+              {/* LISTA DE SUGERENCIAS DESPLEGABLE HACIA ARRIBA */}
               {isFocused && (
                 <div 
-                  className="suggestions-dropdown position-absolute w-100 bg-white shadow-lg rounded-4 mt-2 overflow-hidden text-start" 
-                  style={{ zIndex: 1000, maxHeight: '260px', overflowY: 'auto' }}
+                  className="suggestions-dropdown position-absolute w-100 bg-white shadow-lg rounded-4 mb-2 overflow-hidden text-start start-0" 
+                  style={{ 
+                    zIndex: 1000, 
+                    maxHeight: '260px', 
+                    overflowY: 'auto',
+                    bottom: '100%' // Fuerza a desplegarse hacia arriba del input
+                  }}
                 >
                   <div className="p-2 bg-light border-bottom text-muted small fw-bold px-3">
                     {searchTerm ? 'Resultados sugeridos' : 'Sugerencias populares'}
@@ -142,21 +135,43 @@ const Hero = () => {
                   )}
                 </div>
               )}
+
+              <div 
+                className="input-group input-group-lg shadow-lg rounded-pill overflow-hidden"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.35)'
+                }}
+              >
+                <span className="input-group-text bg-transparent border-0 text-white ps-3 ps-md-4">
+                  <i className="fas fa-search"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control bg-transparent border-0 text-white shadow-none ps-2 py-3"
+                  placeholder="¿Qué buscas? (Trámites, turismo, agua...)"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  style={{ fontSize: '0.95rem', color: '#fff' }}
+                />
+              </div>
+
             </div>
 
             <div className="hero-buttons d-flex justify-content-center flex-wrap gap-2">
-              <a href={primaryBtnLink} className="btn btn-outline-light btn-lg">
-                <i className="fas fa-compass"></i> {primaryBtnText}
+              <a href={primaryBtnLink} className="btn btn-outline-light btn-lg px-4 py-2">
+                <i className="fas fa-compass me-2"></i> {primaryBtnText}
               </a>
-              <a href={secondaryBtnLink} className="btn btn-primary btn-lg">
-                <i className="fas fa-th-large"></i> {secondaryBtnText}
+              <a href={secondaryBtnLink} className="btn btn-primary btn-lg px-4 py-2">
+                <i className="fas fa-th-large me-2"></i> {secondaryBtnText}
               </a>
             </div>
           </div>
         </div>
       </div>
-
-     
     </section>
   );
 };
