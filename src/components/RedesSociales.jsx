@@ -50,6 +50,7 @@ const RedesSociales = () => {
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, [queryClient]);
+
   const platforms = socialData.platforms;
   const getPlatform = (id) => platforms.find((platform) => platform.id === id) || initialRedesSocialesData.platforms.find((platform) => platform.id === id);
   const instagramImages = getPlatform('instagram').images.filter(Boolean);
@@ -98,7 +99,7 @@ const RedesSociales = () => {
         {/* CONTADORES ANIMADOS DE SEGUIDORES */}
         <div className="row g-4 mb-5">
           {socialStats.map((stat, idx) => (
-            <div key={stat.id} className="col-lg-3 col-md-6 col-sm-6">
+            <div key={stat.id} className="col-lg-3 col-md-6 col-sm-6 col-6">
               <div 
                 className={`social-animated-card ${isVisible ? 'card-animated-in' : ''}`}
                 style={{ animationDelay: `${idx * 150}ms` }}
@@ -164,18 +165,18 @@ const RedesSociales = () => {
           </button>
         </div>
 
-        {/* TARJETAS SOCIAL MEDIA */}
-        <div className="row g-4">
+        {/* TARJETAS SOCIAL MEDIA (Forzadas a col-6 para 2 columnas en móviles y tablets) */}
+        <div className="row g-3 g-md-4">
           {/* Facebook Card */}
           {(activeTab === 'all' || activeTab === 'facebook') && (
-            <div className={activeTab === 'facebook' ? 'col-12' : 'col-lg-4'}>
-              <div className="social-card facebook-card">
+            <div className={activeTab === 'facebook' ? 'col-12' : 'col-lg-4 col-md-6 col-6'}>
+              <div className="social-card facebook-card h-100">
                 <div className="social-card-header">
                   <div className="d-flex align-items-center gap-2">
                     <i className="fab fa-facebook-f"></i>
-                    <h5 className="mb-0">{getPlatform('facebook').name}</h5>
+                    <h5 className="mb-0 text-truncate">{getPlatform('facebook').name}</h5>
                   </div>
-                  <span className="social-badge badge-fb"><i className="fas fa-check-circle me-1"></i>Oficial</span>
+                  <span className="social-badge badge-fb d-none d-sm-inline-block"><i className="fas fa-check-circle me-1"></i>Oficial</span>
                 </div>
                 <div className="social-card-body facebook-card-body">
                   <div className="facebook-gallery">
@@ -194,9 +195,9 @@ const RedesSociales = () => {
                   </div>
                   <div className="facebook-profile mt-3">
                     <i className="fab fa-facebook-f me-2"></i>
-                    <h6 className="fw-bold mb-0">{getPlatform('facebook').handle}</h6>
+                    <h6 className="fw-bold mb-0 text-truncate">{getPlatform('facebook').handle}</h6>
                   </div>
-                    <p className="text-muted small mb-0">{getPlatform('facebook').profileDescription}</p>
+                  <p className="text-muted small mb-0 d-none d-sm-block">{getPlatform('facebook').profileDescription}</p>
                 </div>
                 <div className="social-card-footer">
                   <a href={getPlatform('facebook').url} target="_blank" rel="noreferrer" className="social-link-btn">
@@ -209,14 +210,14 @@ const RedesSociales = () => {
 
           {/* Instagram Card */}
           {(activeTab === 'all' || activeTab === 'instagram') && (
-            <div className={activeTab === 'instagram' ? 'col-12' : 'col-lg-4'}>
-              <div className="social-card instagram-card">
+            <div className={activeTab === 'instagram' ? 'col-12' : 'col-lg-4 col-md-6 col-6'}>
+              <div className="social-card instagram-card h-100">
                 <div className="social-card-header">
                   <div className="d-flex align-items-center gap-2">
                     <i className="fab fa-instagram"></i>
-                    <h5 className="mb-0">{getPlatform('instagram').name}</h5>
+                    <h5 className="mb-0 text-truncate">{getPlatform('instagram').name}</h5>
                   </div>
-                  <span className="social-badge badge-ig"><i className="fas fa-camera me-1"></i>Fotos</span>
+                  <span className="social-badge badge-ig d-none d-sm-inline-block"><i className="fas fa-camera me-1"></i>Fotos</span>
                 </div>
                 <div className="social-card-body">
                   <div className="instagram-grid">
@@ -240,7 +241,7 @@ const RedesSociales = () => {
                   </div>
                   <div className="instagram-profile mt-3">
                     <i className="fab fa-instagram me-2"></i>
-                    <h6 className="fw-bold mb-0">{getPlatform('instagram').handle}</h6>
+                    <h6 className="fw-bold mb-0 text-truncate">{getPlatform('instagram').handle}</h6>
                   </div>
                 </div>
                 <div className="social-card-footer">
@@ -254,14 +255,14 @@ const RedesSociales = () => {
 
           {/* TikTok Card */}
           {(activeTab === 'all' || activeTab === 'tiktok') && (
-            <div className={activeTab === 'tiktok' ? 'col-12' : 'col-lg-4'}>
-              <div className="social-card tiktok-card">
+            <div className={activeTab === 'tiktok' ? 'col-12' : 'col-lg-4 col-md-6 col-6'}>
+              <div className="social-card tiktok-card h-100">
                 <div className="social-card-header">
                   <div className="d-flex align-items-center gap-2">
                     <i className="fab fa-tiktok"></i>
-                    <h5 className="mb-0">{getPlatform('tiktok').name}</h5>
+                    <h5 className="mb-0 text-truncate">{getPlatform('tiktok').name}</h5>
                   </div>
-                  <span className="social-badge badge-tt"><i className="fas fa-video me-1"></i>Videos</span>
+                  <span className="social-badge badge-tt d-none d-sm-inline-block"><i className="fas fa-video me-1"></i>Videos</span>
                 </div>
                 <div className="social-card-body tiktok-card-body">
                   <div className="tiktok-gallery">
@@ -280,9 +281,9 @@ const RedesSociales = () => {
                   </div>
                   <div className="tiktok-profile mt-3">
                     <i className="fab fa-tiktok me-2"></i>
-                    <h6 className="fw-bold mb-0">{getPlatform('tiktok').handle}</h6>
+                    <h6 className="fw-bold mb-0 text-truncate">{getPlatform('tiktok').handle}</h6>
                   </div>
-                  <p className="text-muted small mb-0">{getPlatform('tiktok').profileDescription}</p>
+                  <p className="text-muted small mb-0 d-none d-sm-block">{getPlatform('tiktok').profileDescription}</p>
                 </div>
                 <div className="social-card-footer">
                   <a href={getPlatform('tiktok').url} target="_blank" rel="noreferrer" className="social-link-btn">
@@ -314,4 +315,3 @@ const RedesSociales = () => {
 };
 
 export default RedesSociales;
-

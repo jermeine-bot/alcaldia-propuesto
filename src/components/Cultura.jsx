@@ -34,7 +34,6 @@ const Cultura = () => {
                       <i className="far fa-calendar-alt me-1"></i> {item.event_date}
                     </div>
                   )}
-                  <a href="#contacto" className="cultura-link">Conocer más</a>
                 </div>
               </div>
             ))}

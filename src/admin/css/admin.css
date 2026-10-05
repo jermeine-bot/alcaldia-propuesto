@@ -505,3 +505,54 @@ p {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* Contenedor principal con un patrón de mosaico colonial estilo rosetón hidráulico */
+.admin-login-wrapper {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  overflow: hidden;
+
+  /* Fondo base con el azul institucional de León */
+  background-color: #0b2545;
+  
+  /* Patrón geométrico de mosaico colonial (Estilo baldosa hidráulica de rosetón) */
+  background-image: 
+    /* Estructura geométrica central entrelazada en tono rojo y dorado sutil */
+    radial-gradient(circle at 50% 50%, rgba(217, 43, 43, 0.25) 12%, transparent 13%),
+    radial-gradient(circle at 0% 0%, rgba(230, 184, 0, 0.2) 15%, transparent 16%),
+    radial-gradient(circle at 100% 100%, rgba(230, 184, 0, 0.2) 15%, transparent 16%),
+    radial-gradient(circle at 0% 100%, rgba(217, 43, 43, 0.2) 15%, transparent 16%),
+    radial-gradient(circle at 100% 0%, rgba(217, 43, 43, 0.2) 15%, transparent 16%),
+    /* Líneas diagonales que simulan los cortes y grecas de las baldosas tradicionales */
+    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%);
+
+  background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+  background-size: 90px 90px; /* Tamaño de la baldosa geométrica */
+}
+
+/* Capa translúcida elegante para suavizar el patrón y resaltar el formulario */
+.admin-login-bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.94) 0%, rgba(235, 241, 248, 0.86) 100%);
+  z-index: 0;
+}
+
+/* Tarjeta del login con profundidad y bordes estilizados */
+.admin-login-card {
+  background: #ffffff;
+  padding: 2.5rem;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 1.5rem 3rem rgba(11, 37, 69, 0.22) !important;
+  border: 1px solid rgba(11, 37, 69, 0.1);
+}
