@@ -44,8 +44,8 @@ const Contacto = () => {
     <section id="contacto" className="contacto-section py-5">
       <div className="container">
         <div className="section-header text-center mb-5">
-          <span className="section-subtitle">Comunicación</span>
-          <h2 className="section-title">Contáctanos</h2>
+          <span className="section-subtitle">Formulario de Denuncia Ciudadana</span>
+          <h2 className="section-title">Denuncia Ciudadana</h2>
           <p className="section-description">Estamos aquí para servirte</p>
         </div>
 
