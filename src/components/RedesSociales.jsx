@@ -39,20 +39,6 @@ const RedesSociales = () => {
     staleTime: 0
   });
 
-<<<<<<< HEAD
-  useEffect(() => {
-    const handleStorage = (event) => {
-      if (event.key === 'alcaldia_leon_redes_sociales') {
-        queryClient.invalidateQueries({ queryKey: ['redes-sociales'] });
-      }
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [queryClient]);
-
-=======
->>>>>>> 2e0fe226378082a51bb5f9383643d0bdb285e936
   const platforms = socialData.platforms;
   const getPlatform = (id) => platforms.find((platform) => platform.id === id) || initialRedesSocialesData.platforms.find((platform) => platform.id === id);
   const instagramImages = getPlatform('instagram').images.filter(Boolean);
@@ -316,8 +302,4 @@ const RedesSociales = () => {
   );
 };
 
-<<<<<<< HEAD
 export default RedesSociales;
-=======
-export default RedesSociales;
->>>>>>> 2e0fe226378082a51bb5f9383643d0bdb285e936
