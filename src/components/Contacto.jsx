@@ -17,9 +17,13 @@ const Contacto = () => {
   const [submitted, setSubmitted] = useState(false);
 
   const address = contacto?.address || 'Palacio Municipal, León, Nicaragua';
-  const phone = contacto?.phone || '+505 2315-0000';
   const email = contacto?.email || 'info@alcaldaleon.gob.ni';
   const schedule = contacto?.schedule || 'Lunes a Viernes: 8:00 AM - 4:00 PM';
+  
+  // Número de WhatsApp configurado directamente
+  const whatsappNumber = '50578863343'; // Número de WhatsApp en formato internacional sin signos ni espacios
+  const phoneDisplay = '+505 78863343';
+
   const facebook = contacto?.facebook || '#';
   const twitter = contacto?.twitter || '#';
   const instagram = contacto?.instagram || '#';
@@ -32,6 +36,18 @@ const Contacto = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.nombre && formData.email && formData.mensaje) {
+      // Construimos el texto estructurado para WhatsApp
+      const text = `*Nueva Denuncia / Mensaje Ciudadano*%0A` +
+                   `----------------------------------%0A` +
+                   `*Nombre:* ${encodeURIComponent(formData.nombre)}%0A` +
+                   `*Correo:* ${encodeURIComponent(formData.email)}%0A` +
+                   `*Asunto:* ${encodeURIComponent(formData.asunto || 'Sin asunto')}%0A` +
+                   `*Mensaje:* ${encodeURIComponent(formData.mensaje)}`;
+
+      // Abrir enlace de WhatsApp en una nueva pestaña
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${text}`;
+      window.open(whatsappUrl, '_blank');
+
       setSubmitted(true);
       setTimeout(() => {
         setSubmitted(false);
@@ -44,8 +60,8 @@ const Contacto = () => {
     <section id="contacto" className="contacto-section py-5">
       <div className="container">
         <div className="section-header text-center mb-5">
-          <span className="section-subtitle">Comunicación</span>
-          <h2 className="section-title">Contáctanos</h2>
+          <span className="section-subtitle">Formulario de Denuncia Ciudadana</span>
+          <h2 className="section-title">Denuncia Ciudadana</h2>
           <p className="section-description">Estamos aquí para servirte</p>
         </div>
 
@@ -62,8 +78,8 @@ const Contacto = () => {
               <div className="contact-item">
                 <i className="fas fa-phone-alt"></i>
                 <div>
-                  <h6>Teléfono</h6>
-                  <p>{phone}</p>
+                  <h6>WhatsApp / Teléfono</h6>
+                  <p>{phoneDisplay}</p>
                 </div>
               </div>
               <div className="contact-item">
@@ -94,8 +110,8 @@ const Contacto = () => {
             {submitted ? (
               <div className="alert alert-success p-4 rounded-3 text-center" role="alert">
                 <i className="fas fa-check-circle display-4 mb-3 text-success"></i>
-                <h4>¡Mensaje Enviado con Éxito!</h4>
-                <p className="mb-0">Gracias por comunicarte con la Alcaldía Municipal de León. Te responderemos a la brevedad.</p>
+                <h4>¡Redirigiendo a WhatsApp!</h4>
+                <p className="mb-0">Se ha abierto WhatsApp con los detalles de tu mensaje listos para enviarse. Gracias por comunicarte con nosotros.</p>
               </div>
             ) : (
               <form className="contact-form" onSubmit={handleSubmit}>
@@ -137,15 +153,15 @@ const Contacto = () => {
                       name="mensaje"
                       className="form-control"
                       rows="5"
-                      placeholder="Mensaje"
+                      placeholder="Mensaje o denuncia..."
                       value={formData.mensaje}
                       onChange={handleChange}
                       required
                     ></textarea>
                   </div>
                   <div className="col-12">
-                    <button type="submit" className="btn btn-primary">
-                      Enviar mensaje
+                    <button type="submit" className="btn btn-success d-flex align-items-center justify-content-center gap-2 w-100 py-3 fw-bold">
+                      <i className="fab fa-whatsapp fa-lg"></i> Enviar por WhatsApp
                     </button>
                   </div>
                 </div>

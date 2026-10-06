@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 import { initialServiciosSettings } from '../services/initialData';
@@ -57,18 +58,135 @@ const Servicios = () => {
         });
       }
     } else if (linkUrl.startsWith('http://') || linkUrl.startsWith('https://')) {
-      // Abre en nueva ventana si es un link externo
       setSelectedCategoria(null);
     }
   };
 
+  // Contenido del modal con pestañas corregidas y visibles
+  const modalContent = selectedCategoria && (
+    <div
+      className="modal-backdrop-custom position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3 p-md-4"
+      style={{ backgroundColor: 'rgba(11, 37, 69, 0.65)', backdropFilter: 'blur(5px)', zIndex: 99999, overflowY: 'auto' }}
+      onClick={() => setSelectedCategoria(null)}
+    >
+      <div
+        className="servicio-modal-content bg-white rounded-5 shadow-lg p-4 p-md-5 w-100 position-relative d-flex flex-column border-0"
+        style={{ 
+          maxWidth: '900px', 
+          maxHeight: '90vh', 
+          overflowY: 'auto',
+          margin: 'auto'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* MODAL HEADER */}
+        <div className="modal-header-custom d-flex align-items-start justify-content-between mb-3 border-bottom pb-4">
+          <div className="d-flex align-items-center gap-3 pe-3">
+            <div className="servicio-icon m-0 modal-icon-glow flex-shrink-0 bg-danger text-white rounded-4 p-3 shadow-sm d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px', fontSize: '1.5rem' }}>
+              <i className={`fas ${selectedCategoria.icon}`}></i>
+            </div>
+            <div>
+              <span className="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill mb-2 fw-bold text-uppercase small">
+                {selectedCategoria.badgeIcon} {selectedCategoria.title}
+              </span>
+              <h3 className="h4 fw-bold mb-0 text-dark">{selectedCategoria.subtitle}</h3>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn-close-custom btn rounded-circle border-0 text-secondary bg-light d-flex align-items-center justify-content-center"
+            onClick={() => setSelectedCategoria(null)}
+            aria-label="Cerrar modal"
+            style={{ width: '40px', height: '40px' }}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+
+        {/* SELECTOR DE CATEGORÍAS CORREGIDO (Visibilidad total y estilo de píldoras limpias) */}
+        <div className="modal-tabs-container mb-4 pb-2 border-bottom">
+          <label className="form-label small text-muted fw-semibold mb-2 d-block">Cambiar de categoría:</label>
+          <div className="d-flex flex-wrap gap-2">
+            {categoriasServicios.map((tab) => (
+              <button
+                key={tab.id}
+                className={`btn btn-sm rounded-pill px-3 py-2 fw-semibold transition-all d-flex align-items-center gap-1 ${
+                  selectedCategoria.id === tab.id
+                    ? 'btn-danger shadow-sm'
+                    : 'btn-light text-dark border bg-white'
+                }`}
+                onClick={() => setSelectedCategoria(tab)}
+              >
+                <span>{tab.badgeIcon || '📁'}</span>
+                <span>{tab.title}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* DESCRIPCIÓN CATEGORÍA */}
+        <p className="text-secondary mb-4 lead fs-6">{selectedCategoria.desc}</p>
+
+        {/* GRID DE SUB-SERVICIOS / OPCIONES */}
+        <div className="row g-3">
+          {selectedCategoria.opciones?.map((opcion, idx) => {
+            const targetUrl = opcion.linkUrl || '#contacto';
+            const isExternal = targetUrl.startsWith('http://') || targetUrl.startsWith('https://');
+
+            return (
+              <div key={opcion.id || idx} className="col-12 col-md-6">
+                <div className="subservicio-item p-4 rounded-4 border bg-white h-100 d-flex flex-column shadow-hover transition-all">
+                  <div className="d-flex align-items-start gap-3 mb-3">
+                    <div className="subservicio-icon-box rounded-3 p-3 bg-danger-subtle text-danger d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '45px', height: '45px' }}>
+                      <i className={`fas ${opcion.icon || 'fa-file-alt'}`}></i>
+                    </div>
+                    <div>
+                      <h5 className="h6 fw-bold mb-1 text-dark">{opcion.title}</h5>
+                      <p className="small text-muted mb-0">{opcion.desc}</p>
+                    </div>
+                  </div>
+                  <div className="mt-auto pt-3 text-end border-top-dashed">
+                    <a
+                      href={targetUrl}
+                      target={isExternal ? '_blank' : '_self'}
+                      rel={isExternal ? 'noopener noreferrer' : undefined}
+                      className="btn btn-sm btn-outline-danger rounded-pill px-4 fw-semibold"
+                      onClick={(e) => handleOptionClick(e, targetUrl)}
+                    >
+                      {opcion.linkText || 'Acceder'} <i className="fas fa-chevron-right ms-1 small"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* FOOTER MODAL */}
+        <div className="modal-footer-custom mt-5 pt-3 border-top text-center d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+          <span className="small text-muted d-flex align-items-center">
+            <i className="fas fa-headset me-2 text-danger fs-5"></i> Atención directa en ventanilla: <strong className="ms-1 text-dark">{sectionSettings.phone}</strong>
+          </span>
+          <button
+            className="btn btn-dark btn-sm px-4 py-2 rounded-pill fw-semibold"
+            onClick={() => setSelectedCategoria(null)}
+          >
+            Cerrar Ventana
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <section id="servicios" className="servicios-section py-5">
+    <section id="servicios" className="servicios-section py-5 position-relative">
       <div className="container">
         <div className="section-header text-center mb-5">
-          <span className="section-subtitle">{sectionSettings.eyebrow}</span>
-          <h2 className="section-title">{sectionSettings.title}</h2>
-          <p className="section-description">{sectionSettings.description}</p>
+          <span className="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill mb-3 fw-bold small text-uppercase">
+            {sectionSettings.eyebrow}
+          </span>
+          <h2 className="section-title fw-bold text-dark mb-3">{sectionSettings.title}</h2>
+          <p className="section-description text-muted mx-auto" style={{ maxWidth: '650px' }}>{sectionSettings.description}</p>
         </div>
 
         {/* CONTENEDOR DE LAS CATEGORÍAS PRINCIPALES */}
@@ -76,7 +194,7 @@ const Servicios = () => {
           {categoriasServicios.map((cat) => (
             <div key={cat.id} className="col-lg-3 col-md-6 col-sm-12">
               <div
-                className="servicio-categoria-card h-100 p-4 rounded-4 shadow-sm"
+                className="servicio-categoria-card h-100 p-4 rounded-4 shadow-sm bg-white border position-relative overflow-hidden d-flex flex-column transition-all cursor-pointer"
                 onClick={() => setSelectedCategoria(cat)}
                 role="button"
                 tabIndex={0}
@@ -87,21 +205,27 @@ const Servicios = () => {
                   }
                 }}
               >
-                <div className="categoria-card-top d-flex align-items-center justify-content-between mb-3">
-                  <div className="servicio-icon mb-0">
+                <div className="card-bg-glow position-absolute top-0 end-0 p-4 opacity-10 text-danger pointer-events-none">
+                  <i className={`fas ${cat.icon} fa-4x`}></i>
+                </div>
+
+                <div className="categoria-card-top d-flex align-items-center justify-content-between mb-4 position-relative z-1">
+                  <div className="servicio-icon mb-0 rounded-4 bg-danger-subtle text-danger p-3 d-flex align-items-center justify-content-center shadow-sm" style={{ width: '55px', height: '55px', fontSize: '1.25rem' }}>
                     <i className={`fas ${cat.icon}`}></i>
                   </div>
-                  <span className="categoria-badge">
+                  <span className="badge bg-light text-secondary border px-3 py-1 rounded-pill fw-semibold small">
                     {cat.badgeIcon || '📁'} {cat.opciones?.length || cat.count || 0} opciones
                   </span>
                 </div>
 
-                <h4 className="categoria-title fw-bold text-dark mb-2">{cat.title}</h4>
-                <p className="categoria-subtitle text-muted mb-3">{cat.subtitle}</p>
+                <div className="position-relative z-1 mb-3">
+                  <h4 className="categoria-title fw-bold text-dark mb-2 fs-5">{cat.title}</h4>
+                  <p className="categoria-subtitle text-muted small mb-0">{cat.subtitle}</p>
+                </div>
 
-                <div className="categoria-card-footer d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
-                  <span className="servicio-link text-decoration-none fw-semibold">
-                    Explorar Opciones <i className="fas fa-arrow-right ms-1"></i>
+                <div className="categoria-card-footer d-flex align-items-center justify-content-between pt-3 border-top mt-auto position-relative z-1">
+                  <span className="servicio-link text-danger text-decoration-none fw-semibold small d-flex align-items-center">
+                    Explorar Opciones <i className="fas fa-arrow-right ms-2"></i>
                   </span>
                 </div>
               </div>
@@ -110,113 +234,10 @@ const Servicios = () => {
         </div>
       </div>
 
-      {/* MODAL DETALLE DE CATEGORÍA DE SERVICIOS */}
-      {selectedCategoria && (
-        <div
-          className="modal-backdrop-custom d-flex align-items-center justify-content-center"
-          onClick={() => setSelectedCategoria(null)}
-        >
-          <div
-            className="servicio-modal-content rounded-4 shadow-lg p-4 p-md-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* MODAL HEADER */}
-            <div className="modal-header-custom d-flex align-items-start justify-content-between mb-4 border-bottom pb-3">
-              <div className="d-flex align-items-center gap-3">
-                <div className="servicio-icon m-0 modal-icon-glow">
-                  <i className={`fas ${selectedCategoria.icon}`}></i>
-                </div>
-                <div>
-                  <span className="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill mb-1 fw-bold">
-                    {selectedCategoria.badgeIcon} {selectedCategoria.title}
-                  </span>
-                  <h3 className="h4 fw-bold mb-0 text-dark">{selectedCategoria.subtitle}</h3>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="btn-close-custom btn rounded-circle border-0 text-secondary"
-                onClick={() => setSelectedCategoria(null)}
-                aria-label="Cerrar modal"
-              >
-                <i className="fas fa-times fa-lg"></i>
-              </button>
-            </div>
-
-            {/* TAB SELECTOR RÁPIDO ENTRE CATEGORÍAS */}
-            <div className="modal-tabs-selector d-flex gap-2 overflow-x-auto pb-3 mb-4 border-bottom">
-              {categoriasServicios.map((tab) => (
-                <button
-                  key={tab.id}
-                  className={`btn btn-sm text-nowrap rounded-pill px-3 transition-all ${
-                    selectedCategoria.id === tab.id
-                      ? 'btn-danger fw-semibold shadow-sm'
-                      : 'btn-outline-secondary'
-                  }`}
-                  onClick={() => setSelectedCategoria(tab)}
-                >
-                  {tab.badgeIcon || '📁'} {tab.title}
-                </button>
-              ))}
-            </div>
-
-            {/* DESCRIPCIÓN CATEGORÍA */}
-            <p className="text-secondary mb-4">{selectedCategoria.desc}</p>
-
-            {/* GRID DE SUB-SERVICIOS / OPCIONES */}
-            <div className="row g-3">
-              {selectedCategoria.opciones?.map((opcion, idx) => {
-                const targetUrl = opcion.linkUrl || '#contacto';
-                const isExternal = targetUrl.startsWith('http://') || targetUrl.startsWith('https://');
-
-                return (
-                  <div key={opcion.id || idx} className="col-12 col-md-6">
-                    <div className="subservicio-item p-3 rounded-3 border h-100 d-flex flex-column">
-                      <div className="d-flex align-items-start gap-3 mb-2">
-                        <div className="subservicio-icon-box rounded-3 p-2 d-flex align-items-center justify-content-center">
-                          <i className={`fas ${opcion.icon || 'fa-file-alt'}`}></i>
-                        </div>
-                        <div>
-                          <h5 className="h6 fw-bold mb-1 text-dark">{opcion.title}</h5>
-                          <p className="small text-muted mb-2 line-clamp-2">{opcion.desc}</p>
-                        </div>
-                      </div>
-                      <div className="mt-auto pt-2 text-end">
-                        <a
-                          href={targetUrl}
-                          target={isExternal ? '_blank' : '_self'}
-                          rel={isExternal ? 'noopener noreferrer' : undefined}
-                          className="btn btn-sm btn-outline-danger rounded-pill px-3"
-                          onClick={(e) => handleOptionClick(e, targetUrl)}
-                        >
-                          {opcion.linkText || 'Acceder'} <i className="fas fa-chevron-right ms-1 small"></i>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* FOOTER MODAL */}
-            <div className="modal-footer-custom mt-4 pt-3 border-top text-center text-md-between d-flex flex-column flex-md-row align-items-center gap-3">
-              <span className="small text-muted">
-                <i className="fas fa-info-circle me-1 text-danger"></i> Para orientación directa en ventanilla llama al <strong>{sectionSettings.phone}</strong>
-              </span>
-              <button
-                className="btn btn-secondary btn-sm px-4 rounded-pill"
-                onClick={() => setSelectedCategoria(null)}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* RENDERIZA EL MODAL FUERA DE LA SECCIÓN DIRECTAMENTE EN EL BODY */}
+      {typeof document !== 'undefined' && ReactDOM.createPortal(modalContent, document.body)}
     </section>
   );
 };
 
 export default Servicios;
-
-

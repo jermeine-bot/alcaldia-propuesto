@@ -51,7 +51,10 @@ const LoginPage = () => {
 
   return (
     <div className="admin-login-wrapper">
-      <div className="admin-login-card">
+      {/* Capa de fondo con imagen institucional y efecto oscuro difuminado */}
+      <div className="admin-login-bg-overlay"></div>
+
+      <div className="admin-login-card position-relative z-1 shadow-lg">
         <div className="text-center mb-4">
           <img
             src="/img/nav_logo/leon2d.png"
@@ -68,7 +71,6 @@ const LoginPage = () => {
           </h2>
           <p className="text-muted small">Panel Administrativo de Control Institucional</p>
         </div>
-
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
@@ -130,5 +132,5 @@ const LoginPage = () => {
     </div>
   );
 };
- 
+
 export default LoginPage;
