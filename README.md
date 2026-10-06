@@ -18,10 +18,11 @@ Este proyecto se compone de una aplicación web fullstack:
 5. [Persistencia y configuración](#-persistencia-y-configuración-del-cms)
 6. [Estructura Completa del Proyecto](#-estructura-completa-del-proyecto)
 7. [Arquitectura del Backend](#-arquitectura-del-backend)
-8. [Módulo de Sincronización con Facebook Graph API](#-módulo-de-sincronización-con-facebook-graph-api)
-9. [Seguridad, roles y bitácora](#-seguridad-roles-y-bitácora)
-10. [Autenticación y credenciales de desarrollo](#-autenticación-y-credenciales-de-desarrollo)
-11. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
+8. [Diagrama de la base de datos](#-diagrama-de-la-base-de-datos)
+9. [Módulo de Sincronización con Facebook Graph API](#-módulo-de-sincronización-con-facebook-graph-api)
+10. [Seguridad, roles y bitácora](#-seguridad-roles-y-bitácora)
+11. [Autenticación y credenciales de desarrollo](#-autenticación-y-credenciales-de-desarrollo)
+12. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
 
 ---
 
@@ -155,6 +156,208 @@ alcaldia-leon-react/
 
 El backend Express se inicia desde `backend/server.js`, monta sus endpoints bajo `/api` y conecta con MySQL usando el pool `mysql2`. Al iniciar crea las tablas requeridas y siembra contenido inicial solo donde todavía no hay registros. Si MySQL no está disponible, el servidor no inicia; configura las variables `MYSQL_*` en `backend/.env`.
 
+### Diagrama de componentes y flujo de una petición
+
+El frontend no consulta MySQL directamente. Las llamadas HTTP pasan por el cliente `apiService.js`, llegan a Express y las rutas las distribuyen a controladores. Los middlewares aplican las validaciones configuradas para cada ruta; los controladores usan el pool MySQL o los servicios de integración.
+
+```mermaid
+flowchart LR
+    ciudadano["Navegador<br/>Portal público o panel CMS"]
+    frontend["Frontend React + Vite"]
+    apiClient["src/services/apiService.js<br/>VITE_API_BASE_URL"]
+
+    subgraph backend["Backend Node.js + Express"]
+        server["server.js<br/>initDb + inicio del servidor"]
+        app["src/app.js<br/>CORS, JSON, uploads, health check"]
+        routes["Rutas /api/*"]
+        middleware["Middlewares<br/>JWT · roles · Multer"]
+        controllers["Controladores<br/>auth · noticias · hero · proyectos<br/>turismo · cultura · stats · contacto<br/>servicios · CMS · usuarios · auditoría"]
+        services["Servicios<br/>Facebook · auditoría"]
+        dbpool["config/db.js<br/>Pool MySQL + esquema + datos iniciales"]
+    end
+
+    mysql[("MySQL<br/>alcaldia_leon")]
+    uploads[("backend/uploads<br/>Archivos multimedia")]
+    facebook["Facebook Graph API<br/>opcional"]
+
+    ciudadano --> frontend --> apiClient
+    apiClient <-->|"HTTP / JSON"| app
+    server -->|"inicializa"| dbpool
+    server -->|"levanta"| app
+    app --> routes --> middleware --> controllers
+    controllers --> dbpool --> mysql
+    controllers --> services
+    services --> dbpool
+    middleware -.->|"archivos"| uploads
+    services <-->|"sincronización opcional"| facebook
+    apiClient --> frontend
+```
+
+### Módulos de API
+
+| Prefijo | Responsabilidad principal |
+|---|---|
+| `/api/auth` | Inicio de sesión, usuario autenticado y cambio de contraseña |
+| `/api/noticias` | Consulta y administración de noticias |
+| `/api/hero` | Contenido principal del portal |
+| `/api/proyectos` | Proyectos municipales |
+| `/api/turismo` | Destinos y contenido turístico |
+| `/api/cultura` | Agenda y contenido cultural |
+| `/api/stats` | Estadísticas publicadas |
+| `/api/contacto` | Información institucional y redes |
+| `/api/servicios` | Categorías de servicios, trámites y configuración |
+| `/api/cms` | Contenido del CMS, incluidos centros de atención y redes sociales |
+| `/api/users` | Gestión de cuentas y roles |
+| `/api/audit-logs` | Consulta de la bitácora |
+| `/api/facebook` | Sincronización manual con Facebook |
+
+Los archivos subidos se sirven en `/uploads`. La sincronización programada con Facebook se activa solo si se configuran `FACEBOOK_PAGE_ID` y `FACEBOOK_ACCESS_TOKEN`.
+
+##  Diagrama de la base de datos
+
+El esquema se crea y verifica al iniciar el backend, mediante `backend/src/config/db.js`. El diagrama muestra las tablas y sus claves principales; **la única relación declarada con clave foránea actualmente es `subservicios.servicio_id` → `servicios.id`**. Las demás referencias conceptuales, como `activity_logs.userId`, no tienen una restricción FK en el esquema.
+
+```mermaid
+erDiagram
+    USERS {
+        varchar id PK
+        varchar name
+        varchar email UK
+        varchar password
+        varchar role
+        varchar avatar
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    NOTICIAS {
+        varchar id PK
+        varchar titulo
+        varchar slug
+        text extracto
+        text contenido
+        varchar categoria
+        text imagen
+        varchar autor
+        varchar status
+        varchar fuente
+        varchar external_id
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    HERO {
+        varchar id PK
+        text title
+        text subtitle
+        text video_url
+        text fallback_image_url
+        boolean is_active
+        timestamp updated_at
+    }
+
+    PROYECTOS {
+        varchar id PK
+        varchar title
+        varchar category
+        varchar status
+        int progress
+        boolean is_published
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TURISMO {
+        varchar id PK
+        varchar title
+        varchar category
+        varchar location
+        text content
+        boolean is_published
+        int display_order
+    }
+
+    CULTURA {
+        varchar id PK
+        varchar title
+        varchar event_date
+        varchar event_time
+        varchar location
+        text image_url
+        boolean is_published
+    }
+
+    STATS {
+        varchar id PK
+        varchar title
+        bigint number
+        varchar category
+        json breakdown
+        boolean is_published
+        int display_order
+    }
+
+    CONTACTO {
+        varchar id PK
+        text address
+        varchar phone
+        varchar email
+        varchar schedule
+        varchar facebook_url
+        varchar instagram_url
+        timestamp updated_at
+    }
+
+    SERVICIOS {
+        varchar id PK
+        varchar title
+        varchar subtitle
+        text desc
+        int count
+        int display_order
+    }
+
+    SUBSERVICIOS {
+        varchar id PK
+        varchar servicio_id FK
+        varchar title
+        text desc
+        varchar linkText
+        varchar linkUrl
+    }
+
+    SERVICIOS_SETTINGS {
+        varchar id PK
+        varchar eyebrow
+        varchar title
+        text description
+        varchar phone
+    }
+
+    ACTIVITY_LOGS {
+        varchar id PK
+        varchar userId
+        varchar userEmail
+        varchar userName
+        varchar role
+        varchar action
+        varchar module
+        text details
+        varchar ip
+        timestamp timestamp
+    }
+
+    CMS_CONTENT {
+        varchar id PK
+        json content
+        timestamp updated_at
+    }
+
+    SERVICIOS ||--o{ SUBSERVICIOS : "contiene (FK)"
+```
+
+`CMS_CONTENT` guarda documentos JSON identificados por `id` (por ejemplo, `centros-atencion` y `redes-sociales`). `SERVICIOS_SETTINGS` es una configuración independiente para los textos y teléfono de la sección de servicios. `ACTIVITY_LOGS.userId` identifica al usuario asociado al evento cuando está disponible, pero no tiene FK declarada.
+
 ---
 
 ##  Seguridad, roles y bitácora
@@ -194,8 +397,39 @@ El middleware de autenticación rechaza solicitudes privadas sin un JWT válido.
 
 ##  Guía de Instalación y Ejecución
 
-### 1. Iniciar el Backend (Node.js)
-Primero crea la base de datos MySQL (por defecto `alcaldia_leon`) y define `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE` y `JWT_SECRET` en `backend/.env`.
+Para probar la aplicación localmente necesitas tener **Node.js** y **MySQL** instalados, y el servicio de MySQL iniciado. El frontend y el backend se ejecutan al mismo tiempo en **dos terminales diferentes**. Los comandos siguientes parten de la carpeta raíz del proyecto.
+
+### 1. Preparar MySQL
+
+Crea la base de datos si todavía no existe:
+
+```bash
+mysql -u root -p
+```
+
+En el prompt de MySQL:
+
+```sql
+CREATE DATABASE IF NOT EXISTS alcaldia_leon;
+EXIT;
+```
+
+Configura `backend/.env` con los valores de tu entorno:
+
+```env
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=tu_contraseña_mysql
+MYSQL_DATABASE=alcaldia_leon
+JWT_SECRET=un_secreto_local
+```
+
+No subas este archivo con contraseñas o secretos al repositorio. Al arrancar, el backend verifica y crea las tablas que falten, y agrega datos de demostración en las tablas vacías.
+
+### 2. Iniciar el Backend (Terminal 1)
+
+Desde la raíz del proyecto:
 
 ```bash
 cd backend
@@ -203,15 +437,55 @@ npm ci
 npm run dev
 ```
 
-### 2. Iniciar el Frontend (React + Vite)
-En una nueva terminal:
+Deja esta terminal abierta. Cuando indique que el servidor está corriendo, el backend estará disponible en `http://localhost:5000`. Comprueba que responde visitando `http://localhost:5000/api/health` o ejecutando:
+
+```bash
+curl http://localhost:5000/api/health
+```
+
+Si aparece `EADDRINUSE` en el puerto `5000`, ya hay otro proceso usando ese puerto. Detén la otra instancia del backend o configura un puerto diferente en `backend/.env` y cambia la URL de API del frontend.
+
+### 3. Iniciar el Frontend (Terminal 2)
+
+Abre otra terminal, desde la raíz del proyecto:
+
 ```bash
 npm ci
 npm run dev
 ```
 
-Para usar otro puerto de API con Vite, configura `VITE_API_BASE_URL` antes de iniciar el frontend. Ejemplo:
+Vite mostrará la dirección local del frontend, normalmente `http://localhost:5173`. Abre esa URL en el navegador. Por defecto, el frontend consulta el backend en `http://localhost:5000/api`.
+
+Para usar un puerto distinto para el backend, configura `VITE_API_BASE_URL` al iniciar Vite. Por ejemplo:
 
 ```bash
 VITE_API_BASE_URL=http://localhost:5001/api npm run dev -- --port 5174
 ```
+
+### 4. Probar y consultar datos
+
+- **Estado del backend:** `GET http://localhost:5000/api/health`
+- **Noticias desde la API:** `GET http://localhost:5000/api/noticias`
+- **Inicio de sesión del panel:** `POST http://localhost:5000/api/auth/login`
+
+En una tercera terminal también puedes consultar MySQL directamente:
+
+```bash
+mysql -h localhost -P 3306 -u root -p alcaldia_leon
+```
+
+Dentro de MySQL, lista las tablas y consulta sus registros:
+
+```sql
+SHOW TABLES;
+SELECT * FROM noticias;
+```
+
+Sustituye `noticias` por el nombre de otra tabla mostrada por `SHOW TABLES;`. Puedes limitar una consulta grande con `LIMIT 20`, por ejemplo `SELECT * FROM noticias LIMIT 20;`. Sal con `EXIT;`.
+
+Credenciales locales de demostración para el panel:
+
+- Correo: `admin@alcaldaleon.gob.ni`
+- Contraseña: `admin123`
+
+Úsalas solo en desarrollo; cambia o elimina estas credenciales antes de desplegar en producción.
