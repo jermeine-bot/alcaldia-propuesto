@@ -1,78 +1,50 @@
-import { db } from '../config/firebase.js';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore/lite';
-import { auditService } from '../services/auditService.js';
+import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import pool from '../config/db.js';
+import { auditService } from '../services/auditService.js';
 
-let mockUsers = [
-  {
-    id: 'u-1',
-    name: 'Administrador General',
-    email: 'admin@alcaldaleon.gob.ni',
-    role: 'superadmin',
-    avatar: '/img/nav_logo/logo nav2.png',
-    created_at: new Date().toISOString()
-  }
-];
+const listUsers = async () => {
+  const [rows] = await pool.query(
+    'SELECT id, name, email, role, avatar, created_at, updated_at FROM users ORDER BY created_at ASC'
+  );
+  return rows;
+};
 
 export const usersController = {
-  getAll: async (req, res) => {
+  getAll: async (_req, res) => {
     try {
-      if (db) {
-        const querySnapshot = await getDocs(collection(db, 'users'));
-        if (!querySnapshot.empty) {
-          const list = querySnapshot.docs.map(docSnap => {
-            const data = docSnap.data();
-            const { password, ...userWithoutPassword } = data;
-            return { id: docSnap.id, ...userWithoutPassword };
-          });
-          return res.json(list);
-        }
-      }
-      return res.json(mockUsers);
+      return res.json(await listUsers());
     } catch (error) {
-      return res.json(mockUsers);
+      console.error('Error al consultar usuarios en MySQL:', error);
+      return res.status(500).json({ error: 'No se pudieron consultar los usuarios.' });
     }
   },
 
   create: async (req, res) => {
     try {
       const { name, email, password, role } = req.body;
-
-      if (!name || !email || !password) {
+      if (!name?.trim() || !email?.trim() || !password) {
         return res.status(400).json({ error: 'Nombre, correo y contraseña son obligatorios.' });
       }
-
+      const id = randomUUID();
       const hashedPassword = await bcrypt.hash(password, 10);
-      const id = `u-${Date.now()}`;
-      const newUser = {
-        id,
-        name,
-        email,
-        password: hashedPassword,
-        role: role || 'editor',
-        avatar: '/img/nav_logo/logo nav2.png',
-        created_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'users', id), newUser);
-        } else {
-          mockUsers.push(newUser);
-        }
-      } catch (fbErr) {
-        mockUsers.push(newUser);
-      }
-
+      const userRole = role || 'editor';
+      await pool.query(
+        'INSERT INTO users (id, name, email, password, role, avatar) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, name.trim(), email.trim().toLowerCase(), hashedPassword, userRole, '/img/nav_logo/logo nav2.png']
+      );
       await auditService.logAction({
         req,
         action: 'CREAR_USUARIO',
         module: 'Usuarios',
-        details: `Nuevo usuario creado: ${email} con rol [${newUser.role}]`
+        details: `Nuevo usuario creado: ${email} con rol [${userRole}]`
       });
-
-      return usersController.getAll(req, res);
+      return res.status(201).json(await listUsers());
     } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ error: 'Ya existe un usuario con ese correo.' });
+      }
+      console.error('Error al registrar usuario en MySQL:', error);
       return res.status(500).json({ error: 'Error al registrar nuevo usuario.' });
     }
   },
@@ -81,33 +53,38 @@ export const usersController = {
     try {
       const { id } = req.params;
       const { name, role, password } = req.body;
-
-      const updates = { name, role, updated_at: new Date().toISOString() };
+      const updates = [];
+      const values = [];
+      if (name !== undefined) {
+        updates.push('name = ?');
+        values.push(name.trim());
+      }
+      if (role !== undefined) {
+        updates.push('role = ?');
+        values.push(role);
+      }
       if (password) {
-        updates.password = await bcrypt.hash(password, 10);
+        updates.push('password = ?');
+        values.push(await bcrypt.hash(password, 10));
       }
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'users', id), updates);
-        } else {
-          const idx = mockUsers.findIndex(u => u.id === id);
-          if (idx !== -1) mockUsers[idx] = { ...mockUsers[idx], ...updates };
-        }
-      } catch (fbErr) {
-        const idx = mockUsers.findIndex(u => u.id === id);
-        if (idx !== -1) mockUsers[idx] = { ...mockUsers[idx], ...updates };
+      if (updates.length === 0) {
+        return res.status(400).json({ error: 'No se proporcionaron campos para actualizar.' });
       }
-
+      const [existing] = await pool.query('SELECT id FROM users WHERE id = ?', [id]);
+      if (existing.length === 0) {
+        return res.status(404).json({ error: 'No se encontró el usuario.' });
+      }
+      values.push(id);
+      await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
       await auditService.logAction({
         req,
         action: 'EDITAR_USUARIO',
         module: 'Usuarios',
         details: `Usuario ${id} actualizado`
       });
-
-      return usersController.getAll(req, res);
+      return res.json(await listUsers());
     } catch (error) {
+      console.error('Error al actualizar usuario en MySQL:', error);
       return res.status(500).json({ error: 'Error al actualizar usuario.' });
     }
   },
@@ -118,26 +95,19 @@ export const usersController = {
       if (id === req.user.id) {
         return res.status(400).json({ error: 'No puedes eliminar tu propia cuenta de usuario.' });
       }
-
-      try {
-        if (db) {
-          await deleteDoc(doc(db, 'users', id));
-        } else {
-          mockUsers = mockUsers.filter(u => u.id !== id);
-        }
-      } catch (fbErr) {
-        mockUsers = mockUsers.filter(u => u.id !== id);
+      const [result] = await pool.query('DELETE FROM users WHERE id = ?', [id]);
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'No se encontró el usuario.' });
       }
-
       await auditService.logAction({
         req,
         action: 'ELIMINAR_USUARIO',
         module: 'Usuarios',
         details: `Usuario ${id} eliminado`
       });
-
-      return usersController.getAll(req, res);
+      return res.json(await listUsers());
     } catch (error) {
+      console.error('Error al eliminar usuario en MySQL:', error);
       return res.status(500).json({ error: 'Error al eliminar usuario.' });
     }
   }

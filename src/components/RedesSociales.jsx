@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 import { initialRedesSocialesData } from '../services/initialData';
 
@@ -33,13 +33,13 @@ const RedesSociales = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [selectedImage, setSelectedImage] = useState(null);
-  const queryClient = useQueryClient();
   const { data: socialData = initialRedesSocialesData } = useQuery({
     queryKey: ['redes-sociales'],
     queryFn: apiService.getRedesSociales,
     staleTime: 0
   });
 
+<<<<<<< HEAD
   useEffect(() => {
     const handleStorage = (event) => {
       if (event.key === 'alcaldia_leon_redes_sociales') {
@@ -51,6 +51,8 @@ const RedesSociales = () => {
     return () => window.removeEventListener('storage', handleStorage);
   }, [queryClient]);
 
+=======
+>>>>>>> 2e0fe226378082a51bb5f9383643d0bdb285e936
   const platforms = socialData.platforms;
   const getPlatform = (id) => platforms.find((platform) => platform.id === id) || initialRedesSocialesData.platforms.find((platform) => platform.id === id);
   const instagramImages = getPlatform('instagram').images.filter(Boolean);
@@ -314,4 +316,8 @@ const RedesSociales = () => {
   );
 };
 
+<<<<<<< HEAD
 export default RedesSociales;
+=======
+export default RedesSociales;
+>>>>>>> 2e0fe226378082a51bb5f9383643d0bdb285e936

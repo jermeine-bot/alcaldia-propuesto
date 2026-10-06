@@ -1,116 +1,71 @@
-import { db } from '../config/firebase.js';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore/lite';
+import { randomUUID } from 'node:crypto';
+import pool from '../config/db.js';
 
-let mockCultura = [
-  {
-    id: 'cultura-1',
-    icon: 'fa-cross',
-    title: 'Semana Santa y Alfombras de Aserrín',
-    desc: 'La tradición religiosa y artística más impresionante confeccionada en las calles de Sutiaba.',
-    event_date: 'Marzo / Abril 2026',
-    event_time: 'Todo el día',
-    location: 'Barrio Sutiaba, León',
-    image_url: '/img/cultura/semana_santa.jpg',
-    is_published: true
-  },
-  {
-    id: 'cultura-2',
-    icon: 'fa-fist-raised',
-    title: 'La Gritería en Honor a la Purísima',
-    desc: 'La fiesta mariana más alegre, colorida y multitudinaria de Nicaragua.',
-    event_date: '7 de Diciembre',
-    event_time: '6:00 PM',
-    location: 'Catedral y barrios de León',
-    image_url: '/img/cultura/griteria.jpg',
-    is_published: true
-  }
-];
+const getAllCultura = async () => {
+  const [rows] = await pool.query('SELECT * FROM cultura ORDER BY created_at DESC');
+  return rows;
+};
 
 export const culturaController = {
-  getAll: async (req, res) => {
+  getAll: async (_req, res) => {
     try {
-      if (db) {
-        const querySnapshot = await getDocs(collection(db, 'cultura'));
-        if (!querySnapshot.empty) {
-          const list = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          return res.json(list);
-        }
-      }
-      return res.json(mockCultura);
+      return res.json(await getAllCultura());
     } catch (error) {
-      console.warn('⚠️ Error al leer cultura en Firestore:', error.message);
-      return res.json(mockCultura);
+      console.error('Error al consultar cultura en MySQL:', error);
+      return res.status(500).json({ error: 'No se pudieron consultar los eventos culturales.' });
     }
   },
 
   create: async (req, res) => {
     try {
       const data = req.body;
-      const id = data.id || `cultura-${Date.now()}`;
-      const newItem = {
-        ...data,
-        id,
-        is_published: data.is_published ?? true,
-        created_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'cultura', id), newItem);
-        } else {
-          mockCultura.push(newItem);
-        }
-      } catch (fbErr) {
-        mockCultura.push(newItem);
+      if (!data.title?.trim()) {
+        return res.status(400).json({ error: 'El título del evento es obligatorio.' });
       }
-
-      return culturaController.getAll(req, res);
+      const id = data.id || `cultura-${randomUUID()}`;
+      await pool.query(
+        `INSERT INTO cultura (id, icon, title, \`desc\`, event_date, event_time, location, image_url, is_published)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, data.icon || '', data.title.trim(), data.desc || '', data.event_date || '',
+          data.event_time || '', data.location || '', data.image_url || '', data.is_published ?? true]
+      );
+      return res.status(201).json(await getAllCultura());
     } catch (error) {
+      console.error('Error al registrar evento cultural en MySQL:', error);
       return res.status(500).json({ error: 'Error al registrar evento cultural.' });
     }
   },
 
   update: async (req, res) => {
     try {
-      const { id } = req.params;
       const data = req.body;
-      const updates = {
-        ...data,
-        updated_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'cultura', id), updates);
-        } else {
-          const idx = mockCultura.findIndex(c => c.id === id);
-          if (idx !== -1) mockCultura[idx] = { ...mockCultura[idx], ...updates };
-        }
-      } catch (fbErr) {
-        const idx = mockCultura.findIndex(c => c.id === id);
-        if (idx !== -1) mockCultura[idx] = { ...mockCultura[idx], ...updates };
+      if (!data.title?.trim()) {
+        return res.status(400).json({ error: 'El título del evento es obligatorio.' });
       }
-
-      return culturaController.getAll(req, res);
+      const [result] = await pool.query(
+        `UPDATE cultura SET icon=?, title=?, \`desc\`=?, event_date=?, event_time=?, location=?, image_url=?, is_published=? WHERE id=?`,
+        [data.icon || '', data.title.trim(), data.desc || '', data.event_date || '',
+          data.event_time || '', data.location || '', data.image_url || '',
+          data.is_published ?? true, req.params.id]
+      );
+      if (result.affectedRows === 0) {
+        const [existing] = await pool.query('SELECT id FROM cultura WHERE id = ?', [req.params.id]);
+        if (existing.length === 0) return res.status(404).json({ error: 'No se encontró el evento cultural.' });
+      }
+      return res.json(await getAllCultura());
     } catch (error) {
+      console.error('Error al actualizar evento cultural en MySQL:', error);
       return res.status(500).json({ error: 'Error al actualizar evento cultural.' });
     }
   },
 
   delete: async (req, res) => {
     try {
-      const { id } = req.params;
-      try {
-        if (db) {
-          await deleteDoc(doc(db, 'cultura', id));
-        } else {
-          mockCultura = mockCultura.filter(c => c.id !== id);
-        }
-      } catch (fbErr) {
-        mockCultura = mockCultura.filter(c => c.id !== id);
-      }
-      return culturaController.getAll(req, res);
+      const [result] = await pool.query('DELETE FROM cultura WHERE id = ?', [req.params.id]);
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'No se encontró el evento cultural.' });
+      return res.json(await getAllCultura());
     } catch (error) {
+      console.error('Error al eliminar evento cultural en MySQL:', error);
       return res.status(500).json({ error: 'Error al eliminar evento cultural.' });
     }
   }

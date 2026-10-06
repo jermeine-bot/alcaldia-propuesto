@@ -4,7 +4,7 @@ Bienvenido a la documentación oficial y actualizada del sistema web completo de
 
 Este proyecto se compone de una aplicación web fullstack:
 1. **Frontend (SPA)**: Desarrollado con **React 19** + **Vite 8**, que incluye un portal público ciudadano de alto impacto visual y un **Panel Administrativo (CMS Dashboard)**.
-2. **Backend (API REST)**: Desarrollado con **Node.js** + **Express.js**. Algunas secciones usan Firebase Firestore; Centros de Atención y Redes Sociales aún guardan los cambios en el navegador.
+2. **Backend (API REST)**: Desarrollado con **Node.js** + **Express.js**, con persistencia centralizada en **MySQL**.
 3. **Módulo de Sincronización Automática**: Conexión con **Facebook Graph API** para importación de noticias sin duplicados.
 4. **Seguridad & Bitácora**: Control de acceso por roles (RBAC) y Registro de Auditoría de Cambios (*Audit Logs*).
 
@@ -38,12 +38,12 @@ Este proyecto se compone de una aplicación web fullstack:
 | **Notificaciones** | SweetAlert2 | `^11.26.25` | Modales interactivos de confirmación |
 | **Carruseles / Mapas** | Swiper + Leaflet | `^14.1.0` / `^1.9.4` | Slider táctil y cartografía interactiva |
 
-###  Backend (Node.js + Express + Firebase)
+###  Backend (Node.js + Express + MySQL)
 | Categoría | Tecnología | Versión | Propósito |
 |---|---|---|---|
 | **Entorno de Servidor** | Node.js (ESM) | `v20+` | Entorno de ejecución de lado del servidor |
 | **Framework Web** | Express.js | `^4.21.2` | Infraestructura de rutas y middleware de API REST |
-| **Base de Datos NoSQL** | Firebase Firestore Lite | `firebase` `^11.3.1` | Lectura y escritura de las colecciones conectadas a Firestore |
+| **Base de Datos** | MySQL | `mysql2` `^3.11.0` | Persistencia de contenido, usuarios, auditoría y configuración CMS |
 | **Almacenamiento Multimedia** | Multer + disco local | `multer` `^1.4.5-lts.1` | Las imágenes de noticias se guardan en `backend/uploads` y se sirven bajo `/uploads` |
 | **Seguridad & Token** | JWT + bcryptjs | `^9.0.2` / `^3.0.3` | Encriptación de contraseñas y firma de tokens de sesión |
 | **Social Sync** | Facebook Graph API | `v19.0` | Importación automática de noticias desde Facebook |
@@ -67,7 +67,7 @@ Se implementó una reestructuración de la sección **Trámites y Servicios** pa
    - Edición de los textos introductorios de la sección pública y del teléfono de orientación.
    - El portal público y el CMS consultan el mismo contenido mediante React Query.
 
-La API expone `GET /api/servicios`, `GET/PUT /api/servicios/settings`, operaciones de categorías en `/api/servicios` y operaciones de trámites en `/api/servicios/:id/subservicios`. Las escrituras requieren JWT válido y rol `superadmin` o `editor`. El controlador usa la colección Firestore `servicios`; los textos de sección se guardan en `cmsMetadata/servicios`. Al inicializar una colección vacía se copian las categorías de ejemplo definidas en `src/services/initialData.js`.
+La API expone `GET /api/servicios`, `GET/PUT /api/servicios/settings`, operaciones de categorías en `/api/servicios` y operaciones de trámites en `/api/servicios/:id/subservicios`. Los registros y su configuración se guardan en MySQL; al iniciar una instalación vacía se cargan los datos iniciales de `src/services/initialData.js`.
 
 ##  CMS de Centros de Atención
 
@@ -81,12 +81,10 @@ Los enlaces, contadores y galerías de la landing se leen desde esta configuraci
 
 ##  Persistencia y configuración del CMS
 
-- **Trámites y Servicios**: las lecturas y escrituras usan la API `/api/servicios` y Firestore. Firestore debe estar habilitado y configurado para que el guardado remoto funcione; si Firestore está desactivado, las escrituras fallan y el CMS muestra el error.
-- **Centros de Atención**: se guardan en `localStorage` bajo `alcaldia_leon_centros_atencion`.
-- **Redes Sociales**: se guardan en `localStorage` bajo `alcaldia_leon_redes_sociales`.
-- Centros y Redes se sincronizan con la landing en el mismo navegador, incluidas otras pestañas abiertas. `localStorage` no comparte cambios entre dispositivos ni entre navegadores; para publicar esos cambios a todos los visitantes deben migrarse a persistencia del backend.
+- **Trámites y Servicios**: la API `/api/servicios` usa MySQL, incluidas sus categorías, opciones y configuración.
+- **Centros de Atención** y **Redes Sociales**: se leen y guardan en MySQL mediante `GET/PUT /api/cms/centros-atencion` y `GET/PUT /api/cms/redes-sociales`. Los cambios quedan compartidos entre los clientes conectados al backend.
+- Las demás secciones del CMS usan endpoints REST del backend; las credenciales de conexión se definen solo en `backend/.env` mediante `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` y `MYSQL_DATABASE`.
 - La API del frontend se configura con `VITE_API_BASE_URL`; por defecto usa `http://localhost:5000/api`. En el servidor Vite se debe definir la variable antes de arrancar, por ejemplo `VITE_API_BASE_URL=http://localhost:5001/api`.
-- El cliente invalida/refresca las consultas públicas de Centros y Redes al montar y cuando otra pestaña modifica sus claves de almacenamiento.
 
 ---
 
@@ -94,18 +92,19 @@ Los enlaces, contadores y galerías de la landing se leen desde esta configuraci
 
 ```text
 alcaldia-leon-react/
-├── backend/                       ← SERVIDOR BACKEND (Node.js + Express + Firebase)
-│   ├── .env                       ← Credenciales de Firebase y Facebook Graph API
+├── backend/                       ← SERVIDOR BACKEND (Node.js + Express + MySQL)
+│   ├── .env                       ← Configuración privada MySQL, JWT y Facebook opcional
 │   ├── package.json
 │   ├── server.js                  ← Entrypoint + Cron Job de Sincronización (Puerto 5000)
 │   ├── uploads/                   ← Almacenamiento local temporal / fallback
 │   └── src/
 │       ├── app.js                 ← Configuración de Express, CORS y montaje de rutas API
 │       ├── config/
-│       │   └── firebase.js        ← Inicialización de Firestore y Firebase Storage
+│       │   └── db.js              ← Pool MySQL, creación de tablas y datos iniciales
 │       ├── controllers/
 │       │   ├── authController.js  ← Login JWT, encriptación bcrypt y cambio de clave
 │       │   ├── serviciosController.js ← Categorías, trámites y textos de Servicios
+│       │   ├── cmsContentController.js← Centros de atención y redes sociales
 │       │   ├── noticiasController.js ← CRUD de noticias + Auditoría
 │       │   ├── proyectosController.js← CRUD de proyectos
 │       │   ├── turismoController.js  ← CRUD de destinos turísticos
@@ -133,7 +132,8 @@ alcaldia-leon-react/
 │           ├── contactoRoutes.js  ← Rutas /api/contacto
 │           ├── facebookRoutes.js  ← Rutas /api/facebook
 │           ├── auditRoutes.js     ← Rutas /api/audit-logs
-│           └── usersRoutes.js     ← Rutas /api/users
+│           ├── usersRoutes.js     ← Rutas /api/users
+│           └── cmsContentRoutes.js← Rutas /api/cms
 │
 ├── index.html
 ├── vite.config.js
@@ -143,9 +143,8 @@ alcaldia-leon-react/
     ├── App.jsx
     ├── index.css
     ├── services/
-    │   ├── apiService.js          ← Cliente API unificado
-    │   ├── mockStorage.js         ← Almacenamiento local asíncrono (Fallback)
-    │   └── initialData.js         ← Datos por defecto de la aplicación
+    │   ├── apiService.js          ← Cliente de API REST del backend
+    │   └── initialData.js         ← Datos iniciales del CMS
       ├── components/                ← Portal público; incluye CentrosAtencion y RedesSociales
     └── admin/                     ← Panel CMS Administrativo (/admin)
         ├── components/            ← Layout, Sidebar y Header de Administración
@@ -154,7 +153,7 @@ alcaldia-leon-react/
 
 ##  Arquitectura del Backend
 
-El backend Express se inicia desde `backend/server.js`, monta sus endpoints en `/api` y usa Firebase Firestore para los controladores que lo integran. La disponibilidad de una colección depende de que Firestore esté habilitado en el proyecto y de la configuración de credenciales y reglas correspondiente.
+El backend Express se inicia desde `backend/server.js`, monta sus endpoints bajo `/api` y conecta con MySQL usando el pool `mysql2`. Al iniciar crea las tablas requeridas y siembra contenido inicial solo donde todavía no hay registros. Si MySQL no está disponible, el servidor no inicia; configura las variables `MYSQL_*` en `backend/.env`.
 
 ---
 
@@ -166,7 +165,7 @@ El backend Express se inicia desde `backend/server.js`, monta sus endpoints en `
 * **`visor`**: Perfil de solo lectura.
 
 ### Bitácora de Auditoría (`activity_logs`)
-Cada acción dentro del sistema (crear noticia, editar proyecto, eliminar registro, login exitoso o fallido) genera un registro de auditoría en Firestore que guarda:
+Cada acción dentro del sistema (crear noticia, editar proyecto, eliminar registro, login exitoso o fallido) genera un registro en la tabla MySQL `activity_logs`, que guarda:
 `id`, `userEmail`, `userName`, `role`, `action`, `module`, `details`, `ip` y `timestamp`.
 
 El middleware valida la firma y expiración del JWT, y rechaza solicitudes privadas sin token o con token inválido. Las rutas de Usuarios, Auditoría y Servicios aplican controles de rol; otras rutas de contenido actualmente exigen autenticación, pero no todas filtran por rol.
@@ -175,8 +174,8 @@ El middleware valida la firma y expiración del JWT, y rechaza solicitudes priva
 
 ##  Módulo de Sincronización con Facebook Graph API
 
-* **Cron Job en Segundo Plano**: Cada 30 minutos, el servidor Node.js consulta la página oficial de la Alcaldía de León en Facebook.
-* **Filtro Anti-Duplicación**: Utiliza la clave `external_id` (ID de publicación de Facebook) para ignorar publicaciones ya registradas.
+* **Cron Job en Segundo Plano**: Si se configuran `FACEBOOK_PAGE_ID` y `FACEBOOK_ACCESS_TOKEN`, el servidor consulta cada 30 minutos la página oficial de la Alcaldía de León.
+* **Filtro Anti-Duplicación**: Consulta `external_id` en la tabla MySQL `noticias` para ignorar publicaciones ya registradas.
 * **Sincronización Manual**: Los administradores pueden forzar la sincronización en tiempo real con 1 solo clic desde el CMS.
 
 ---
@@ -189,13 +188,15 @@ El middleware valida la firma y expiración del JWT, y rechaza solicitudes priva
   * **Correo**: `admin@alcaldaleon.gob.ni`
   * **Contraseña**: `admin123`
 
-El middleware de autenticación rechaza solicitudes privadas sin un JWT válido. En producción se debe configurar `JWT_SECRET`; el secreto predeterminado solo se usa en desarrollo. La autenticación mock del frontend es para demostración local y no sustituye una sesión JWT del backend.
+El middleware de autenticación rechaza solicitudes privadas sin un JWT válido. En producción se debe configurar `JWT_SECRET`; el secreto predeterminado solo se usa en desarrollo. El frontend conserva el JWT devuelto por la API para autenticar las solicitudes administrativas.
 
 ---
 
 ##  Guía de Instalación y Ejecución
 
 ### 1. Iniciar el Backend (Node.js)
+Primero crea la base de datos MySQL (por defecto `alcaldia_leon`) y define `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE` y `JWT_SECRET` en `backend/.env`.
+
 ```bash
 cd backend
 npm ci

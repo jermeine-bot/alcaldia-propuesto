@@ -1,237 +1,139 @@
-import { db } from '../config/firebase.js';
-import { collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore/lite';
+import { randomUUID } from 'node:crypto';
+import pool from '../config/db.js';
 import { auditService } from '../services/auditService.js';
-import fs from 'fs';
 
-let mockNoticias = [
-  {
-    id: 'noticia-1',
-    titulo: 'Inauguración del nuevo Parque Central',
-    slug: 'inauguracion-del-nuevo-parque-central',
-    extracto: 'Un espacio renovado para el disfrute de todas las familias leonesas.',
-    contenido: 'La Alcaldía Municipal de León se enorgullece en inaugurar las obras de remodelación y embellecimiento del Parque Central.',
-    categoria: 'Obras Públicas',
-    imagen: '/img/noticias/noticia1.jpg',
-    autor: 'Prensa Alcaldía',
-    date: '15 Enero 2026',
-    status: 'published',
-    fuente: 'manual'
-  },
-  {
-    id: 'noticia-2',
-    titulo: 'Nuevo sistema de recolección de basura',
-    slug: 'nuevo-sistema-de-recoleccion-de-basura',
-    extracto: 'Modernizamos el servicio para una ciudad más limpia y sostenible.',
-    contenido: 'Con la incorporación de una flota de camiones recolectores modernos.',
-    categoria: 'Servicios Municipales',
-    imagen: '/img/noticias/noticia2.jpg',
-    autor: 'Dirección de Ornato',
-    date: '12 Enero 2026',
-    status: 'published',
-    fuente: 'manual'
-  }
-];
+const generateSlug = text => String(text || '')
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^\w\s-]/g, '')
+  .replace(/\s+/g, '-')
+  .replace(/--+/g, '-');
 
-const generateSlug = (text) => {
-  if (!text) return '';
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-');
+const getAllNoticias = async () => {
+  const [rows] = await pool.query('SELECT * FROM noticias ORDER BY created_at DESC');
+  return rows;
 };
 
 export const noticiasController = {
-  getAll: async (req, res) => {
+  getAll: async (_req, res) => {
     try {
-      if (db) {
-        const querySnapshot = await getDocs(collection(db, 'noticias'));
-        if (!querySnapshot.empty) {
-          const list = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-          return res.json(list);
-        }
-      }
-      return res.json(mockNoticias);
+      return res.json(await getAllNoticias());
     } catch (error) {
-      console.warn('⚠️ Leyendo modo memoria/local para noticias:', error.message);
-      return res.json(mockNoticias);
+      console.error('Error al consultar noticias en MySQL:', error);
+      return res.status(500).json({ error: 'No se pudieron consultar las noticias.' });
     }
   },
 
   getById: async (req, res) => {
-    const { id } = req.params;
     try {
-      if (db) {
-        const docSnap = await getDoc(doc(db, 'noticias', id));
-        if (docSnap.exists()) {
-          return res.json({ id: docSnap.id, ...docSnap.data() });
-        }
-      }
-      const localItem = mockNoticias.find(n => n.id === id);
-      if (!localItem) return res.status(404).json({ error: 'Noticia no encontrada' });
-      return res.json(localItem);
+      const [rows] = await pool.query('SELECT * FROM noticias WHERE id = ?', [req.params.id]);
+      if (rows.length === 0) return res.status(404).json({ error: 'Noticia no encontrada.' });
+      return res.json(rows[0]);
     } catch (error) {
-      const localItem = mockNoticias.find(n => n.id === id);
-      if (!localItem) return res.status(404).json({ error: 'Noticia no encontrada' });
-      return res.json(localItem);
+      console.error('Error al consultar noticia en MySQL:', error);
+      return res.status(500).json({ error: 'No se pudo consultar la noticia.' });
     }
   },
 
   create: async (req, res) => {
     try {
-      const { title, titulo, summary, extracto, content, contenido, category, categoria, img, imagen, author, autor, date, status, fuente, url_externa, external_id } = req.body;
-
-      const finalTitle = title || titulo;
-      if (!finalTitle) return res.status(400).json({ error: 'El título de la noticia es obligatorio.' });
-
-      const id = `noticia-${Date.now()}`;
-      const slug = generateSlug(finalTitle);
-      const finalExtracto = summary || extracto || '';
-      const finalContenido = content || contenido || '';
-      const finalCategoria = category || categoria || 'General';
-      const finalImagen = img || imagen || '/img/hero-bg.jpg';
-      const finalAutor = author || autor || 'Prensa Alcaldía';
-      const finalDate = date || new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-      const finalStatus = status || 'published';
-      const finalFuente = fuente || 'manual';
-
-      const payload = {
-        id,
-        titulo: finalTitle,
-        title: finalTitle,
-        slug,
-        extracto: finalExtracto,
-        summary: finalExtracto,
-        contenido: finalContenido,
-        content: finalContenido,
-        categoria: finalCategoria,
-        category: finalCategoria,
-        imagen: finalImagen,
-        img: finalImagen,
-        autor: finalAutor,
-        author: finalAutor,
-        date: finalDate,
-        status: finalStatus,
-        fuente: finalFuente,
-        url_externa: url_externa || null,
-        external_id: external_id || null,
-        created_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'noticias', id), payload);
-        } else {
-          mockNoticias.unshift(payload);
-        }
-      } catch (fbErr) {
-        console.warn('⚠️ Error guardando en Firestore:', fbErr.message);
-        mockNoticias.unshift(payload);
+      const data = req.body;
+      const title = data.title || data.titulo;
+      if (!title?.trim()) {
+        return res.status(400).json({ error: 'El título de la noticia es obligatorio.' });
       }
 
+      const id = `noticia-${randomUUID()}`;
+      const noticia = {
+        title: title.trim(),
+        slug: generateSlug(title),
+        summary: data.summary || data.extracto || '',
+        content: data.content || data.contenido || '',
+        category: data.category || data.categoria || 'General',
+        image: data.img || data.imagen || data.image || '/img/hero-bg.jpg',
+        author: data.author || data.autor || 'Prensa Alcaldía',
+        date: data.date || new Date().toLocaleDateString('es-ES', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        }),
+        status: data.status || 'published',
+        fuente: data.fuente || 'manual',
+        urlExterna: data.url_externa || null,
+        externalId: data.external_id || null
+      };
+      await pool.query(
+        `INSERT INTO noticias (id, titulo, slug, extracto, contenido, categoria, imagen, autor, date, status, fuente, url_externa, external_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, noticia.title, noticia.slug, noticia.summary, noticia.content, noticia.category,
+          noticia.image, noticia.author, noticia.date, noticia.status, noticia.fuente,
+          noticia.urlExterna, noticia.externalId]
+      );
       await auditService.logAction({
         req,
         action: 'CREAR_NOTICIA',
         module: 'Noticias',
-        details: `Noticia creada: "${finalTitle}"`
+        details: `Noticia creada: "${noticia.title}"`
       });
-
-      return noticiasController.getAll(req, res);
+      return res.status(201).json(await getAllNoticias());
     } catch (error) {
-      console.error('Error al crear noticia:', error);
+      console.error('Error al crear noticia en MySQL:', error);
       return res.status(500).json({ error: 'Error al crear la noticia.' });
     }
   },
 
   update: async (req, res) => {
     try {
-      const { id } = req.params;
-      const { title, titulo, summary, extracto, content, contenido, category, categoria, img, imagen, author, autor, date, status } = req.body;
-
-      const finalTitle = title || titulo;
-      const slug = generateSlug(finalTitle);
-
-      const updates = {
-        titulo: finalTitle,
-        title: finalTitle,
-        slug,
-        extracto: summary || extracto,
-        summary: summary || extracto,
-        contenido: content || contenido,
-        content: content || contenido,
-        categoria: category || categoria,
-        category: category || categoria,
-        imagen: img || imagen,
-        img: img || imagen,
-        autor: author || autor,
-        author: author || autor,
-        date,
-        status,
-        updated_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await updateDoc(doc(db, 'noticias', id), updates);
-        } else {
-          const idx = mockNoticias.findIndex(n => n.id === id);
-          if (idx !== -1) mockNoticias[idx] = { ...mockNoticias[idx], ...updates };
-        }
-      } catch (fbErr) {
-        const idx = mockNoticias.findIndex(n => n.id === id);
-        if (idx !== -1) mockNoticias[idx] = { ...mockNoticias[idx], ...updates };
+      const data = req.body;
+      const title = data.title || data.titulo;
+      if (!title?.trim()) {
+        return res.status(400).json({ error: 'El título de la noticia es obligatorio.' });
       }
-
+      const [result] = await pool.query(
+        `UPDATE noticias SET titulo=?, slug=?, extracto=?, contenido=?, categoria=?, imagen=?, autor=?, date=?, status=?
+         WHERE id=?`,
+        [title.trim(), generateSlug(title), data.summary ?? data.extracto ?? '',
+          data.content ?? data.contenido ?? '', data.category ?? data.categoria ?? 'General',
+          data.img ?? data.imagen ?? data.image ?? '', data.author ?? data.autor ?? 'Prensa Alcaldía',
+          data.date ?? '', data.status ?? 'published', req.params.id]
+      );
+      if (result.affectedRows === 0) {
+        const [existing] = await pool.query('SELECT id FROM noticias WHERE id = ?', [req.params.id]);
+        if (existing.length === 0) return res.status(404).json({ error: 'Noticia no encontrada.' });
+      }
       await auditService.logAction({
         req,
         action: 'EDITAR_NOTICIA',
         module: 'Noticias',
-        details: `Noticia actualizada ID: ${id}`
+        details: `Noticia actualizada ID: ${req.params.id}`
       });
-
-      return noticiasController.getAll(req, res);
+      return res.json(await getAllNoticias());
     } catch (error) {
+      console.error('Error al actualizar noticia en MySQL:', error);
       return res.status(500).json({ error: 'Error al actualizar noticia.' });
     }
   },
 
   delete: async (req, res) => {
     try {
-      const { id } = req.params;
-      try {
-        if (db) {
-          await deleteDoc(doc(db, 'noticias', id));
-        } else {
-          mockNoticias = mockNoticias.filter(n => n.id !== id);
-        }
-      } catch (fbErr) {
-        mockNoticias = mockNoticias.filter(n => n.id !== id);
-      }
-
+      const [result] = await pool.query('DELETE FROM noticias WHERE id = ?', [req.params.id]);
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'Noticia no encontrada.' });
       await auditService.logAction({
         req,
         action: 'ELIMINAR_NOTICIA',
         module: 'Noticias',
-        details: `Noticia eliminada ID: ${id}`
+        details: `Noticia eliminada ID: ${req.params.id}`
       });
-
-      return noticiasController.getAll(req, res);
+      return res.json(await getAllNoticias());
     } catch (error) {
+      console.error('Error al eliminar noticia en MySQL:', error);
       return res.status(500).json({ error: 'Error al eliminar la noticia.' });
     }
   },
 
   uploadImage: async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: 'No se seleccionó ninguna imagen.' });
-      }
-      return res.json({ url: `/uploads/${req.file.filename}` });
-    } catch (error) {
-      return res.status(500).json({ error: 'Error al procesar la imagen.' });
-    }
+    if (!req.file) return res.status(400).json({ error: 'No se seleccionó ninguna imagen.' });
+    return res.json({ url: `/uploads/${req.file.filename}` });
   }
 };

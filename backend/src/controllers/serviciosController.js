@@ -1,36 +1,44 @@
 import { randomUUID } from 'node:crypto';
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore/lite';
-import { db } from '../config/firebase.js';
-import { initialServiciosData, initialServiciosSettings } from '../../../src/services/initialData.js';
-
-const cloneInitialServices = () => initialServiciosData.map((item, index) => ({
-  ...item,
-  display_order: index,
-  opciones: (item.opciones || []).map(option => ({ ...option }))
-}));
-
-let mockServicios = cloneInitialServices();
-
-const sortServices = items => items.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+import pool from '../config/db.js';
 
 const readServices = async () => {
-  if (!db) return mockServicios;
+  const [services] = await pool.query(
+    'SELECT * FROM servicios ORDER BY display_order ASC, created_at ASC'
+  );
+  if (services.length === 0) return [];
 
-  const servicesRef = collection(db, 'servicios');
-  let snapshot = await getDocs(servicesRef);
-  const metadataRef = doc(db, 'cmsMetadata', 'servicios');
-  const metadata = await getDoc(metadataRef);
-
-  if (!metadata.data()?.initialized_at) {
-    if (snapshot.empty) {
-      const defaults = cloneInitialServices();
-      await Promise.all(defaults.map(item => setDoc(doc(db, 'servicios', item.id), item)));
-      snapshot = await getDocs(servicesRef);
-    }
-    await setDoc(metadataRef, { initialized_at: new Date().toISOString() }, { merge: true });
+  const ids = services.map(service => service.id);
+  const [options] = await pool.query(
+    `SELECT id, servicio_id, title, \`desc\`, icon, linkText, linkUrl
+     FROM subservicios WHERE servicio_id IN (${ids.map(() => '?').join(', ')}) ORDER BY id ASC`,
+    ids
+  );
+  const byService = new Map();
+  for (const option of options) {
+    const { servicio_id: serviceId, ...data } = option;
+    const list = byService.get(serviceId) || [];
+    list.push(data);
+    byService.set(serviceId, list);
   }
+  return services.map(service => ({
+    ...service,
+    opciones: byService.get(service.id) || [],
+    count: byService.get(service.id)?.length || 0
+  }));
+};
 
-  return sortServices(snapshot.docs.map(serviceDoc => ({ id: serviceDoc.id, ...serviceDoc.data() })));
+const getOptions = (options = []) => Array.isArray(options) ? options : [];
+
+const saveOptions = async (connection, serviceId, options) => {
+  await connection.query('DELETE FROM subservicios WHERE servicio_id = ?', [serviceId]);
+  for (const option of options) {
+    await connection.query(
+      `INSERT INTO subservicios (id, servicio_id, title, \`desc\`, icon, linkText, linkUrl)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [option.id || `opcion-${randomUUID()}`, serviceId, option.title || '',
+        option.desc || '', option.icon || '', option.linkText || '', option.linkUrl || '']
+    );
+  }
 };
 
 const sendError = (res, error, message) => {
@@ -41,17 +49,13 @@ const sendError = (res, error, message) => {
 export const serviciosController = {
   getSettings: async (_req, res) => {
     try {
-      const metadata = await getDoc(doc(db, 'cmsMetadata', 'servicios'));
-      const stored = metadata.exists() ? metadata.data() : {};
-      return res.json({
-        eyebrow: stored.eyebrow || initialServiciosSettings.eyebrow,
-        title: stored.title || initialServiciosSettings.title,
-        description: stored.description || initialServiciosSettings.description,
-        phone: stored.phone || initialServiciosSettings.phone
-      });
+      const [rows] = await pool.query('SELECT eyebrow, title, description, phone FROM servicios_settings WHERE id = ?', ['main']);
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'No se encontró la configuración de servicios.' });
+      }
+      return res.json(rows[0]);
     } catch (error) {
-      console.warn('No se pudo leer la configuración de servicios:', error.message);
-      return res.json(initialServiciosSettings);
+      return sendError(res, error, 'No se pudo consultar la configuración de servicios.');
     }
   },
 
@@ -66,8 +70,13 @@ export const serviciosController = {
       if (Object.values(settings).some(value => !value)) {
         return res.status(400).json({ error: 'Completa todos los campos de la sección.' });
       }
-
-      await setDoc(doc(db, 'cmsMetadata', 'servicios'), settings, { merge: true });
+      await pool.query(
+        `INSERT INTO servicios_settings (id, eyebrow, title, description, phone)
+         VALUES ('main', ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE eyebrow=VALUES(eyebrow), title=VALUES(title),
+         description=VALUES(description), phone=VALUES(phone)`,
+        [settings.eyebrow, settings.title, settings.description, settings.phone]
+      );
       return res.json(settings);
     } catch (error) {
       return sendError(res, error, 'No se pudo actualizar la sección de servicios.');
@@ -78,69 +87,79 @@ export const serviciosController = {
     try {
       return res.json(await readServices());
     } catch (error) {
-      console.warn('No se pudieron leer los servicios desde Firestore:', error.message);
-      return res.json(mockServicios);
+      return sendError(res, error, 'No se pudieron consultar los servicios.');
     }
   },
 
   create: async (req, res) => {
+    let connection;
     try {
+      connection = await pool.getConnection();
       const data = req.body;
       if (!data.title || !data.subtitle) {
         return res.status(400).json({ error: 'El título y el subtítulo son obligatorios.' });
       }
-
-      const services = await readServices();
       const id = `servicio-${randomUUID()}`;
-      const service = {
-        ...data,
-        id,
-        opciones: Array.isArray(data.opciones) ? data.opciones : [],
-        count: Array.isArray(data.opciones) ? data.opciones.length : 0,
-        display_order: services.length,
-        created_at: new Date().toISOString()
-      };
-
-      await setDoc(doc(db, 'servicios', id), service);
-      return res.json(await readServices());
+      await connection.beginTransaction();
+      const [rows] = await connection.query('SELECT COUNT(*) AS total FROM servicios');
+      await connection.query(
+        `INSERT INTO servicios (id, title, subtitle, icon, color, badgeIcon, \`desc\`, display_order, count)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, data.title, data.subtitle, data.icon || '', data.color || '', data.badgeIcon || '',
+          data.desc || '', rows[0].total, getOptions(data.opciones).length]
+      );
+      await saveOptions(connection, id, getOptions(data.opciones));
+      await connection.commit();
+      return res.status(201).json(await readServices());
     } catch (error) {
+      if (connection) await connection.rollback();
       return sendError(res, error, 'No se pudo crear la categoría de servicios.');
+    } finally {
+      connection?.release();
     }
   },
 
   update: async (req, res) => {
+    let connection;
     try {
+      connection = await pool.getConnection();
       const { id } = req.params;
-      const serviceRef = doc(db, 'servicios', id);
-      const existing = await getDoc(serviceRef);
-      if (!existing.exists()) {
-        return res.status(404).json({ error: 'No se encontró la categoría de servicios.' });
-      }
-
       const data = req.body;
       if (!data.title || !data.subtitle) {
         return res.status(400).json({ error: 'El título y el subtítulo son obligatorios.' });
       }
-
-      const current = existing.data();
-      const opciones = Array.isArray(data.opciones) ? data.opciones : current.opciones || [];
-      await setDoc(serviceRef, {
-        ...current,
-        ...data,
-        id,
-        opciones,
-        count: opciones.length,
-        updated_at: new Date().toISOString()
-      });
+      await connection.beginTransaction();
+      const [existing] = await connection.query('SELECT id FROM servicios WHERE id = ?', [id]);
+      if (existing.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({ error: 'No se encontró la categoría de servicios.' });
+      }
+      await connection.query(
+        `UPDATE servicios SET title=?, subtitle=?, icon=?, color=?, badgeIcon=?, \`desc\`=? WHERE id=?`,
+        [data.title, data.subtitle, data.icon || '', data.color || '', data.badgeIcon || '', data.desc || '', id]
+      );
+      if (Array.isArray(data.opciones)) await saveOptions(connection, id, data.opciones);
+      const [[{ total }]] = await connection.query(
+        'SELECT COUNT(*) AS total FROM subservicios WHERE servicio_id = ?',
+        [id]
+      );
+      await connection.query('UPDATE servicios SET count = ? WHERE id = ?', [total, id]);
+      await connection.commit();
       return res.json(await readServices());
     } catch (error) {
+      if (connection) await connection.rollback();
       return sendError(res, error, 'No se pudo actualizar la categoría de servicios.');
+    } finally {
+      connection?.release();
     }
   },
 
   delete: async (req, res) => {
     try {
-      await deleteDoc(doc(db, 'servicios', req.params.id));
+      const [result] = await pool.query('DELETE FROM servicios WHERE id = ?', [req.params.id]);
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'No se encontró la categoría de servicios.' });
+      }
       return res.json(await readServices());
     } catch (error) {
       return sendError(res, error, 'No se pudo eliminar la categoría de servicios.');
@@ -148,59 +167,78 @@ export const serviciosController = {
   },
 
   saveSubservicio: async (req, res) => {
+    let connection;
     try {
-      const { id } = req.params;
+      connection = await pool.getConnection();
+      const { id: serviceId } = req.params;
       const data = req.body;
       if (!data.title || !data.desc) {
         return res.status(400).json({ error: 'El nombre y la descripción del trámite son obligatorios.' });
       }
-
-      const serviceRef = doc(db, 'servicios', id);
-      const snapshot = await getDoc(serviceRef);
-      if (!snapshot.exists()) {
+      const optionId = data.id || `opcion-${randomUUID()}`;
+      await connection.beginTransaction();
+      const [services] = await connection.query('SELECT id FROM servicios WHERE id = ?', [serviceId]);
+      if (services.length === 0) {
+        await connection.rollback();
         return res.status(404).json({ error: 'No se encontró la categoría de servicios.' });
       }
-
-      const service = snapshot.data();
-      const options = [...(service.opciones || [])];
-      const optionId = data.id || `opcion-${randomUUID()}`;
-      const index = options.findIndex(option => option.id === optionId);
-      const option = { ...data, id: optionId };
-      if (index === -1) options.push(option);
-      else options[index] = { ...options[index], ...option };
-
-      await setDoc(serviceRef, {
-        ...service,
-        opciones: options,
-        count: options.length,
-        updated_at: new Date().toISOString()
-      });
+      if (req.method === 'PUT') {
+        const [existingOptions] = await connection.query(
+          'SELECT id FROM subservicios WHERE id = ? AND servicio_id = ?',
+          [optionId, serviceId]
+        );
+        if (existingOptions.length === 0) {
+          await connection.rollback();
+          return res.status(404).json({ error: 'No se encontró el trámite o servicio.' });
+        }
+      }
+      await connection.query(
+        `INSERT INTO subservicios (id, servicio_id, title, \`desc\`, icon, linkText, linkUrl)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE title=VALUES(title), \`desc\`=VALUES(\`desc\`),
+         icon=VALUES(icon), linkText=VALUES(linkText), linkUrl=VALUES(linkUrl)`,
+        [optionId, serviceId, data.title, data.desc, data.icon || '', data.linkText || '', data.linkUrl || '']
+      );
+      await connection.query(
+        'UPDATE servicios SET count = (SELECT COUNT(*) FROM subservicios WHERE servicio_id = ?) WHERE id = ?',
+        [serviceId, serviceId]
+      );
+      await connection.commit();
       return res.json(await readServices());
     } catch (error) {
+      if (connection) await connection.rollback();
       return sendError(res, error, 'No se pudo guardar el trámite o servicio.');
+    } finally {
+      connection?.release();
     }
   },
 
   deleteSubservicio: async (req, res) => {
+    let connection;
     try {
-      const { id, subservicioId } = req.params;
-      const serviceRef = doc(db, 'servicios', id);
-      const snapshot = await getDoc(serviceRef);
-      if (!snapshot.exists()) {
+      connection = await pool.getConnection();
+      const { id: serviceId, subservicioId } = req.params;
+      await connection.beginTransaction();
+      const [services] = await connection.query('SELECT id FROM servicios WHERE id = ?', [serviceId]);
+      if (services.length === 0) {
+        await connection.rollback();
         return res.status(404).json({ error: 'No se encontró la categoría de servicios.' });
       }
-
-      const service = snapshot.data();
-      const options = (service.opciones || []).filter(option => option.id !== subservicioId);
-      await setDoc(serviceRef, {
-        ...service,
-        opciones: options,
-        count: options.length,
-        updated_at: new Date().toISOString()
-      });
+      await connection.query(
+        'DELETE FROM subservicios WHERE id = ? AND servicio_id = ?',
+        [subservicioId, serviceId]
+      );
+      await connection.query(
+        'UPDATE servicios SET count = (SELECT COUNT(*) FROM subservicios WHERE servicio_id = ?) WHERE id = ?',
+        [serviceId, serviceId]
+      );
+      await connection.commit();
       return res.json(await readServices());
     } catch (error) {
+      if (connection) await connection.rollback();
       return sendError(res, error, 'No se pudo eliminar el trámite o servicio.');
+    } finally {
+      connection?.release();
     }
   }
 };

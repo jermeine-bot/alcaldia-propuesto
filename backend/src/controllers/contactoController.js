@@ -1,57 +1,37 @@
-import { db } from '../config/firebase.js';
-import { doc, getDoc, setDoc } from 'firebase/firestore/lite';
+import pool from '../config/db.js';
 
-let mockContacto = {
-  id: 'contacto-1',
-  address: 'Palacio Municipal, Frente al Parque Central, León, Nicaragua',
-  phone: '+505 2315-0000',
-  secondary_phone: '+505 2315-1111',
-  email: 'info@alcaldaleon.gob.ni',
-  schedule: 'Lunes a Viernes: 8:00 AM - 4:00 PM',
-  facebook_url: 'https://www.facebook.com/share/1EJ2g1UpjY/',
-  instagram_url: 'https://www.instagram.com/alcaldia_leon',
-  tiktok_url: 'https://www.tiktok.com/@leonalcaldia',
-  youtube_url: 'https://www.youtube.com/@AlcaldiaLeon',
-  twitter_url: 'https://twitter.com/alcaldia_leon'
-};
+const CONTACT_ID = 'contacto-1';
+const CONTACT_FIELDS = [
+  'address', 'phone', 'secondary_phone', 'email', 'schedule',
+  'facebook_url', 'instagram_url', 'tiktok_url', 'youtube_url', 'twitter_url'
+];
 
 export const contactoController = {
-  getContacto: async (req, res) => {
+  getContacto: async (_req, res) => {
     try {
-      if (db) {
-        const docSnap = await getDoc(doc(db, 'contacto', 'contacto-1'));
-        if (docSnap.exists()) {
-          return res.json({ id: docSnap.id, ...docSnap.data() });
-        }
+      const [rows] = await pool.query('SELECT * FROM contacto WHERE id = ?', [CONTACT_ID]);
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'No se encontró la información de contacto.' });
       }
-      return res.json(mockContacto);
+      return res.json(rows[0]);
     } catch (error) {
-      console.warn('⚠️ Error al leer contacto en Firestore:', error.message);
-      return res.json(mockContacto);
+      console.error('Error al consultar contacto en MySQL:', error);
+      return res.status(500).json({ error: 'No se pudo consultar la información de contacto.' });
     }
   },
 
   updateContacto: async (req, res) => {
     try {
-      const data = req.body;
-      const updated = {
-        ...data,
-        id: 'contacto-1',
-        updated_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'contacto', 'contacto-1'), updated);
-        } else {
-          mockContacto = { ...mockContacto, ...updated };
-        }
-      } catch (fbErr) {
-        mockContacto = { ...mockContacto, ...updated };
-      }
-
-      return res.json(updated);
+      const values = CONTACT_FIELDS.map(field => req.body[field] ?? null);
+      await pool.query(
+        `INSERT INTO contacto (id, ${CONTACT_FIELDS.join(', ')}) VALUES (?, ${CONTACT_FIELDS.map(() => '?').join(', ')})
+         ON DUPLICATE KEY UPDATE ${CONTACT_FIELDS.map(field => `${field} = VALUES(${field})`).join(', ')}`,
+        [CONTACT_ID, ...values]
+      );
+      const [rows] = await pool.query('SELECT * FROM contacto WHERE id = ?', [CONTACT_ID]);
+      return res.json(rows[0]);
     } catch (error) {
+      console.error('Error al actualizar contacto en MySQL:', error);
       return res.status(500).json({ error: 'Error al actualizar información de contacto.' });
     }
   }
