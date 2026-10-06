@@ -84,6 +84,7 @@ Los enlaces, contadores y galerías de la landing se leen desde esta configuraci
 
 - **Trámites y Servicios**: la API `/api/servicios` usa MySQL, incluidas sus categorías, opciones y configuración.
 - **Centros de Atención** y **Redes Sociales**: se leen y guardan en MySQL mediante `GET/PUT /api/cms/centros-atencion` y `GET/PUT /api/cms/redes-sociales`. Los cambios quedan compartidos entre los clientes conectados al backend.
+- **Esquema MySQL**: las tablas están definidas en `backend/mysql/db.sql`; el backend ejecuta ese archivo al iniciar. `backend/src/config/db.js` conserva la conexión, las migraciones para instalaciones existentes y la carga de datos iniciales.
 - Las demás secciones del CMS usan endpoints REST del backend; las credenciales de conexión se definen solo en `backend/.env` mediante `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` y `MYSQL_DATABASE`.
 - La API del frontend se configura con `VITE_API_BASE_URL`; por defecto usa `http://localhost:5000/api`. En el servidor Vite se debe definir la variable antes de arrancar, por ejemplo `VITE_API_BASE_URL=http://localhost:5001/api`.
 
@@ -97,11 +98,13 @@ alcaldia-leon-react/
 │   ├── .env                       ← Configuración privada MySQL, JWT y Facebook opcional
 │   ├── package.json
 │   ├── server.js                  ← Entrypoint + Cron Job de Sincronización (Puerto 5000)
+│   ├── mysql/
+│   │   └── db.sql                 ← Esquema de tablas MySQL
 │   ├── uploads/                   ← Almacenamiento local temporal / fallback
 │   └── src/
 │       ├── app.js                 ← Configuración de Express, CORS y montaje de rutas API
 │       ├── config/
-│       │   └── db.js              ← Pool MySQL, creación de tablas y datos iniciales
+│       │   └── db.js              ← Pool MySQL, migraciones y datos iniciales
 │       ├── controllers/
 │       │   ├── authController.js  ← Login JWT, encriptación bcrypt y cambio de clave
 │       │   ├── serviciosController.js ← Categorías, trámites y textos de Servicios
@@ -173,7 +176,7 @@ flowchart LR
         middleware["Middlewares<br/>JWT · roles · Multer"]
         controllers["Controladores<br/>auth · noticias · hero · proyectos<br/>turismo · cultura · stats · contacto<br/>servicios · CMS · usuarios · auditoría"]
         services["Servicios<br/>Facebook · auditoría"]
-        dbpool["config/db.js<br/>Pool MySQL + esquema + datos iniciales"]
+        dbpool["config/db.js<br/>Pool MySQL + migraciones + datos iniciales"]
     end
 
     mysql[("MySQL<br/>alcaldia_leon")]
@@ -215,7 +218,7 @@ Los archivos subidos se sirven en `/uploads`. La sincronización programada con 
 
 ##  Diagrama de la base de datos
 
-El esquema se crea y verifica al iniciar el backend, mediante `backend/src/config/db.js`. El diagrama muestra las tablas y sus claves principales; **la única relación declarada con clave foránea actualmente es `subservicios.servicio_id` → `servicios.id`**. Las demás referencias conceptuales, como `activity_logs.userId`, no tienen una restricción FK en el esquema.
+El esquema de tablas está en `backend/mysql/db.sql` y se ejecuta al iniciar el backend. `backend/src/config/db.js` aplica migraciones necesarias para bases existentes y carga los datos iniciales. El diagrama muestra las tablas y sus claves principales; **la única relación declarada con clave foránea actualmente es `subservicios.servicio_id` → `servicios.id`**. Las demás referencias conceptuales, como `activity_logs.userId`, no tienen una restricción FK en el esquema.
 
 ```mermaid
 erDiagram
@@ -425,7 +428,7 @@ MYSQL_DATABASE=alcaldia_leon
 JWT_SECRET=un_secreto_local
 ```
 
-No subas este archivo con contraseñas o secretos al repositorio. Al arrancar, el backend verifica y crea las tablas que falten, y agrega datos de demostración en las tablas vacías.
+No subas este archivo con contraseñas o secretos al repositorio. Al arrancar, el backend ejecuta `backend/mysql/db.sql` para crear las tablas que falten y agrega datos de demostración en las tablas vacías.
 
 ### 2. Iniciar el Backend (Terminal 1)
 
