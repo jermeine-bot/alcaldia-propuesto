@@ -1,116 +1,71 @@
-import { db } from '../config/firebase.js';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore/lite';
+import { randomUUID } from 'node:crypto';
+import pool from '../config/db.js';
 
-let mockTurismo = [
-  {
-    id: 'turismo-1',
-    img: '/img/turismo/catedral.jpg',
-    title: 'Basílica Catedral de León',
-    desc: 'La catedral más grande de Centroamérica y Patrimonio de la Humanidad UNESCO.',
-    category: 'Patrimonio & Historia',
-    location: 'Plaza Mayor, Centro Histórico',
-    content: 'La Real e Insigne Basílica Catedral de la Asunción de la Bienaventurada Virgen María es uno de los monumentos más icónicos de América Latina. En sus criptas descansan los restos del insigne poeta Rubén Darío.',
-    is_published: true,
-    display_order: 1
-  },
-  {
-    id: 'turismo-2',
-    img: '/img/turismo/leon-viejo.jpg',
-    title: 'Ruinas de León Viejo',
-    desc: 'Primer asentamiento de la ciudad y Patrimonio Cultural UNESCO.',
-    category: 'Patrimonio UNESCO',
-    location: 'Puerto Momotombo',
-    content: 'Fundada en 1524 por Francisco Hernández de Córdoba al pie del volcán Momotombo. Sepultada por las cenizas volcánicas, conserva el trazado urbano original del siglo XVI.',
-    is_published: true,
-    display_order: 2
-  }
-];
+const getAllTurismo = async () => {
+  const [rows] = await pool.query('SELECT * FROM turismo ORDER BY display_order ASC, created_at ASC');
+  return rows;
+};
 
 export const turismoController = {
-  getAll: async (req, res) => {
+  getAll: async (_req, res) => {
     try {
-      if (db) {
-        const querySnapshot = await getDocs(collection(db, 'turismo'));
-        if (!querySnapshot.empty) {
-          const list = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          return res.json(list);
-        }
-      }
-      return res.json(mockTurismo);
+      return res.json(await getAllTurismo());
     } catch (error) {
-      console.warn('⚠️ Error al leer turismo en Firestore:', error.message);
-      return res.json(mockTurismo);
+      console.error('Error al consultar turismo en MySQL:', error);
+      return res.status(500).json({ error: 'No se pudieron consultar los destinos turísticos.' });
     }
   },
 
   create: async (req, res) => {
     try {
       const data = req.body;
-      const id = data.id || `turismo-${Date.now()}`;
-      const newItem = {
-        ...data,
-        id,
-        is_published: data.is_published ?? true,
-        created_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'turismo', id), newItem);
-        } else {
-          mockTurismo.push(newItem);
-        }
-      } catch (fbErr) {
-        mockTurismo.push(newItem);
+      if (!data.title?.trim()) {
+        return res.status(400).json({ error: 'El título del destino es obligatorio.' });
       }
-
-      return turismoController.getAll(req, res);
+      const id = data.id || `turismo-${randomUUID()}`;
+      await pool.query(
+        `INSERT INTO turismo (id, img, title, \`desc\`, category, location, content, is_published, display_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, data.img || '', data.title.trim(), data.desc || '', data.category || '',
+          data.location || '', data.content || '', data.is_published ?? true, Number(data.display_order) || 0]
+      );
+      return res.status(201).json(await getAllTurismo());
     } catch (error) {
+      console.error('Error al registrar destino turístico en MySQL:', error);
       return res.status(500).json({ error: 'Error al registrar destino turístico.' });
     }
   },
 
   update: async (req, res) => {
     try {
-      const { id } = req.params;
       const data = req.body;
-      const updates = {
-        ...data,
-        updated_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'turismo', id), updates);
-        } else {
-          const idx = mockTurismo.findIndex(t => t.id === id);
-          if (idx !== -1) mockTurismo[idx] = { ...mockTurismo[idx], ...updates };
-        }
-      } catch (fbErr) {
-        const idx = mockTurismo.findIndex(t => t.id === id);
-        if (idx !== -1) mockTurismo[idx] = { ...mockTurismo[idx], ...updates };
+      if (!data.title?.trim()) {
+        return res.status(400).json({ error: 'El título del destino es obligatorio.' });
       }
-
-      return turismoController.getAll(req, res);
+      const [result] = await pool.query(
+        `UPDATE turismo SET img=?, title=?, \`desc\`=?, category=?, location=?, content=?, is_published=?, display_order=? WHERE id=?`,
+        [data.img || '', data.title.trim(), data.desc || '', data.category || '',
+          data.location || '', data.content || '', data.is_published ?? true,
+          Number(data.display_order) || 0, req.params.id]
+      );
+      if (result.affectedRows === 0) {
+        const [existing] = await pool.query('SELECT id FROM turismo WHERE id = ?', [req.params.id]);
+        if (existing.length === 0) return res.status(404).json({ error: 'No se encontró el destino turístico.' });
+      }
+      return res.json(await getAllTurismo());
     } catch (error) {
+      console.error('Error al actualizar destino turístico en MySQL:', error);
       return res.status(500).json({ error: 'Error al actualizar destino turístico.' });
     }
   },
 
   delete: async (req, res) => {
     try {
-      const { id } = req.params;
-      try {
-        if (db) {
-          await deleteDoc(doc(db, 'turismo', id));
-        } else {
-          mockTurismo = mockTurismo.filter(t => t.id !== id);
-        }
-      } catch (fbErr) {
-        mockTurismo = mockTurismo.filter(t => t.id !== id);
-      }
-      return turismoController.getAll(req, res);
+      const [result] = await pool.query('DELETE FROM turismo WHERE id = ?', [req.params.id]);
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'No se encontró el destino turístico.' });
+      return res.json(await getAllTurismo());
     } catch (error) {
+      console.error('Error al eliminar destino turístico en MySQL:', error);
       return res.status(500).json({ error: 'Error al eliminar destino turístico.' });
     }
   }

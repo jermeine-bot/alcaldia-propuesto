@@ -1,7 +1,7 @@
 {
   "name": "alcaldia-leon-backend",
-  "version": "1.0.0",
-  "description": "Backend API para Alcaldía de León (Express + Firebase)",
+  "version": "2.0.0",
+  "description": "Backend API para Alcaldía de León (Express + MySQL)",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -9,16 +9,12 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
-    "@firebase/app": "0.16.1",
-    "@firebase/firestore": "4.8.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
     "express": "^4.21.2",
-    "firebase": "^11.3.1",
-    "firebase-admin": "^13.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "pg": "^8.16.3"
+    "mysql2": "^3.11.0"
   }
 }

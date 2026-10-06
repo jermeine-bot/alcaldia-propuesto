@@ -1,13 +1,11 @@
 import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import {
   Newspaper,
   Building2,
   Palmtree,
   CalendarDays,
-  RefreshCw,
   PlusCircle,
   TrendingUp,
   ExternalLink,
@@ -17,8 +15,6 @@ import {
 import { apiService } from '../../services/apiService';
 
 const DashboardOverview = () => {
-  const queryClient = useQueryClient();
-
   const { data: noticias = [] } = useQuery({
     queryKey: ['noticias'],
     queryFn: apiService.getNoticias
@@ -39,36 +35,6 @@ const DashboardOverview = () => {
     queryFn: apiService.getCultura
   });
 
-  const resetMutation = useMutation({
-    mutationFn: apiService.resetToDefault,
-    onSuccess: () => {
-      queryClient.invalidateQueries();
-      Swal.fire({
-        icon: 'success',
-        title: 'Datos Restablecidos',
-        text: 'Los datos han sido restaurados a sus valores institucionales por defecto.',
-        confirmButtonColor: '#B22222'
-      });
-    }
-  });
-
-  const handleReset = () => {
-    Swal.fire({
-      title: '¿Restablecer todo?',
-      text: 'Esta acción reiniciará todas las noticias, proyectos y contenidos a su estado inicial.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#B22222',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Sí, restablecer',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        resetMutation.mutate();
-      }
-    });
-  };
-
   const proyectosEnProgreso = proyectos.filter((p) => Number(p.progress) < 100);
   const proyectosCompletados = proyectos.filter((p) => Number(p.progress) === 100);
 
@@ -84,16 +50,6 @@ const DashboardOverview = () => {
             <p className="text-muted mb-0 small">
               Administración de obras, noticias, turismo y contenidos institucionales de la ciudad.
             </p>
-          </div>
-          <div className="d-flex gap-2">
-            <button
-              onClick={handleReset}
-              className="btn btn-outline-danger btn-sm d-flex align-items-center gap-2 text-nowrap"
-              disabled={resetMutation.isPending}
-            >
-              <RefreshCw size={15} className={resetMutation.isPending ? 'spin' : ''} />
-              <span>Restablecer Datos Demo</span>
-            </button>
           </div>
         </div>
       </div>

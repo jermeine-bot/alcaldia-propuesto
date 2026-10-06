@@ -1,139 +1,77 @@
-import { db } from '../config/firebase.js';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore/lite';
+import { randomUUID } from 'node:crypto';
+import pool from '../config/db.js';
 
-let mockProyectos = [
-  {
-    id: 'proyecto-1',
-    img: '/img/proyectos/proyecto1.jpg',
-    category: 'Infraestructura',
-    status: 'En Progreso',
-    isCompleted: false,
-    title: 'Parque Lineal del Río Chiquito',
-    desc: 'Recuperación ambiental, reforestación y creación de senderos ecológicos y espacios recreativos para familias leonesas.',
-    detailed_desc: 'Este mega proyecto contempla la limpieza integral del cauce, siembra de más de 5,000 árboles nativos, instalación de luminarias solares y construcción de ciclovías.',
-    location: 'Río Chiquito, León',
-    cost: 'C$ 45.2M',
-    progress: 68,
-    startDate: 'Enero 2024',
-    beneficiaries: '35,000 Habitantes',
-    is_published: true
-  },
-  {
-    id: 'proyecto-2',
-    img: '/img/proyectos/proyecto2.jpg',
-    category: 'Comercio & Economía',
-    status: 'Completado',
-    isCompleted: true,
-    title: 'Modernización del Mercado Municipal Santos Bárcenas',
-    desc: 'Renovación de tramos, sistema eléctrico moderno, agua potable y accesibilidad universal para comerciantes y clientes.',
-    detailed_desc: 'Rehabilitación total de techo, nuevo sistema contra incendios y ordenamiento de más de 300 tramos comerciales para garantizar compras seguras y cómodas.',
-    location: 'Centro Histórico, León',
-    cost: 'C$ 32.8M',
-    progress: 100,
-    startDate: 'Julio 2023',
-    beneficiaries: '50,000 Habitantes',
-    is_published: true
-  }
-];
+const getAllProyectos = async () => {
+  const [rows] = await pool.query('SELECT * FROM proyectos ORDER BY created_at DESC');
+  return rows;
+};
 
 export const proyectosController = {
-  getAll: async (req, res) => {
+  getAll: async (_req, res) => {
     try {
-      if (db) {
-        const querySnapshot = await getDocs(collection(db, 'proyectos'));
-        if (!querySnapshot.empty) {
-          const list = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          return res.json(list);
-        }
-      }
-      return res.json(mockProyectos);
+      return res.json(await getAllProyectos());
     } catch (error) {
-      console.warn('⚠️ Error al leer proyectos en Firestore:', error.message);
-      return res.json(mockProyectos);
+      console.error('Error al consultar proyectos en MySQL:', error);
+      return res.status(500).json({ error: 'No se pudieron consultar los proyectos.' });
     }
   },
 
   create: async (req, res) => {
     try {
       const data = req.body;
-      const progressNum = Number(data.progress || 0);
-      const isCompleted = progressNum === 100;
-      const statusText = isCompleted ? 'Completado' : 'En Progreso';
-
-      const id = data.id || `proyecto-${Date.now()}`;
-      const newItem = {
-        ...data,
-        id,
-        progress: progressNum,
-        isCompleted,
-        status: statusText,
-        created_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'proyectos', id), newItem);
-        } else {
-          mockProyectos.unshift(newItem);
-        }
-      } catch (fbErr) {
-        mockProyectos.unshift(newItem);
+      if (!data.title?.trim()) {
+        return res.status(400).json({ error: 'El título del proyecto es obligatorio.' });
       }
-
-      return proyectosController.getAll(req, res);
+      const id = data.id || `proyecto-${randomUUID()}`;
+      const progress = Number(data.progress) || 0;
+      const isCompleted = progress === 100;
+      await pool.query(
+        `INSERT INTO proyectos (id, img, category, status, isCompleted, title, \`desc\`, detailed_desc, location, cost, progress, startDate, beneficiaries, is_published)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, data.img || '', data.category || '', isCompleted ? 'Completado' : 'En Progreso',
+          isCompleted, data.title.trim(), data.desc || '', data.detailed_desc || '', data.location || '',
+          data.cost || '', progress, data.startDate || '', data.beneficiaries || '', data.is_published ?? true]
+      );
+      return res.status(201).json(await getAllProyectos());
     } catch (error) {
+      console.error('Error al registrar proyecto en MySQL:', error);
       return res.status(500).json({ error: 'Error al registrar el proyecto.' });
     }
   },
 
   update: async (req, res) => {
     try {
-      const { id } = req.params;
       const data = req.body;
-      const progressNum = Number(data.progress !== undefined ? data.progress : 0);
-      const isCompleted = progressNum === 100;
-      const statusText = isCompleted ? 'Completado' : 'En Progreso';
-
-      const updates = {
-        ...data,
-        progress: progressNum,
-        isCompleted,
-        status: statusText,
-        updated_at: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'proyectos', id), updates);
-        } else {
-          const idx = mockProyectos.findIndex(p => p.id === id);
-          if (idx !== -1) mockProyectos[idx] = { ...mockProyectos[idx], ...updates };
-        }
-      } catch (fbErr) {
-        const idx = mockProyectos.findIndex(p => p.id === id);
-        if (idx !== -1) mockProyectos[idx] = { ...mockProyectos[idx], ...updates };
+      if (!data.title?.trim()) {
+        return res.status(400).json({ error: 'El título del proyecto es obligatorio.' });
       }
-
-      return proyectosController.getAll(req, res);
+      const progress = Number(data.progress) || 0;
+      const isCompleted = progress === 100;
+      const [result] = await pool.query(
+        `UPDATE proyectos SET img=?, category=?, status=?, isCompleted=?, title=?, \`desc\`=?, detailed_desc=?,
+         location=?, cost=?, progress=?, startDate=?, beneficiaries=?, is_published=? WHERE id=?`,
+        [data.img || '', data.category || '', isCompleted ? 'Completado' : 'En Progreso', isCompleted,
+          data.title.trim(), data.desc || '', data.detailed_desc || '', data.location || '', data.cost || '',
+          progress, data.startDate || '', data.beneficiaries || '', data.is_published ?? true, req.params.id]
+      );
+      if (result.affectedRows === 0) {
+        const [existing] = await pool.query('SELECT id FROM proyectos WHERE id = ?', [req.params.id]);
+        if (existing.length === 0) return res.status(404).json({ error: 'No se encontró el proyecto.' });
+      }
+      return res.json(await getAllProyectos());
     } catch (error) {
+      console.error('Error al actualizar proyecto en MySQL:', error);
       return res.status(500).json({ error: 'Error al actualizar el proyecto.' });
     }
   },
 
   delete: async (req, res) => {
     try {
-      const { id } = req.params;
-      try {
-        if (db) {
-          await deleteDoc(doc(db, 'proyectos', id));
-        } else {
-          mockProyectos = mockProyectos.filter(p => p.id !== id);
-        }
-      } catch (fbErr) {
-        mockProyectos = mockProyectos.filter(p => p.id !== id);
-      }
-      return proyectosController.getAll(req, res);
+      const [result] = await pool.query('DELETE FROM proyectos WHERE id = ?', [req.params.id]);
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'No se encontró el proyecto.' });
+      return res.json(await getAllProyectos());
     } catch (error) {
+      console.error('Error al eliminar proyecto en MySQL:', error);
       return res.status(500).json({ error: 'Error al eliminar el proyecto.' });
     }
   }

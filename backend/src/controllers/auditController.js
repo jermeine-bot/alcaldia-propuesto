@@ -7,6 +7,7 @@ export const auditController = {
       const logs = await auditService.getLogs(limit);
       return res.json(logs);
     } catch (error) {
+      console.error('Error al consultar bitácora en MySQL:', error);
       return res.status(500).json({ error: 'Error al obtener la bitácora de auditoría.' });
     }
   }

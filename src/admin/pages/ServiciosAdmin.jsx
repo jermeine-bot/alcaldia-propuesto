@@ -42,7 +42,7 @@ const ServiciosAdmin = () => {
     linkUrl: '#contacto'
   });
 
-  // Fetch de Servicios desde la API / mockStorage
+  // Fetch de Servicios desde la API del backend
   const { data: servicios = [], isLoading } = useQuery({
     queryKey: ['servicios'],
     queryFn: apiService.getServicios

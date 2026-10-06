@@ -1,5 +1,4 @@
-import { db } from '../config/firebase.js';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore/lite';
+import pool from '../config/db.js';
 import { auditService } from '../services/auditService.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -17,45 +16,9 @@ export const authController = {
         return res.status(400).json({ error: 'Debes proporcionar correo y contraseña.' });
       }
 
-      let user = null;
-
-      try {
-        if (db) {
-          const querySnapshot = await getDocs(collection(db, 'users'));
-          const foundDoc = querySnapshot.docs.find(d => d.data().email === email);
-          if (foundDoc) {
-            user = { id: foundDoc.id, ...foundDoc.data() };
-          }
-        }
-      } catch (fbErr) {
-        console.warn('⚠️ Error consultando usuarios en Firestore:', fbErr.message);
-      }
-
-      if (user) {
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) {
-          await auditService.logAction({
-            req,
-            user: { email },
-            action: 'LOGIN_FALLIDO',
-            module: 'Autenticación',
-            details: `Intento de acceso fallido para ${email}`
-          });
-          return res.status(401).json({ error: 'Credenciales inválidas. Verifica tu correo o contraseña.' });
-        }
-      } else if (
-        process.env.NODE_ENV !== 'production' &&
-        email === 'admin@alcaldaleon.gob.ni' &&
-        password === 'admin123'
-      ) {
-        user = {
-          id: 'u-1',
-          name: 'Administrador General',
-          email: 'admin@alcaldaleon.gob.ni',
-          role: 'superadmin',
-          avatar: '/img/nav_logo/logo nav2.png'
-        };
-      } else {
+      const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email.trim().toLowerCase()]);
+      const user = rows[0];
+      if (!user || !(await bcrypt.compare(password, user.password))) {
         await auditService.logAction({
           req,
           user: { email },
@@ -108,22 +71,18 @@ export const authController = {
       const { currentPassword, newPassword } = req.body;
       const userId = req.user.id;
 
-      if (!currentPassword || !newPassword) {
-        return res.status(400).json({ error: 'Debes proporcionar la contraseña actual y la nueva.' });
+      if (!currentPassword || !newPassword || newPassword.length < 8) {
+        return res.status(400).json({ error: 'Proporciona tu contraseña actual y una nueva de al menos 8 caracteres.' });
       }
-
+      const [rows] = await pool.query('SELECT password FROM users WHERE id = ?', [userId]);
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'No se encontró el usuario.' });
+      }
+      if (!(await bcrypt.compare(currentPassword, rows[0].password))) {
+        return res.status(401).json({ error: 'La contraseña actual no es correcta.' });
+      }
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'users', userId), {
-            password: hashedNewPassword,
-            updated_at: new Date().toISOString()
-          });
-        }
-      } catch (e) {
-        // Fallback
-      }
+      await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedNewPassword, userId]);
 
       await auditService.logAction({
         req,
@@ -134,6 +93,7 @@ export const authController = {
 
       return res.json({ message: 'Contraseña actualizada correctamente.' });
     } catch (error) {
+      console.error('Error al cambiar contraseña en MySQL:', error);
       return res.status(500).json({ error: 'Error al cambiar contraseña.' });
     }
   },

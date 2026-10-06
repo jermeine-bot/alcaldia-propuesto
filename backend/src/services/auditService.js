@@ -1,69 +1,42 @@
-import { db } from '../config/firebase.js';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore/lite';
-
-let localAuditLogs = [
-  {
-    id: 'log-1',
-    userEmail: 'admin@alcaldaleon.gob.ni',
-    userName: 'Administrador General',
-    action: 'INICIALIZACION_SISTEMA',
-    module: 'Sistema',
-    details: 'Sistema de bitácora de auditoría iniciado correctamente.',
-    ip: '127.0.0.1',
-    timestamp: new Date().toISOString()
-  }
-];
+import { randomUUID } from 'node:crypto';
+import pool from '../config/db.js';
 
 export const auditService = {
   logAction: async ({ req, user, action, module, details }) => {
-    try {
-      const userInfo = user || req?.user || { email: 'sistema@alcaldaleon.gob.ni', name: 'Sistema Automático' };
-      const ip = req?.ip || req?.headers?.['x-forwarded-for'] || '127.0.0.1';
+    const userInfo = user || req?.user || {
+      email: 'sistema@alcaldaleon.gob.ni',
+      name: 'Sistema Automático'
+    };
+    const forwardedFor = req?.headers?.['x-forwarded-for'];
+    const ip = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(',')[0]) || req?.ip || null;
+    const logEntry = {
+      id: `log-${randomUUID()}`,
+      userId: userInfo.id || 'system',
+      userEmail: userInfo.email || 'desconocido',
+      userName: userInfo.name || userInfo.email || 'Usuario',
+      role: userInfo.role || 'admin',
+      action,
+      module,
+      details: details || '',
+      ip,
+      timestamp: new Date()
+    };
 
-      const logEntry = {
-        id: `log-${Date.now()}-${Math.round(Math.random() * 1000)}`,
-        userId: userInfo.id || 'system',
-        userEmail: userInfo.email || 'desconocido',
-        userName: userInfo.name || userInfo.email || 'Usuario',
-        role: userInfo.role || 'admin',
-        action,
-        module,
-        details: details || '',
-        ip,
-        timestamp: new Date().toISOString()
-      };
-
-      try {
-        if (db) {
-          await setDoc(doc(db, 'activity_logs', logEntry.id), logEntry);
-        } else {
-          localAuditLogs.unshift(logEntry);
-        }
-      } catch (fbErr) {
-        localAuditLogs.unshift(logEntry);
-      }
-
-      console.log(`📜 [AUDIT LOG] ${logEntry.timestamp} | ${logEntry.userEmail} | ${action} | ${module}: ${details}`);
-      return logEntry;
-    } catch (error) {
-      console.warn('⚠️ Error al guardar log de auditoría:', error.message);
-    }
+    await pool.query(
+      `INSERT INTO activity_logs (id, userId, userEmail, userName, role, action, module, details, ip, timestamp)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [logEntry.id, logEntry.userId, logEntry.userEmail, logEntry.userName, logEntry.role,
+        logEntry.action, logEntry.module, logEntry.details, logEntry.ip, logEntry.timestamp]
+    );
+    return logEntry;
   },
 
-  getLogs: async () => {
-    try {
-      if (db) {
-        const querySnapshot = await getDocs(collection(db, 'activity_logs'));
-        if (!querySnapshot.empty) {
-          const list = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          list.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-          return list;
-        }
-      }
-      return localAuditLogs;
-    } catch (error) {
-      console.warn('⚠️ Error consultando logs en Firestore:', error.message);
-      return localAuditLogs;
-    }
+  getLogs: async (limit = 100) => {
+    const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 100, 1), 500);
+    const [rows] = await pool.query(
+      'SELECT * FROM activity_logs ORDER BY timestamp DESC LIMIT ?',
+      [safeLimit]
+    );
+    return rows;
   }
 };

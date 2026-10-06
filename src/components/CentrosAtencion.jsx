@@ -1,27 +1,14 @@
 import React from 'react';
-import { useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 import { initialCentrosAtencionData } from '../services/initialData';
 
 const CentrosAtencion = () => {
-  const queryClient = useQueryClient();
   const { data: centrosAtencion = initialCentrosAtencionData } = useQuery({
     queryKey: ['centros-atencion'],
     queryFn: apiService.getCentrosAtencion,
     staleTime: 0
   });
-
-  useEffect(() => {
-    const handleStorage = (event) => {
-      if (event.key === 'alcaldia_leon_centros_atencion') {
-        queryClient.invalidateQueries({ queryKey: ['centros-atencion'] });
-      }
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [queryClient]);
 
   return (
     <section id="centros-atencion" className="centros-atencion-section py-5">
