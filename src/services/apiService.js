@@ -1,13 +1,7 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
-const AUTH_STORAGE_KEY = 'alcaldia_leon_auth';
+let authData = null;
 
-const getAuthData = () => {
-  try {
-    return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
-  } catch {
-    return null;
-  }
-};
+const getAuthData = () => authData;
 
 const request = async (path, { method = 'GET', data, authenticated = true } = {}) => {
   const headers = {};
@@ -64,12 +58,12 @@ export const apiService = {
       data: { email, password },
       authenticated: false
     });
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(result));
+    authData = result;
     return result;
   },
 
   logout: async () => {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    authData = null;
   },
 
   getCurrentUser: () => getAuthData(),

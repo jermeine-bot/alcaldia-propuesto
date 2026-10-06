@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { LogIn, Key, Mail, ShieldAlert } from 'lucide-react';
+import { LogIn, Key, Mail } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import '../css/admin.css';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('admin@alcaldaleon.gob.ni');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/admin/dashboard';
+
+  useEffect(() => {
+    apiService.logout();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
