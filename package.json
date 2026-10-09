@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "backend:php": "powershell -ExecutionPolicy Bypass -File ./backend/start.ps1",
     "build": "vite build",
-    "lint": "oxlint src backend/src",
+    "lint": "oxlint src",
     "preview": "vite preview"
   },
   "dependencies": {
