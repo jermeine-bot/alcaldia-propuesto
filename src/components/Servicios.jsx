@@ -62,7 +62,7 @@ const Servicios = () => {
     }
   };
 
-  // Contenido del modal con pestañas corregidas y visibles
+  // Contenido del modal con pestañas y barra de desplazamiento oculta
   const modalContent = selectedCategoria && (
     <div
       className="modal-backdrop-custom position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3 p-md-4"
@@ -75,10 +75,19 @@ const Servicios = () => {
           maxWidth: '900px', 
           maxHeight: '90vh', 
           overflowY: 'auto',
-          margin: 'auto'
+          margin: 'auto',
+          scrollbarWidth: 'none',     /* Oculta scroll en Firefox */
+          msOverflowStyle: 'none',    /* Oculta scroll en IE/Edge antiguo */
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Estilo para ocultar la barra de desplazamiento en Webkit (Chrome, Safari, Opera) */}
+        <style>{`
+          .servicio-modal-content::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+
         {/* MODAL HEADER */}
         <div className="modal-header-custom d-flex align-items-start justify-content-between mb-3 border-bottom pb-4">
           <div className="d-flex align-items-center gap-3 pe-3">
@@ -103,7 +112,7 @@ const Servicios = () => {
           </button>
         </div>
 
-        {/* SELECTOR DE CATEGORÍAS CORREGIDO (Visibilidad total y estilo de píldoras limpias) */}
+        {/* SELECTOR DE CATEGORÍAS */}
         <div className="modal-tabs-container mb-4 pb-2 border-bottom">
           <label className="form-label small text-muted fw-semibold mb-2 d-block">Cambiar de categoría:</label>
           <div className="d-flex flex-wrap gap-2">

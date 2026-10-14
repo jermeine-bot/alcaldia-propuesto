@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 
@@ -59,11 +60,135 @@ const Estadisticas = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Bloquear el scroll del body cuando el modal esté abierto
+  useEffect(() => {
+    if (selectedStat) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') setSelectedStat(null);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [selectedStat]);
+
   const categories = ['Todos', 'Población', 'Desarrollo', 'Cultura', 'Servicios', 'Geografía', 'Turismo'];
 
   const filteredStats = activeCategory === 'Todos' 
     ? cityStats 
     : cityStats.filter(s => s.category === activeCategory);
+
+  // Contenido del modal centralizado
+  const modalContent = selectedStat && (
+    <div 
+      className="stat-modal-backdrop position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3 p-md-4"
+      style={{
+        backgroundColor: 'rgba(11, 37, 69, 0.65)',
+        backdropFilter: 'blur(5px)',
+        zIndex: 99999,
+        overflowY: 'auto'
+      }}
+      onClick={() => setSelectedStat(null)}
+    >
+      <div 
+        className="stat-modal-card bg-white rounded-5 shadow-lg p-4 p-md-5 w-100 position-relative d-flex flex-column border-0" 
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: '520px',
+          maxHeight: '85vh',
+          overflowY: 'auto',
+          margin: 'auto'
+        }}
+      >
+        {/* Botón de Cierre Superior (X) */}
+        <button 
+          className="btn-close-custom btn rounded-circle border-0 text-secondary bg-light d-flex align-items-center justify-content-center position-absolute" 
+          onClick={() => setSelectedStat(null)}
+          aria-label="Cerrar modal"
+          style={{ width: '40px', height: '40px', top: '20px', right: '20px' }}
+        >
+          <i className="fas fa-times"></i>
+        </button>
+
+        {/* Encabezado Modal */}
+        <div className="stat-modal-header d-flex align-items-center gap-3 mb-3 pe-4">
+          <div 
+            className="stat-icon-wrapper-large d-flex align-items-center justify-content-center rounded-4 p-3 shadow-sm flex-shrink-0" 
+            style={{ 
+              backgroundColor: `${selectedStat.color || '#B22222'}15`, 
+              color: selectedStat.color || '#B22222',
+              width: '60px',
+              height: '60px',
+              fontSize: '1.5rem'
+            }}
+          >
+            <i className={`fas ${selectedStat.icon || 'fa-chart-bar'}`}></i>
+          </div>
+          <div>
+            <span className="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill mb-2 fw-bold text-uppercase small" style={{ backgroundColor: `${selectedStat.color || '#B22222'}15`, color: selectedStat.color || '#B22222' }}>
+              {selectedStat.badge || selectedStat.category}
+            </span>
+            <h3 className="h4 fw-bold mb-0 text-dark">{selectedStat.title}</h3>
+          </div>
+        </div>
+
+        {/* Cuerpo Modal */}
+        <div className="stat-modal-body my-2">
+          <div className="display-5 fw-bold mb-2" style={{ color: selectedStat.color || '#B22222' }}>
+            {(selectedStat.number || 0).toLocaleString()}{selectedStat.suffix}
+          </div>
+          <p className="text-secondary mb-4 lead fs-6">{selectedStat.detalles?.descripcion || selectedStat.subtitle}</p>
+
+          {selectedStat.detalles?.desglose?.length > 0 && (
+            <>
+              <h6 className="fw-bold text-uppercase small text-danger mb-3" style={{ letterSpacing: '0.5px' }}>Desglose e Información Relevante:</h6>
+              <div className="d-flex flex-column gap-2">
+                {selectedStat.detalles.desglose.map((item, i) => (
+                  <div key={i} className="d-flex align-items-center justify-content-between p-3 rounded-4 bg-light border">
+                    <span className="fw-semibold text-secondary small">{item.label}</span>
+                    <span className="fw-bold text-dark small text-end ms-2">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer con Botones */}
+        <div className="stat-modal-footer mt-4 pt-3 border-top d-flex gap-2 justify-content-end align-items-center">
+          <button 
+            className="btn btn-light px-4 py-2 rounded-pill fw-semibold text-secondary border small"
+            onClick={() => setSelectedStat(null)}
+          >
+            Cerrar
+          </button>
+
+          {selectedStat.externalLink ? (
+            <a
+              href={selectedStat.externalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn px-4 py-2 rounded-pill fw-bold text-white small shadow-sm d-inline-flex align-items-center gap-2"
+              style={{ backgroundColor: selectedStat.color || '#B22222', border: 'none' }}
+            >
+              Conocer más <i className="fas fa-external-link-alt small"></i>
+            </a>
+          ) : (
+            <button 
+              className="btn px-4 py-2 rounded-pill fw-bold text-white small shadow-sm"
+              style={{ backgroundColor: selectedStat.color || '#B22222', border: 'none' }}
+              onClick={() => setSelectedStat(null)}
+            >
+              Conocer más
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <section id="estadisticas" ref={sectionRef} className="estadisticas-section py-5 position-relative">
@@ -105,16 +230,18 @@ const Estadisticas = () => {
           <div className="text-center text-muted py-4">No hay estadísticas registradas para esta categoría.</div>
         ) : (
           <div className="row g-4 justify-content-center">
-            {filteredStats.map((stat, idx) => (
-              <div key={stat.id} className="col-lg-4 col-md-6 col-sm-12">
+            {filteredStats.map((stat, idx) => {
+              const externalLink = stat.linkUrl || stat.url;
+              const hasExternalLink = Boolean(externalLink);
+
+              const cardContent = (
                 <div
-                  className={`city-stat-card-glass ${isVisible ? 'card-animated-in' : ''}`}
+                  className={`city-stat-card-glass h-100 ${isVisible ? 'card-animated-in' : ''}`}
                   style={{ 
                     animationDelay: `${idx * 120}ms`,
                     borderTop: `3px solid ${stat.color || '#B22222'}`
                   }}
-                  onClick={() => setSelectedStat(stat)}
-                  title="Haz clic para ver el desglose detallado"
+                  title={hasExternalLink ? "Haz clic para ir al enlace externo" : "Haz clic para ver el desglose detallado"}
                 >
                   <div className="stat-card-top d-flex align-items-center justify-content-between">
                     <div 
@@ -159,12 +286,38 @@ const Estadisticas = () => {
                   </div>
 
                   <div className="stat-card-footer mt-3 pt-2 d-flex align-items-center justify-content-between border-top border-secondary border-opacity-10">
-                    <span className="small text-muted font-medium">Ver desglose completo</span>
-                    <i className="fas fa-chevron-right text-danger small"></i>
+                    <span className="small text-muted font-medium">
+                      {hasExternalLink ? 'Ver enlace externo' : 'Ver desglose completo'}
+                    </span>
+                    <i className={`fas ${hasExternalLink ? 'fa-external-link-alt' : 'fa-chevron-right'} text-danger small`}></i>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+
+              return (
+                <div key={stat.id} className="col-lg-4 col-md-6 col-sm-12">
+                  {hasExternalLink ? (
+                    <a 
+                      href={externalLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-decoration-none d-block h-100"
+                    >
+                      {cardContent}
+                    </a>
+                  ) : (
+                    <div 
+                      onClick={() => setSelectedStat({ ...stat, externalLink })} 
+                      role="button" 
+                      tabIndex={0}
+                      className="h-100 cursor-pointer"
+                    >
+                      {cardContent}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -194,59 +347,8 @@ const Estadisticas = () => {
 
       </div>
 
-      {/* MODAL INTERACTIVO DE DESGLOSE DE INDICADOR */}
-      {selectedStat && (
-        <div className="stat-modal-backdrop" onClick={() => setSelectedStat(null)}>
-          <div className="stat-modal-card" onClick={(e) => e.stopPropagation()}>
-            <button className="stat-modal-close" onClick={() => setSelectedStat(null)}>
-              &times;
-            </button>
-            <div className="stat-modal-header d-flex align-items-center gap-3 mb-3">
-              <div 
-                className="stat-icon-wrapper-large" 
-                style={{ backgroundColor: `${selectedStat.color || '#B22222'}20`, color: selectedStat.color || '#B22222' }}
-              >
-                <i className={`fas ${selectedStat.icon || 'fa-chart-bar'}`}></i>
-              </div>
-              <div>
-                <span className="stat-badge-pill" style={{ backgroundColor: `${selectedStat.color || '#B22222'}15`, color: selectedStat.color || '#B22222' }}>
-                  {selectedStat.badge || selectedStat.category}
-                </span>
-                <h3 className="fw-bold mb-0 mt-1" style={{ color: 'var(--text-dark)' }}>{selectedStat.title}</h3>
-              </div>
-            </div>
-
-            <div className="stat-modal-body">
-              <div className="display-4 fw-extrabold mb-2" style={{ color: selectedStat.color || '#B22222' }}>
-                {(selectedStat.number || 0).toLocaleString()}{selectedStat.suffix}
-              </div>
-              <p className="text-muted mb-4">{selectedStat.detalles?.descripcion || selectedStat.subtitle}</p>
-
-              {selectedStat.detalles?.desglose?.length > 0 && (
-                <>
-                  <h6 className="fw-bold text-uppercase small text-danger letter-spacing-1 mb-3">Desglose e Información Relevante:</h6>
-                  <div className="row g-2">
-                    {selectedStat.detalles.desglose.map((item, i) => (
-                      <div key={i} className="col-12">
-                        <div className="stat-detail-item d-flex align-items-center justify-content-between p-3 rounded-3">
-                          <span className="fw-semibold text-secondary small">{item.label}</span>
-                          <span className="fw-bold text-dark small ms-2 text-end">{item.value}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="stat-modal-footer mt-4 pt-3 border-top d-flex justify-content-end">
-              <button className="btn btn-outline-danger btn-sm px-4 rounded-pill" onClick={() => setSelectedStat(null)}>
-                Cerrar Detalles
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* RENDERIZA EL MODAL FUERA DE LA SECCIÓN MEDIANTE PORTAL */}
+      {typeof document !== 'undefined' && ReactDOM.createPortal(modalContent, document.body)}
     </section>
   );
 };

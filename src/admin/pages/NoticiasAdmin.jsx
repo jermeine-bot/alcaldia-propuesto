@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
-import { Newspaper, Plus, Edit, Trash2, Search, CheckCircle, Clock } from 'lucide-react';
+import { Newspaper, Plus, Edit, Trash2, Search, CheckCircle, Clock, Link as LinkIcon, Calendar } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import ImageUploader from '../components/ImageUploader';
 
@@ -11,13 +11,21 @@ const NoticiasAdmin = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Función para obtener la fecha actual en formato legible (ej. 13 de Octubre, 2026 o similar)
+  const getCurrentFormattedDate = () => {
+    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    return new Date().toLocaleDateString('es-ES', options);
+  };
+
   const [formData, setFormData] = useState({
     title: '',
     category: 'Infraestructura',
     image: '/img/noticias/noticia1.jpg',
     summary: '',
     content: '',
-    status: 'published'
+    linkUrl: '',
+    status: 'published',
+    date: getCurrentFormattedDate()
   });
 
   const { data: noticias = [], isLoading } = useQuery({
@@ -65,7 +73,9 @@ const NoticiasAdmin = () => {
       image: '/img/noticias/noticia1.jpg',
       summary: '',
       content: '',
-      status: 'published'
+      linkUrl: '',
+      status: 'published',
+      date: getCurrentFormattedDate()
     });
   };
 
@@ -83,8 +93,9 @@ const NoticiasAdmin = () => {
       image: item.image || item.img || '/img/noticias/noticia1.jpg',
       summary: item.summary || item.text || '',
       content: item.content || item.summary || item.text || '',
+      linkUrl: item.linkUrl || item.url || '',
       status: item.status || 'published',
-      date: item.date
+      date: item.date || getCurrentFormattedDate()
     });
     setShowModal(true);
   };
@@ -169,7 +180,7 @@ const NoticiasAdmin = () => {
               <thead>
                 <tr>
                   <th style={{ minWidth: '60px' }}>Imagen</th>
-                  <th style={{ minWidth: '220px' }}>Título y Fecha</th>
+                  <th style={{ minWidth: '220px' }}>Título y Fecha Real</th>
                   <th style={{ minWidth: '120px' }}>Categoría</th>
                   <th style={{ minWidth: '110px' }}>Estado</th>
                   <th className="text-end" style={{ minWidth: '100px' }}>Acciones</th>
@@ -203,7 +214,9 @@ const NoticiasAdmin = () => {
                           <div className="fw-semibold text-dark mb-1 text-truncate" style={{ maxWidth: 280 }} title={item.title}>
                             {item.title}
                           </div>
-                          <small className="text-muted">{item.date || 'Reciente'}</small>
+                          <small className="text-muted d-flex align-items-center gap-1">
+                            <Calendar size={12} className="text-danger" /> {item.date || 'Fecha no registrada'}
+                          </small>
                         </td>
                         <td>
                           <span className="badge bg-light text-dark border text-nowrap">{item.category}</span>
@@ -275,15 +288,21 @@ const NoticiasAdmin = () => {
                       </select>
                     </div>
 
-                    <div className="col-12 col-md-8">
-                      <ImageUploader
-                        label="Imagen Destacada de la Noticia"
-                        value={formData.image}
-                        onChange={(img) => setFormData({ ...formData, image: img })}
+                    {/* Campo de Fecha Real (Editable o automático) */}
+                    <div className="col-12 col-md-6">
+                      <label className="form-label fw-semibold small d-flex align-items-center gap-1">
+                        <Calendar size={14} className="text-danger" /> Fecha de Publicación
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        required
                       />
                     </div>
 
-                    <div className="col-12 col-md-4">
+                    <div className="col-12 col-md-6">
                       <label className="form-label fw-semibold small">Estado</label>
                       <select
                         className="form-select"
@@ -293,6 +312,28 @@ const NoticiasAdmin = () => {
                         <option value="published">Publicado</option>
                         <option value="draft">Borrador</option>
                       </select>
+                    </div>
+
+                    {/* Insertar Link de Noticia */}
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small d-flex align-items-center gap-1">
+                        <LinkIcon size={14} className="text-danger" /> Insertar link de noticia (URL externa o destino)
+                      </label>
+                      <input
+                        type="url"
+                        className="form-control"
+                        placeholder="https://ejemplo.com/noticia-completa"
+                        value={formData.linkUrl}
+                        onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="col-12">
+                      <ImageUploader
+                        label="Imagen Destacada de la Noticia"
+                        value={formData.image}
+                        onChange={(img) => setFormData({ ...formData, image: img })}
+                      />
                     </div>
 
                     <div className="col-12">

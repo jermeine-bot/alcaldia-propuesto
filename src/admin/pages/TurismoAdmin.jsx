@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
-import { Palmtree, Plus, Edit, Trash2, Search, MapPin } from 'lucide-react';
+import { Palmtree, Plus, Edit, Trash2, Search, MapPin, Link as LinkIcon } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import ImageUploader from '../components/ImageUploader';
 
@@ -17,7 +17,8 @@ const TurismoAdmin = () => {
     location: 'León, Nicaragua',
     image: '/img/turismo/catedral.jpg',
     desc: '',
-    content: ''
+    content: '',
+    linkUrl: ''
   });
 
   const { data: turismo = [], isLoading } = useQuery({
@@ -65,7 +66,8 @@ const TurismoAdmin = () => {
       location: 'León, Nicaragua',
       image: '/img/turismo/catedral.jpg',
       desc: '',
-      content: ''
+      content: '',
+      linkUrl: ''
     });
   };
 
@@ -83,7 +85,8 @@ const TurismoAdmin = () => {
       location: item.location || 'León, Nicaragua',
       image: item.image || item.img || '/img/turismo/catedral.jpg',
       desc: item.desc || '',
-      content: item.content || item.desc || ''
+      content: item.content || item.desc || '',
+      linkUrl: item.linkUrl || item.url || ''
     });
     setShowModal(true);
   };
@@ -267,6 +270,20 @@ const TurismoAdmin = () => {
                         label="Imagen del Destino Turístico"
                         value={formData.image}
                         onChange={(img) => setFormData({ ...formData, image: img })}
+                      />
+                    </div>
+
+                    {/* Campo Ingrese Link */}
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small d-flex align-items-center gap-1">
+                        <LinkIcon size={14} className="text-danger" /> Ingrese link
+                      </label>
+                      <input
+                        type="url"
+                        className="form-control"
+                        placeholder="https://ejemplo.com/destino-turistico"
+                        value={formData.linkUrl}
+                        onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
                       />
                     </div>
 

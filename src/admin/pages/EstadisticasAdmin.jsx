@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
-import { BarChart3, Plus, Edit, Trash2, Search, Sliders } from 'lucide-react';
+import { BarChart3, Plus, Edit, Trash2, Search, Link } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 
 const EstadisticasAdmin = () => {
@@ -20,7 +20,8 @@ const EstadisticasAdmin = () => {
     percentage: 85,
     color: '#B22222',
     icon: 'fa-users',
-    descripcion: ''
+    descripcion: '',
+    linkUrl: ''
   });
 
   const { data: stats = [], isLoading } = useQuery({
@@ -72,7 +73,8 @@ const EstadisticasAdmin = () => {
       percentage: 85,
       color: '#B22222',
       icon: 'fa-users',
-      descripcion: ''
+      descripcion: '',
+      linkUrl: ''
     });
   };
 
@@ -94,7 +96,8 @@ const EstadisticasAdmin = () => {
       percentage: item.percentage ?? 50,
       color: item.color || '#B22222',
       icon: item.icon || 'fa-chart-bar',
-      descripcion: item.detalles?.descripcion || item.subtitle || ''
+      descripcion: item.detalles?.descripcion || item.subtitle || '',
+      linkUrl: item.linkUrl || item.url || ''
     });
     setShowModal(true);
   };
@@ -351,6 +354,23 @@ const EstadisticasAdmin = () => {
                         value={formData.percentage}
                         onChange={(e) => setFormData({ ...formData, percentage: Number(e.target.value) })}
                       />
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">Enlace Externo (Opcional)</label>
+                      <div className="input-group">
+                        <span className="input-group-text bg-light text-muted">
+                          <Link size={16} />
+                        </span>
+                        <input
+                          type="url"
+                          className="form-control"
+                          placeholder="https://ejemplo.com"
+                          value={formData.linkUrl}
+                          onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
+                        />
+                      </div>
+                      <small className="text-muted">Si se ingresa un enlace, al hacer clic en la tarjeta se abrirá directamente esta URL.</small>
                     </div>
 
                     <div className="col-12">

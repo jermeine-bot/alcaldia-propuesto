@@ -36,29 +36,44 @@ const Noticias = () => {
             }}
             className="noticias-swiper"
           >
-            {publishedNoticias.map((item) => (
-              <SwiperSlide key={item.id}>
-                <div className="noticia-card">
-                  <img
-                    src={item.image || item.img}
-                    alt={item.title}
-                    className="noticia-img"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '/img/noticias/noticia1.jpg';
-                    }}
-                  />
-                  <div className="noticia-body">
-                    <span className="noticia-date">{item.date || 'Reciente'}</span>
-                    <h5>{item.title}</h5>
-                    <p>{item.summary || item.desc}</p>
-                    <a href="#contacto" className="noticia-link">
-                      Leer más <i className="fas fa-arrow-right"></i>
-                    </a>
+            {publishedNoticias.map((item) => {
+              // Obtenemos el link ingresado (soporta 'linkUrl' o 'url')
+              const targetUrl = item.linkUrl || item.url || '#contacto';
+              const isExternal = targetUrl.startsWith('http://') || targetUrl.startsWith('https://');
+
+              return (
+                <SwiperSlide key={item.id}>
+                  <div className="noticia-card h-100 d-flex flex-column">
+                    <img
+                      src={item.image || item.img}
+                      alt={item.title}
+                      className="noticia-img"
+                      style={{ objectFit: 'cover', height: '200px' }}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/img/noticias/noticia1.jpg';
+                      }}
+                    />
+                    <div className="noticia-body d-flex flex-column flex-grow-1">
+                      <span className="noticia-date">{item.date || 'Reciente'}</span>
+                      <h5 className="mt-1">{item.title}</h5>
+                      <p className="flex-grow-1">{item.summary || item.desc}</p>
+                      
+                      <div className="mt-auto pt-2">
+                        <a
+                          href={targetUrl}
+                          target={isExternal ? '_blank' : '_self'}
+                          rel={isExternal ? 'noopener noreferrer' : undefined}
+                          className="noticia-link d-inline-flex align-items-center gap-1"
+                        >
+                          Leer más <i className="fas fa-arrow-right ms-1"></i>
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </SwiperSlide>
-            ))}
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
         )}
       </div>

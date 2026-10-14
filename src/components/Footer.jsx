@@ -94,29 +94,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* BOLETÍN Y SUSCRIPCIÓN */}
-          <div className="col-lg-3 col-md-6">
-            <h6 className="footer-title">Boletín Informativo</h6>
-            <p className="text-white-50 small mb-3">Recibe notificaciones sobre comunicados, eventos y proyectos municipales.</p>
-            {subscribedMessage ? (
-              <div className="alert alert-success py-2 px-3 small fw-bold mb-0 rounded-pill text-center">
-                <i className="fas fa-check-circle me-1"></i> ¡Gracias por suscribirte!
-              </div>
-            ) : (
-              <form className="footer-subscribe" onSubmit={handleSubscribe}>
-                <input
-                  type="email"
-                  placeholder="Tu correo electrónico"
-                  value={subscribedEmail}
-                  onChange={(e) => setSubscribedEmail(e.target.value)}
-                  required
-                />
-                <button type="submit" aria-label="Suscribir">
-                  <i className="fas fa-paper-plane"></i>
-                </button>
-              </form>
-            )}
-          </div>
+        
 
         </div>
 

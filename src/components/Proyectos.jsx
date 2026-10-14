@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 
@@ -30,6 +31,21 @@ const Proyectos = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Bloquear el scroll del body cuando el modal esté abierto
+  useEffect(() => {
+    if (selectedProject) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') setSelectedProject(null);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [selectedProject]);
+
   const filteredProyectos = proyectos.filter((item) => {
     const isCompleted = Number(item.progress) === 100;
     if (activeFilter === 'Todos') return true;
@@ -37,6 +53,93 @@ const Proyectos = () => {
     if (activeFilter === 'Completados') return isCompleted;
     return item.category === activeFilter;
   });
+
+  // Contenido del modal centralizado mediante Portal
+  const modalContent = selectedProject && (
+    <div 
+      className="modal-backdrop-custom position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3 p-md-4"
+      style={{
+        backgroundColor: 'rgba(11, 37, 69, 0.65)',
+        backdropFilter: 'blur(5px)',
+        zIndex: 99999,
+        overflowY: 'auto'
+      }}
+      onClick={() => setSelectedProject(null)}
+    >
+      <div 
+        className="servicio-modal-content bg-white rounded-5 shadow-lg p-4 p-md-5 w-100 position-relative d-flex flex-column border-0" 
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: '900px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          margin: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+      >
+        {/* Estilo para ocultar la barra de desplazamiento en Webkit */}
+        <style>{`
+          .servicio-modal-content::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+
+        {/* Botón de Cierre Superior (X) */}
+        <button 
+          className="btn-close-custom btn rounded-circle border-0 text-secondary bg-light d-flex align-items-center justify-content-center position-absolute" 
+          onClick={() => setSelectedProject(null)}
+          aria-label="Cerrar modal"
+          style={{ width: '40px', height: '40px', top: '20px', right: '20px', zIndex: 2 }}
+        >
+          <i className="fas fa-times"></i>
+        </button>
+
+        <div className="row g-4 align-items-center">
+          <div className="col-md-5">
+            <img
+              src={selectedProject.image || selectedProject.img}
+              alt={selectedProject.title}
+              className="img-fluid rounded-4 shadow-sm object-fit-cover w-100"
+              style={{ maxHeight: '350px' }}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '/img/proyectos/campeche.jpg';
+              }}
+            />
+          </div>
+          <div className="col-md-7 text-start">
+            <div className="mb-2">
+              <span className="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill fw-bold text-uppercase small">
+                {selectedProject.category}
+              </span>
+            </div>
+            <h4 className="h4 fw-bold mb-2 text-dark">{selectedProject.title}</h4>
+            <p className="text-secondary small mb-3" style={{ lineHeight: '1.6' }}>
+              {selectedProject.desc || selectedProject.summary}
+            </p>
+
+            <ul className="list-unstyled text-secondary small mb-4">
+              <li className="mb-2"><strong className="text-dark"><i className="fas fa-map-marker-alt text-danger me-2"></i>Ubicación:</strong> {selectedProject.location}</li>
+              <li className="mb-2"><strong className="text-dark"><i className="fas fa-coins text-warning me-2"></i>Inversión Estimada:</strong> {selectedProject.cost}</li>
+              <li className="mb-2"><strong className="text-dark"><i className="fas fa-calendar-alt text-info me-2"></i>Inicio de Ejecución:</strong> {selectedProject.start_date || selectedProject.startDate || '2026'}</li>
+              <li className="mb-2"><strong className="text-dark"><i className="fas fa-user-friends text-success me-2"></i>Población Beneficiada:</strong> {selectedProject.beneficiaries}</li>
+              <li className="mb-2"><strong className="text-dark"><i className="fas fa-chart-line text-primary me-2"></i>Avance Físico:</strong> {selectedProject.progress}%</li>
+            </ul>
+
+            <div className="d-flex align-items-center justify-content-end pt-3 border-top">
+              <button 
+                className="btn btn-dark btn-sm px-4 rounded-pill fw-semibold"
+                onClick={() => setSelectedProject(null)}
+              >
+                Cerrar Ventana
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <section id="proyectos" ref={sectionRef} className="proyectos-section py-5 position-relative">
@@ -77,7 +180,7 @@ const Proyectos = () => {
                     className={`proyecto-card shadow-sm ${isVisible ? 'proyecto-card-animated' : ''}`}
                     style={{ transitionDelay: `${idx * 120}ms` }}
                   >
-                    <div className="proyecto-img-wrapper">
+                    <div className="proyecto-img-wrapper position-relative">
                       <img
                         src={item.image || item.img}
                         alt={item.title}
@@ -87,13 +190,16 @@ const Proyectos = () => {
                           e.target.src = '/img/proyectos/campeche.jpg';
                         }}
                       />
-                      <span className={`proyecto-status ${isCompleted ? 'status-completed' : 'status-progress'}`}>
-                        <i className={isCompleted ? 'fas fa-check-circle me-1' : 'fas fa-spinner fa-spin me-1'}></i>
-                        {isCompleted ? 'Completado' : 'En Progreso'}
-                      </span>
-                      <span className="proyecto-category-badge">
-                        {item.category}
-                      </span>
+                      {/* ETIQUETA CENTRADA Y MÁS GRANDE */}
+                      <div className="w-100 text-center position-absolute" style={{ bottom: '15px', left: 0, zIndex: 2 }}>
+                        <span 
+                          className={`proyecto-status shadow-sm px-3 py-2 rounded-pill fw-bold ${isCompleted ? 'bg-success text-white' : 'bg-danger text-white'}`}
+                          style={{ fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <i className={isCompleted ? 'fas fa-check-circle' : 'fas fa-spinner fa-spin'}></i>
+                          {isCompleted ? 'COMPLETADO' : 'EN PROGRESO'}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="proyecto-content">
@@ -140,46 +246,8 @@ const Proyectos = () => {
         </div>
       </div>
 
-      {/* MODAL DETALLES DE PROYECTO */}
-      {selectedProject && (
-        <div className="social-media-modal-backdrop" onClick={() => setSelectedProject(null)}>
-          <div className="social-media-modal-content project-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close-btn" onClick={() => setSelectedProject(null)}>
-              <i className="fas fa-times"></i>
-            </button>
-            <div className="row g-4 align-items-center">
-              <div className="col-md-5">
-                <img
-                  src={selectedProject.image || selectedProject.img}
-                  alt={selectedProject.title}
-                  className="img-fluid rounded shadow"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = '/img/proyectos/campeche.jpg';
-                  }}
-                />
-              </div>
-              <div className="col-md-7 text-start text-white">
-                <span className="badge bg-danger mb-2">{selectedProject.category}</span>
-                <h4 className="fw-bold text-white mb-2">{selectedProject.title}</h4>
-                <p className="text-white-50 small mb-3">{selectedProject.desc || selectedProject.summary}</p>
-
-                <ul className="list-unstyled text-white-50 small mb-4">
-                  <li className="mb-2"><strong className="text-white"><i className="fas fa-map-marker-alt text-danger me-2"></i>Ubicación:</strong> {selectedProject.location}</li>
-                  <li className="mb-2"><strong className="text-white"><i className="fas fa-coins text-warning me-2"></i>Inversión Estimada:</strong> {selectedProject.cost}</li>
-                  <li className="mb-2"><strong className="text-white"><i className="fas fa-calendar-alt text-info me-2"></i>Inicio de Ejecución:</strong> {selectedProject.start_date || selectedProject.startDate || '2026'}</li>
-                  <li className="mb-2"><strong className="text-white"><i className="fas fa-user-friends text-success me-2"></i>Población Beneficiada:</strong> {selectedProject.beneficiaries}</li>
-                  <li className="mb-2"><strong className="text-white"><i className="fas fa-chart-line text-primary me-2"></i>Avance Físico:</strong> {selectedProject.progress}%</li>
-                </ul>
-
-                <button className="btn btn-danger btn-sm rounded-pill px-4" onClick={() => setSelectedProject(null)}>
-                  Cerrar Detalles
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* RENDERIZA EL MODAL FUERA DE LA SECCIÓN MEDIANTE PORTAL */}
+      {typeof document !== 'undefined' && ReactDOM.createPortal(modalContent, document.body)}
     </section>
   );
 };

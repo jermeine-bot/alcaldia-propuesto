@@ -49,7 +49,7 @@ class Database {
 
         $configuredDriver = strtolower((string)self::env('DB_DRIVER', 'mysql'));
         $host = self::env('MYSQL_HOST', 'localhost');
-        $port = self::env('MYSQL_PORT', '3306');
+        $port = self::env('MYSQL_PORT', '3307');
         $dbName = self::env('MYSQL_DATABASE', 'alcaldia_leon');
         $user = self::env('MYSQL_USER', 'root');
         $pass = self::env('MYSQL_PASSWORD', 'root');
