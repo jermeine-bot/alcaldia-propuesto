@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
-import { Palmtree, Plus, Edit, Trash2, Search, MapPin, Link as LinkIcon } from 'lucide-react';
+import { Palmtree, Plus, Edit, Trash2, Search, MapPin, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import ImageUploader from '../components/ImageUploader';
 
@@ -39,6 +39,14 @@ const TurismoAdmin = () => {
         confirmButtonColor: '#B22222',
         timer: 1500,
         showConfirmButton: false
+      });
+    },
+    onError: (err) => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al guardar',
+        text: err?.message || 'No se pudo guardar el destino turístico.',
+        confirmButtonColor: '#B22222'
       });
     }
   });
@@ -108,6 +116,15 @@ const TurismoAdmin = () => {
     });
   };
 
+  const formatUrl = (url) => {
+    if (!url || !url.trim()) return '';
+    const trimmed = url.trim();
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title || !formData.desc) {
@@ -119,7 +136,13 @@ const TurismoAdmin = () => {
       });
       return;
     }
-    saveMutation.mutate(formData);
+    const cleanLink = formatUrl(formData.linkUrl);
+    saveMutation.mutate({
+      ...formData,
+      img: formData.image,
+      linkUrl: cleanLink,
+      url: cleanLink
+    });
   };
 
   const filteredTurismo = turismo.filter((item) =>
@@ -172,43 +195,73 @@ const TurismoAdmin = () => {
                 No hay destinos turísticos registrados.
               </div>
             ) : (
-              filteredTurismo.map((item) => (
-                <div key={item.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
-                  <div className="card h-100 border-0 shadow-sm overflow-hidden">
-                    <img
-                      src={item.image || item.img || '/img/turismo/catedral.jpg'}
-                      alt={item.title}
-                      className="card-img-top"
-                      style={{ height: 160, objectFit: 'cover' }}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/img/turismo/catedral.jpg';
-                      }}
-                    />
-                    <div className="card-body p-3 d-flex flex-column">
-                      <div className="d-flex align-items-center justify-content-between mb-1">
-                        <span className="badge bg-danger-subtle text-danger">{item.category}</span>
-                      </div>
-                      <h6 className="card-title fw-bold text-dark mb-1 text-truncate" title={item.title}>{item.title}</h6>
-                      <small className="text-muted mb-2 d-flex align-items-center gap-1 text-truncate">
-                        <MapPin size={13} className="flex-shrink-0" />
-                        <span className="text-truncate">{item.location}</span>
-                      </small>
-                      <p className="card-text small text-secondary flex-grow-1" style={{ fontSize: '0.82rem' }}>
-                        {item.desc}
-                      </p>
-                      <div className="d-flex justify-content-end gap-1 pt-2 border-top">
-                        <button className="btn btn-outline-secondary btn-sm py-1" onClick={() => handleOpenEdit(item)}>
-                          <Edit size={14} /> Editar
-                        </button>
-                        <button className="btn btn-outline-danger btn-sm py-1" onClick={() => handleDelete(item.id, item.title)}>
-                          <Trash2 size={14} />
-                        </button>
+              filteredTurismo.map((item) => {
+                const targetLink = formatUrl(item.linkUrl || item.url);
+                const imgElement = (
+                  <img
+                    src={item.image || item.img || '/img/turismo/catedral.jpg'}
+                    alt={item.title}
+                    className="card-img-top"
+                    style={{
+                      height: 160,
+                      objectFit: 'cover',
+                      cursor: targetLink ? 'pointer' : 'default'
+                    }}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/img/turismo/catedral.jpg';
+                    }}
+                  />
+                );
+
+                return (
+                  <div key={item.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
+                    <div className="card h-100 border-0 shadow-sm overflow-hidden">
+                      {targetLink ? (
+                        <a
+                          href={targetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="position-relative d-block text-decoration-none"
+                          title={`Ir a ${targetLink}`}
+                        >
+                          {imgElement}
+                          <span
+                            className="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 d-flex align-items-center gap-1"
+                            style={{ fontSize: '0.7rem' }}
+                          >
+                            <ExternalLink size={12} /> Ver enlace
+                          </span>
+                        </a>
+                      ) : (
+                        imgElement
+                      )}
+
+                      <div className="card-body p-3 d-flex flex-column">
+                        <div className="d-flex align-items-center justify-content-between mb-1">
+                          <span className="badge bg-danger-subtle text-danger">{item.category}</span>
+                        </div>
+                        <h6 className="card-title fw-bold text-dark mb-1 text-truncate" title={item.title}>{item.title}</h6>
+                        <small className="text-muted mb-2 d-flex align-items-center gap-1 text-truncate">
+                          <MapPin size={13} className="flex-shrink-0" />
+                          <span className="text-truncate">{item.location}</span>
+                        </small>
+                        <p className="card-text small text-secondary flex-grow-1" style={{ fontSize: '0.82rem' }}>
+                          {item.desc}
+                        </p>
+                        <div className="d-flex justify-content-end gap-1 pt-2 border-top">
+                          <button className="btn btn-outline-secondary btn-sm py-1" onClick={() => handleOpenEdit(item)}>
+                            <Edit size={14} /> Editar
+                          </button>
+                          <button className="btn btn-outline-danger btn-sm py-1" onClick={() => handleDelete(item.id, item.title)}>
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
@@ -279,7 +332,7 @@ const TurismoAdmin = () => {
                         <LinkIcon size={14} className="text-danger" /> Ingrese link
                       </label>
                       <input
-                        type="url"
+                        type="text"
                         className="form-control"
                         placeholder="https://ejemplo.com/destino-turistico"
                         value={formData.linkUrl}
