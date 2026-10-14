@@ -67,18 +67,32 @@ class TurismoController {
         }
     }
 
-    public static function create(array $body): void {
+    private static function getRawInput(): array {
+        $raw = file_get_contents('php://input');
+        if ($raw) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return $_POST ?: [];
+    }
+
+    public static function create(array $body = []): void {
         try {
-            $title = trim((string)($body['title'] ?? ''));
+            $raw = self::getRawInput();
+            $data = array_merge($raw, $body);
+
+            $title = trim((string)($data['title'] ?? ''));
             if ($title === '') {
                 http_response_code(400);
                 echo json_encode(['error' => 'El título del destino es obligatorio.']);
                 return;
             }
 
-            $img = $body['image'] ?? $body['img'] ?? '/img/turismo/catedral.jpg';
-            $linkUrl = trim((string)($body['linkUrl'] ?? $body['linkurl'] ?? $body['url'] ?? $body['link'] ?? ''));
-            $id = $body['id'] ?? ('turismo-' . bin2hex(random_bytes(8)));
+            $img = $data['image'] ?? $data['img'] ?? '/img/turismo/catedral.jpg';
+            $linkUrl = trim((string)($data['linkUrl'] ?? $data['linkurl'] ?? $data['url'] ?? $data['link'] ?? ''));
+            $id = $data['id'] ?? ('turismo-' . bin2hex(random_bytes(8)));
 
             $pdo = Database::getConnection();
             self::ensureSchema($pdo);
@@ -91,13 +105,13 @@ class TurismoController {
                 $id,
                 $img,
                 $title,
-                $body['desc'] ?? '',
-                $body['category'] ?? '',
-                $body['location'] ?? '',
-                $body['content'] ?? '',
+                $data['desc'] ?? '',
+                $data['category'] ?? '',
+                $data['location'] ?? '',
+                $data['content'] ?? '',
                 $linkUrl,
-                isset($body['is_published']) ? ($body['is_published'] ? 1 : 0) : 1,
-                (int)($body['display_order'] ?? 0)
+                isset($data['is_published']) ? ($data['is_published'] ? 1 : 0) : 1,
+                (int)($data['display_order'] ?? 0)
             ]);
 
             http_response_code(201);
@@ -108,17 +122,20 @@ class TurismoController {
         }
     }
 
-    public static function update(string $id, array $body): void {
+    public static function update(string $id, array $body = []): void {
         try {
-            $title = trim((string)($body['title'] ?? ''));
+            $raw = self::getRawInput();
+            $data = array_merge($raw, $body);
+
+            $title = trim((string)($data['title'] ?? ''));
             if ($title === '') {
                 http_response_code(400);
                 echo json_encode(['error' => 'El título del destino es obligatorio.']);
                 return;
             }
 
-            $img = $body['image'] ?? $body['img'] ?? '/img/turismo/catedral.jpg';
-            $linkUrl = trim((string)($body['linkUrl'] ?? $body['linkurl'] ?? $body['url'] ?? $body['link'] ?? ''));
+            $img = $data['image'] ?? $data['img'] ?? '/img/turismo/catedral.jpg';
+            $linkUrl = trim((string)($data['linkUrl'] ?? $data['linkurl'] ?? $data['url'] ?? $data['link'] ?? ''));
 
             $pdo = Database::getConnection();
             self::ensureSchema($pdo);
@@ -130,13 +147,13 @@ class TurismoController {
             $stmt->execute([
                 $img,
                 $title,
-                $body['desc'] ?? '',
-                $body['category'] ?? '',
-                $body['location'] ?? '',
-                $body['content'] ?? '',
+                $data['desc'] ?? '',
+                $data['category'] ?? '',
+                $data['location'] ?? '',
+                $data['content'] ?? '',
                 $linkUrl,
-                isset($body['is_published']) ? ($body['is_published'] ? 1 : 0) : 1,
-                (int)($body['display_order'] ?? 0),
+                isset($data['is_published']) ? ($data['is_published'] ? 1 : 0) : 1,
+                (int)($data['display_order'] ?? 0),
                 $id
             ]);
 

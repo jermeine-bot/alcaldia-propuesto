@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
-import { Building2, Plus, Edit, Trash2, Search, CheckCircle2, Clock } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, Search, CheckCircle2, Clock, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import ImageUploader from '../components/ImageUploader';
 
@@ -20,7 +20,8 @@ const ProyectosAdmin = () => {
     image: '/img/proyectos/proyecto1.jpg',
     desc: '',
     beneficiaries: '20,000 Habitantes',
-    start_date: 'Enero 2026'
+    start_date: 'Enero 2026',
+    linkUrl: ''
   });
 
   const { data: proyectos = [], isLoading } = useQuery({
@@ -71,7 +72,8 @@ const ProyectosAdmin = () => {
       image: '/img/proyectos/proyecto1.jpg',
       desc: '',
       beneficiaries: '20,000 Habitantes',
-      start_date: 'Enero 2026'
+      start_date: 'Enero 2026',
+      linkUrl: ''
     });
   };
 
@@ -92,7 +94,8 @@ const ProyectosAdmin = () => {
       image: item.image || item.img || '/img/proyectos/proyecto1.jpg',
       desc: item.desc || item.summary || '',
       beneficiaries: item.beneficiaries || '20,000 Habitantes',
-      start_date: item.start_date || 'Enero 2026'
+      start_date: item.start_date || item.startDate || 'Enero 2026',
+      linkUrl: item.linkUrl || item.url || ''
     });
     setShowModal(true);
   };
@@ -114,6 +117,15 @@ const ProyectosAdmin = () => {
     });
   };
 
+  const formatUrl = (url) => {
+    if (!url || typeof url !== 'string' || !url.trim()) return '';
+    const trimmed = url.trim();
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title || !formData.desc) {
@@ -125,7 +137,14 @@ const ProyectosAdmin = () => {
       });
       return;
     }
-    saveMutation.mutate(formData);
+    const cleanLink = formatUrl(formData.linkUrl);
+    saveMutation.mutate({
+      ...formData,
+      linkUrl: cleanLink,
+      url: cleanLink,
+      img: formData.image,
+      image: formData.image
+    });
   };
 
   const filteredProyectos = proyectos.filter((item) =>
@@ -214,9 +233,22 @@ const ProyectosAdmin = () => {
                           <div className="fw-semibold text-dark mb-1 text-truncate" style={{ maxWidth: 260 }} title={item.title}>
                             {item.title}
                           </div>
-                          <small className="text-muted text-truncate d-block" style={{ maxWidth: 260 }} title={item.location}>
-                            {item.location}
-                          </small>
+                          <div className="d-flex align-items-center gap-2 mt-1">
+                            <small className="text-muted text-truncate" style={{ maxWidth: 180 }} title={item.location}>
+                              {item.location}
+                            </small>
+                            {(item.linkUrl || item.url) && (
+                              <a
+                                href={formatUrl(item.linkUrl || item.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="badge bg-danger-subtle text-danger text-decoration-none d-inline-flex align-items-center gap-1"
+                                title={item.linkUrl || item.url}
+                              >
+                                <ExternalLink size={10} /> Enlace
+                              </a>
+                            )}
+                          </div>
                         </td>
                         <td>
                           <span className="badge bg-light text-dark border text-nowrap">{item.category}</span>
@@ -352,6 +384,21 @@ const ProyectosAdmin = () => {
                         value={formData.beneficiaries}
                         onChange={(e) => setFormData({ ...formData, beneficiaries: e.target.value })}
                       />
+                    </div>
+
+                    {/* Campo Enlace del Proyecto */}
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small d-flex align-items-center gap-1">
+                        <LinkIcon size={14} className="text-danger" /> Enlace del Proyecto (Botón «Conocer más»)
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="https://ejemplo.com/proyecto-detalle"
+                        value={formData.linkUrl}
+                        onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
+                      />
+                      <small className="text-muted">Enlace web de destino al pulsar «Conocer más» en la tarjeta o modal de proyectos.</small>
                     </div>
 
                     <div className="col-12">

@@ -119,6 +119,15 @@ const EstadisticasAdmin = () => {
     });
   };
 
+  const formatUrl = (url) => {
+    if (!url || typeof url !== 'string' || !url.trim()) return '';
+    const trimmed = url.trim();
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title) {
@@ -130,7 +139,13 @@ const EstadisticasAdmin = () => {
       });
       return;
     }
-    saveMutation.mutate(formData);
+    const cleanLink = formatUrl(formData.linkUrl);
+    saveMutation.mutate({
+      ...formData,
+      linkUrl: cleanLink,
+      url: cleanLink,
+      externalLink: cleanLink
+    });
   };
 
   const filteredStats = stats.filter((item) =>
@@ -209,7 +224,20 @@ const EstadisticasAdmin = () => {
                           </div>
                           <div>
                             <div className="fw-semibold text-dark">{item.title}</div>
-                            <small className="text-muted">{item.subtitle}</small>
+                            <div className="d-flex align-items-center gap-2 flex-wrap">
+                              <small className="text-muted">{item.subtitle}</small>
+                              {(item.linkUrl || item.url) && (
+                                <a
+                                  href={formatUrl(item.linkUrl || item.url)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="badge bg-danger-subtle text-danger text-decoration-none d-inline-flex align-items-center gap-1"
+                                  title={item.linkUrl || item.url}
+                                >
+                                  <Link size={10} /> Enlace
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>

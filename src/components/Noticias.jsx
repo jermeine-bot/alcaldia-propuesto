@@ -4,6 +4,16 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
 import { apiService } from '../services/apiService';
 
+const formatUrl = (url) => {
+  if (!url || typeof url !== 'string') return '#contacto';
+  const trimmed = url.trim();
+  if (!trimmed) return '#contacto';
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
 const Noticias = () => {
   const { data: noticias = [] } = useQuery({
     queryKey: ['noticias'],
@@ -37,26 +47,43 @@ const Noticias = () => {
             className="noticias-swiper"
           >
             {publishedNoticias.map((item) => {
-              // Obtenemos el link ingresado (soporta 'linkUrl' o 'url')
-              const targetUrl = item.linkUrl || item.url || '#contacto';
-              const isExternal = targetUrl.startsWith('http://') || targetUrl.startsWith('https://');
+              const rawLink = item.linkUrl || item.url || item.url_externa;
+              const targetUrl = formatUrl(rawLink);
+              const isExternal = /^https?:\/\//i.test(targetUrl);
 
               return (
                 <SwiperSlide key={item.id}>
                   <div className="noticia-card h-100 d-flex flex-column">
-                    <img
-                      src={item.image || item.img}
-                      alt={item.title}
-                      className="noticia-img"
-                      style={{ objectFit: 'cover', height: '200px' }}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/img/noticias/noticia1.jpg';
-                      }}
-                    />
+                    <a
+                      href={targetUrl}
+                      target={isExternal ? '_blank' : '_self'}
+                      rel={isExternal ? 'noopener noreferrer' : undefined}
+                      className="d-block overflow-hidden text-decoration-none"
+                      title={item.title}
+                    >
+                      <img
+                        src={item.image || item.img}
+                        alt={item.title}
+                        className="noticia-img"
+                        style={{ objectFit: 'cover', height: '200px', width: '100%' }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/img/noticias/noticia1.jpg';
+                        }}
+                      />
+                    </a>
                     <div className="noticia-body d-flex flex-column flex-grow-1">
                       <span className="noticia-date">{item.date || 'Reciente'}</span>
-                      <h5 className="mt-1">{item.title}</h5>
+                      <h5 className="mt-1">
+                        <a
+                          href={targetUrl}
+                          target={isExternal ? '_blank' : '_self'}
+                          rel={isExternal ? 'noopener noreferrer' : undefined}
+                          className="text-dark text-decoration-none"
+                        >
+                          {item.title}
+                        </a>
+                      </h5>
                       <p className="flex-grow-1">{item.summary || item.desc}</p>
                       
                       <div className="mt-auto pt-2">
@@ -66,7 +93,7 @@ const Noticias = () => {
                           rel={isExternal ? 'noopener noreferrer' : undefined}
                           className="noticia-link d-inline-flex align-items-center gap-1"
                         >
-                          Leer más <i className="fas fa-arrow-right ms-1"></i>
+                          Ver más <i className="fas fa-arrow-right ms-1"></i>
                         </a>
                       </div>
                     </div>

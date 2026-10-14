@@ -4,6 +4,16 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 import { apiService } from '../services/apiService';
 
+const formatUrl = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
 const Turismo = () => {
   const { data: turismo = [] } = useQuery({
     queryKey: ['turismo'],
@@ -36,23 +46,20 @@ const Turismo = () => {
             className="turismo-swiper"
           >
             {turismo.map((item) => {
-              // Obtiene el enlace directamente desde la base de datos (linkUrl o url)
-              const targetUrl = item.linkUrl || item.url;
-              const isExternal = targetUrl && (targetUrl.startsWith('http://') || targetUrl.startsWith('https://'));
-
-              const CardWrapper = targetUrl ? 'a' : 'div';
-              const wrapperProps = targetUrl ? {
-                href: targetUrl,
-                target: isExternal ? '_blank' : '_self',
-                rel: isExternal ? 'noopener noreferrer' : undefined,
-                className: 'turismo-slide text-decoration-none d-block cursor-pointer'
-              } : {
-                className: 'turismo-slide'
-              };
+              const rawLink = item.linkUrl || item.url;
+              const cleanLink = formatUrl(rawLink);
+              const targetUrl = cleanLink || '#contacto';
+              const isExternal = cleanLink ? /^https?:\/\//i.test(cleanLink) : false;
 
               return (
                 <SwiperSlide key={item.id}>
-                  <CardWrapper {...wrapperProps}>
+                  <a
+                    href={targetUrl}
+                    target={isExternal ? '_blank' : '_self'}
+                    rel={isExternal ? 'noopener noreferrer' : undefined}
+                    className="turismo-slide text-decoration-none d-block cursor-pointer"
+                    title={item.title}
+                  >
                     <img
                       src={item.image || item.img}
                       alt={item.title}
@@ -64,13 +71,11 @@ const Turismo = () => {
                     <div className="turismo-overlay">
                       <h3>{item.title}</h3>
                       <p>{item.desc}</p>
-                      {targetUrl && (
-                        <span className="badge bg-danger mt-2 text-white px-3 py-1 rounded-pill small">
-                          Ver Destino <i className="fas fa-external-link-alt ms-1"></i>
-                        </span>
-                      )}
+                      <span className="badge bg-danger mt-2 text-white px-3 py-1 rounded-pill small d-inline-flex align-items-center gap-1">
+                        {cleanLink ? 'Conocer más' : 'Ver Destino'} <i className={isExternal ? "fas fa-external-link-alt ms-1" : "fas fa-arrow-right ms-1"}></i>
+                      </span>
                     </div>
-                  </CardWrapper>
+                  </a>
                 </SwiperSlide>
               );
             })}

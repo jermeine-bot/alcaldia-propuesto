@@ -3,6 +3,16 @@ import ReactDOM from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 
+const formatUrl = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
 const AnimatedValue = ({ target, suffix = '', isVisible = false }) => {
   const [val, setVal] = useState(0);
 
@@ -168,7 +178,7 @@ const Estadisticas = () => {
 
           {selectedStat.externalLink ? (
             <a
-              href={selectedStat.externalLink}
+              href={formatUrl(selectedStat.externalLink)}
               target="_blank"
               rel="noopener noreferrer"
               className="btn px-4 py-2 rounded-pill fw-bold text-white small shadow-sm d-inline-flex align-items-center gap-2"
@@ -177,13 +187,14 @@ const Estadisticas = () => {
               Conocer más <i className="fas fa-external-link-alt small"></i>
             </a>
           ) : (
-            <button 
-              className="btn px-4 py-2 rounded-pill fw-bold text-white small shadow-sm"
+            <a 
+              href="#contacto"
+              className="btn px-4 py-2 rounded-pill fw-bold text-white small shadow-sm d-inline-flex align-items-center gap-2"
               style={{ backgroundColor: selectedStat.color || '#B22222', border: 'none' }}
               onClick={() => setSelectedStat(null)}
             >
-              Conocer más
-            </button>
+              Conocer más <i className="fas fa-arrow-right small"></i>
+            </a>
           )}
         </div>
       </div>
@@ -231,8 +242,9 @@ const Estadisticas = () => {
         ) : (
           <div className="row g-4 justify-content-center">
             {filteredStats.map((stat, idx) => {
-              const externalLink = stat.linkUrl || stat.url;
-              const hasExternalLink = Boolean(externalLink);
+              const rawLink = stat.linkUrl || stat.url;
+              const cleanLink = formatUrl(rawLink);
+              const hasExternalLink = Boolean(cleanLink);
 
               const cardContent = (
                 <div
@@ -287,34 +299,38 @@ const Estadisticas = () => {
 
                   <div className="stat-card-footer mt-3 pt-2 d-flex align-items-center justify-content-between border-top border-secondary border-opacity-10">
                     <span className="small text-muted font-medium">
-                      {hasExternalLink ? 'Ver enlace externo' : 'Ver desglose completo'}
+                      Ver detalles
                     </span>
-                    <i className={`fas ${hasExternalLink ? 'fa-external-link-alt' : 'fa-chevron-right'} text-danger small`}></i>
+                    {hasExternalLink ? (
+                      <a
+                        href={cleanLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-danger text-white rounded-pill px-3 py-1 small fw-semibold d-inline-flex align-items-center gap-1"
+                        style={{ fontSize: '0.78rem' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Conocer más <i className="fas fa-external-link-alt ms-1" style={{ fontSize: '0.65rem' }}></i>
+                      </a>
+                    ) : (
+                      <span className="text-danger small fw-semibold">
+                        Ver desglose <i className="fas fa-chevron-right ms-1"></i>
+                      </span>
+                    )}
                   </div>
                 </div>
               );
 
               return (
                 <div key={stat.id} className="col-lg-4 col-md-6 col-sm-12">
-                  {hasExternalLink ? (
-                    <a 
-                      href={externalLink} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-decoration-none d-block h-100"
-                    >
-                      {cardContent}
-                    </a>
-                  ) : (
-                    <div 
-                      onClick={() => setSelectedStat({ ...stat, externalLink })} 
-                      role="button" 
-                      tabIndex={0}
-                      className="h-100 cursor-pointer"
-                    >
-                      {cardContent}
-                    </div>
-                  )}
+                  <div 
+                    onClick={() => setSelectedStat({ ...stat, externalLink: cleanLink })} 
+                    role="button" 
+                    tabIndex={0}
+                    className="h-100 cursor-pointer"
+                  >
+                    {cardContent}
+                  </div>
                 </div>
               );
             })}

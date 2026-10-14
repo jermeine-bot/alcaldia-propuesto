@@ -3,6 +3,16 @@ import ReactDOM from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 
+const formatUrl = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
 const Proyectos = () => {
   const sectionRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -53,6 +63,9 @@ const Proyectos = () => {
     if (activeFilter === 'Completados') return isCompleted;
     return item.category === activeFilter;
   });
+
+  const modalTargetUrl = selectedProject ? formatUrl(selectedProject.linkUrl || selectedProject.url) : '';
+  const isModalExternal = modalTargetUrl ? /^https?:\/\//i.test(modalTargetUrl) : false;
 
   // Contenido del modal centralizado mediante Portal
   const modalContent = selectedProject && (
@@ -127,13 +140,31 @@ const Proyectos = () => {
               <li className="mb-2"><strong className="text-dark"><i className="fas fa-chart-line text-primary me-2"></i>Avance Físico:</strong> {selectedProject.progress}%</li>
             </ul>
 
-            <div className="d-flex align-items-center justify-content-end pt-3 border-top">
+            <div className="d-flex align-items-center justify-content-end gap-2 pt-3 border-top">
               <button 
-                className="btn btn-dark btn-sm px-4 rounded-pill fw-semibold"
+                className="btn btn-light btn-sm px-4 rounded-pill fw-semibold text-secondary border"
                 onClick={() => setSelectedProject(null)}
               >
                 Cerrar Ventana
               </button>
+              {modalTargetUrl ? (
+                <a
+                  href={modalTargetUrl}
+                  target={isModalExternal ? '_blank' : '_self'}
+                  rel={isModalExternal ? 'noopener noreferrer' : undefined}
+                  className="btn btn-danger btn-sm px-4 rounded-pill fw-bold text-white shadow-sm d-inline-flex align-items-center gap-2"
+                >
+                  Conocer más <i className="fas fa-external-link-alt small"></i>
+                </a>
+              ) : (
+                <a
+                  href="#contacto"
+                  className="btn btn-danger btn-sm px-4 rounded-pill fw-bold text-white shadow-sm d-inline-flex align-items-center gap-2"
+                  onClick={() => setSelectedProject(null)}
+                >
+                  Conocer más <i className="fas fa-arrow-right small"></i>
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -174,6 +205,9 @@ const Proyectos = () => {
           ) : (
             filteredProyectos.map((item, idx) => {
               const isCompleted = Number(item.progress) === 100;
+              const targetUrl = formatUrl(item.linkUrl || item.url);
+              const isExternal = targetUrl ? /^https?:\/\//i.test(targetUrl) : false;
+
               return (
                 <div key={item.id} className="col-lg-6">
                   <div 
@@ -190,7 +224,7 @@ const Proyectos = () => {
                           e.target.src = '/img/proyectos/campeche.jpg';
                         }}
                       />
-                      {/* ETIQUETA CENTRADA Y MÁS GRANDE */}
+                      {/* ETIQUETA CENTRADA */}
                       <div className="w-100 text-center position-absolute" style={{ bottom: '15px', left: 0, zIndex: 2 }}>
                         <span 
                           className={`proyecto-status shadow-sm px-3 py-2 rounded-pill fw-bold ${isCompleted ? 'bg-success text-white' : 'bg-danger text-white'}`}
@@ -228,14 +262,33 @@ const Proyectos = () => {
                         </div>
                       </div>
 
-                      <div className="d-flex justify-content-between align-items-center pt-2 border-top">
+                      <div className="d-flex justify-content-between align-items-center pt-2 border-top flex-wrap gap-2">
                         <span className="text-muted small"><i className="fas fa-users me-1 text-primary"></i> {item.beneficiaries}</span>
-                        <button 
-                          className="btn btn-outline-danger btn-sm rounded-pill px-3"
-                          onClick={() => setSelectedProject(item)}
-                        >
-                          <i className="fas fa-info-circle me-1"></i> Ver Detalles
-                        </button>
+                        <div className="d-flex gap-2">
+                          <button 
+                            className="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                            onClick={() => setSelectedProject(item)}
+                          >
+                            <i className="fas fa-info-circle me-1"></i> Detalles
+                          </button>
+                          {targetUrl ? (
+                            <a
+                              href={targetUrl}
+                              target={isExternal ? '_blank' : '_self'}
+                              rel={isExternal ? 'noopener noreferrer' : undefined}
+                              className="btn btn-danger btn-sm rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1"
+                            >
+                              Conocer más <i className="fas fa-external-link-alt ms-1 small"></i>
+                            </a>
+                          ) : (
+                            <button
+                              className="btn btn-danger btn-sm rounded-pill px-3 fw-semibold"
+                              onClick={() => setSelectedProject(item)}
+                            >
+                              Conocer más
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
