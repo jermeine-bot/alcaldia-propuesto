@@ -16,7 +16,8 @@ const autoridadesData = [
       'Fomento del turismo sostenible, la cultura y la memoria histórica.',
       'Gestión de alianzas internacionales y cooperación para el municipio.'
     ],
-    contacto: 'alcaldia@alcaldaleon.gob.ni'
+    contacto: 'despachoalcaldeleon@gmail.com',
+    telefono: 23113780
   },
   {
     id: 2,
@@ -32,7 +33,8 @@ const autoridadesData = [
       'Gestión de emergencias y prevención ante desastres naturales.',
       'Atención personalizada a ciudadanas y ciudadanos leoneses.'
     ],
-    contacto: 'vicealcaldia@alcaldaleon.gob.ni'
+    contacto: 'despachoalcaldeleon@gmail.com',
+    telefono: 23113780
   },
   {
     id: 3,
@@ -48,19 +50,24 @@ const autoridadesData = [
       'Recepción y canalización de iniciativas comunitarias y ciudadanas.',
       'Publicación y divulgación de informes de transparencia municipal.'
     ],
-    contacto: 'secretariaconsejo@alcaldaleon.gob.ni'
+    contacto: 'despachoalcaldeleon@gmail.com',
+    telefono: 23113780
   }
 ];
 
 const Autoridades = () => {
   const [selectedAutoridad, setSelectedAutoridad] = useState(null);
+  const [showContactModal, setShowContactModal] = useState(false);
 
-  // Bloquear el scroll del body cuando el modal esté abierto
+  // Bloquear el scroll del body cuando algún modal esté abierto
   useEffect(() => {
-    if (selectedAutoridad) {
+    if (selectedAutoridad || showContactModal) {
       document.body.style.overflow = 'hidden';
       const handleKeyDown = (e) => {
-        if (e.key === 'Escape') setSelectedAutoridad(null);
+        if (e.key === 'Escape') {
+          setShowContactModal(false);
+          setSelectedAutoridad(null);
+        }
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => {
@@ -68,9 +75,9 @@ const Autoridades = () => {
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [selectedAutoridad]);
+  }, [selectedAutoridad, showContactModal]);
 
-  // Contenido del modal centralizado
+  // Contenido del modal principal de biografía
   const modalContent = selectedAutoridad && (
     <div 
       className="autoridad-modal-backdrop position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3 p-md-4"
@@ -90,11 +97,10 @@ const Autoridades = () => {
           maxHeight: '90vh',
           overflowY: 'auto',
           margin: 'auto',
-          scrollbarWidth: 'none', /* Oculta scroll en Firefox */
-          msOverflowStyle: 'none', /* Oculta scroll en IE/Edge antiguo */
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         }}
       >
-        {/* Estilo en línea para ocultar scroll en Webkit (Chrome, Safari, Opera) */}
         <style>{`
           .autoridad-modal-card::-webkit-scrollbar {
             display: none;
@@ -146,9 +152,13 @@ const Autoridades = () => {
             </ul>
 
             <div className="d-flex align-items-center justify-content-between pt-3 border-top gap-3 flex-wrap">
-              <a href={`mailto:${selectedAutoridad.contacto}`} className="btn btn-danger btn-sm px-4 rounded-pill fw-semibold">
+              <button 
+                type="button" 
+                className="btn btn-danger btn-sm px-4 rounded-pill fw-semibold"
+                onClick={() => setShowContactModal(true)}
+              >
                 <i className="fas fa-envelope me-2"></i>Contactar Despacho
-              </a>
+              </button>
               <button 
                 className="btn btn-light btn-sm px-4 rounded-pill fw-semibold text-secondary border"
                 onClick={() => setSelectedAutoridad(null)}
@@ -158,6 +168,72 @@ const Autoridades = () => {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+
+  // Contenido del nuevo modal secundario para Contactar
+  const contactModalContent = selectedAutoridad && showContactModal && (
+    <div 
+      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(3px)',
+        zIndex: 100000
+      }}
+      onClick={() => setShowContactModal(false)}
+    >
+      <div 
+        className="bg-white rounded-4 shadow-lg p-4 w-100 position-relative text-center border-0" 
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '450px' }}
+      >
+        <button 
+          className="btn-close btn rounded-circle position-absolute top-0 end-0 m-3" 
+          onClick={() => setShowContactModal(false)}
+          aria-label="Cerrar modal contacto"
+        ></button>
+
+        <div className="mb-3 text-danger pt-2">
+          <i className="fas fa-headset fa-3x"></i>
+        </div>
+
+        <h4 className="fw-bold text-dark mb-1">Contacto Directo</h4>
+        <p className="text-muted small mb-4">{selectedAutoridad.cargo}</p>
+
+        <div className="card bg-light border-0 p-3 mb-3 text-start shadow-sm">
+          <div className="d-flex align-items-center mb-3">
+            <div className="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px', flexShrink: 0 }}>
+              <i className="fas fa-phone-alt"></i>
+            </div>
+            <div>
+              <small className="text-muted d-block fw-semibold">Número Convencional</small>
+              <a href={`tel:+505${selectedAutoridad.telefono}`} className="text-dark fw-bold text-decoration-none">
+                +505 {selectedAutoridad.telefono}
+              </a>
+            </div>
+          </div>
+
+          <div className="d-flex align-items-center">
+            <div className="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px', flexShrink: 0 }}>
+              <i className="fas fa-envelope"></i>
+            </div>
+            <div className="text-truncate">
+              <small className="text-muted d-block fw-semibold">Correo Electrónico</small>
+              <a href={`mailto:${selectedAutoridad.contacto}`} className="text-dark fw-bold text-decoration-none text-truncate d-block" title={selectedAutoridad.contacto}>
+                {selectedAutoridad.contacto}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          type="button" 
+          className="btn btn-secondary btn-sm w-100 rounded-pill py-2 fw-semibold"
+          onClick={() => setShowContactModal(false)}
+        >
+          Volver
+        </button>
       </div>
     </div>
   );
@@ -205,8 +281,14 @@ const Autoridades = () => {
         </div>
       </div>
 
-      {/* RENDERIZA EL MODAL FUERA DE LA SECCIÓN MEDIANTE PORTAL */}
-      {typeof document !== 'undefined' && ReactDOM.createPortal(modalContent, document.body)}
+      {/* RENDERIZA LOS MODALES FUERA DE LA SECCIÓN MEDIANTE PORTAL */}
+      {typeof document !== 'undefined' && ReactDOM.createPortal(
+        <>
+          {modalContent}
+          {contactModalContent}
+        </>,
+        document.body
+      )}
     </section>
   );
 };
