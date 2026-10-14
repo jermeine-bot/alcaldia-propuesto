@@ -51,6 +51,7 @@ class InitDb {
                     primary_btn_link TEXT,
                     secondary_btn_text TEXT,
                     secondary_btn_link TEXT,
+                    badge_text TEXT DEFAULT 'Alcaldía Municipal de León',
                     is_active INTEGER DEFAULT 1,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
@@ -69,6 +70,7 @@ class InitDb {
                     progress INTEGER DEFAULT 0,
                     startDate TEXT,
                     beneficiaries TEXT,
+                    linkUrl TEXT DEFAULT '',
                     is_published INTEGER DEFAULT 1,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -82,6 +84,7 @@ class InitDb {
                     category TEXT,
                     location TEXT,
                     content TEXT,
+                    linkUrl TEXT DEFAULT '',
                     is_published INTEGER DEFAULT 1,
                     display_order INTEGER DEFAULT 0,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -115,6 +118,7 @@ class InitDb {
                     color TEXT,
                     description TEXT,
                     breakdown TEXT,
+                    linkUrl TEXT DEFAULT '',
                     is_published INTEGER DEFAULT 1,
                     display_order INTEGER DEFAULT 0,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -202,7 +206,88 @@ class InitDb {
             }
         }
 
+        self::migrateSchema($pdo);
         self::seedData($pdo);
+    }
+
+    private static function migrateSchema(PDO $pdo): void {
+        try {
+            $driver = Database::getDriver();
+            $isSqlite = ($driver === 'sqlite');
+
+            if ($isSqlite) {
+                $tables = [
+                    'noticias' => [
+                        'linkUrl' => "ALTER TABLE noticias ADD COLUMN linkUrl TEXT DEFAULT ''",
+                        'date' => "ALTER TABLE noticias ADD COLUMN date TEXT DEFAULT ''",
+                        'url_externa' => "ALTER TABLE noticias ADD COLUMN url_externa TEXT DEFAULT ''"
+                    ],
+                    'proyectos' => [
+                        'linkUrl' => "ALTER TABLE proyectos ADD COLUMN linkUrl TEXT DEFAULT ''"
+                    ],
+                    'turismo' => [
+                        'linkUrl' => "ALTER TABLE turismo ADD COLUMN linkUrl TEXT DEFAULT ''"
+                    ],
+                    'stats' => [
+                        'linkUrl' => "ALTER TABLE stats ADD COLUMN linkUrl TEXT DEFAULT ''"
+                    ],
+                    'hero' => [
+                        'badge_text' => "ALTER TABLE hero ADD COLUMN badge_text TEXT DEFAULT 'Alcaldía Municipal de León'"
+                    ]
+                ];
+
+                foreach ($tables as $table => $columns) {
+                    $cols = $pdo->query("PRAGMA table_info({$table})")->fetchAll(PDO::FETCH_ASSOC);
+                    $existing = [];
+                    foreach ($cols as $c) {
+                        if (isset($c['name'])) {
+                            $existing[] = strtolower($c['name']);
+                        }
+                    }
+                    foreach ($columns as $colName => $alterSql) {
+                        if (!in_array(strtolower($colName), $existing, true)) {
+                            try {
+                                $pdo->exec($alterSql);
+                            } catch (\Throwable $e) {}
+                        }
+                    }
+                }
+            } else {
+                $tables = [
+                    'noticias' => [
+                        'linkUrl' => "ALTER TABLE noticias ADD COLUMN linkUrl TEXT",
+                        'date' => "ALTER TABLE noticias ADD COLUMN `date` VARCHAR(120) DEFAULT ''",
+                        'url_externa' => "ALTER TABLE noticias ADD COLUMN url_externa TEXT"
+                    ],
+                    'proyectos' => [
+                        'linkUrl' => "ALTER TABLE proyectos ADD COLUMN linkUrl TEXT"
+                    ],
+                    'turismo' => [
+                        'linkUrl' => "ALTER TABLE turismo ADD COLUMN linkUrl TEXT"
+                    ],
+                    'stats' => [
+                        'linkUrl' => "ALTER TABLE stats ADD COLUMN linkUrl TEXT"
+                    ],
+                    'hero' => [
+                        'badge_text' => "ALTER TABLE hero ADD COLUMN badge_text VARCHAR(150) DEFAULT 'Alcaldía Municipal de León'"
+                    ]
+                ];
+
+                foreach ($tables as $table => $columns) {
+                    $cols = $pdo->query("SHOW COLUMNS FROM `{$table}`")->fetchAll(PDO::FETCH_COLUMN);
+                    $existing = array_map('strtolower', $cols ?: []);
+                    foreach ($columns as $colName => $alterSql) {
+                        if (!in_array(strtolower($colName), $existing, true)) {
+                            try {
+                                $pdo->exec($alterSql);
+                            } catch (\Throwable $e) {}
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignorar errores de migración
+        }
     }
 
     private static function seedData(PDO $pdo): void {

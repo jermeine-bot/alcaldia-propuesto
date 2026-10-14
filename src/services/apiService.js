@@ -21,22 +21,32 @@ const request = async (path, { method = 'GET', data, authenticated = true } = {}
   return result;
 };
 
-const normalizeNews = items => items.map(item => ({
-  id: item.id,
-  title: item.title || item.titulo,
-  summary: item.summary || item.extracto,
-  content: item.content || item.contenido,
-  category: item.category || item.categoria,
-  img: item.img || item.imagen || item.image,
-  image: item.img || item.imagen || item.image,
-  author: item.author || item.autor,
-  date: item.date,
-  status: item.status || 'published',
-  fuente: item.fuente || 'manual',
-  url_externa: item.url_externa,
-  external_id: item.external_id,
-  created_at: item.created_at
-}));
+const normalizeNews = items => {
+  if (!items) return [];
+  const list = Array.isArray(items) ? items : [items];
+  const mapped = list.map(item => {
+    const rawLink = item.linkUrl || item.linkurl || item.url || item.url_externa || item.urlExterna || '';
+    return {
+      id: item.id,
+      title: item.title || item.titulo,
+      summary: item.summary || item.extracto,
+      content: item.content || item.contenido,
+      category: item.category || item.categoria,
+      img: item.img || item.imagen || item.image,
+      image: item.img || item.imagen || item.image,
+      author: item.author || item.autor,
+      date: item.date || item.fecha || '',
+      status: item.status || 'published',
+      fuente: item.fuente || 'manual',
+      url_externa: rawLink,
+      linkUrl: rawLink,
+      url: rawLink,
+      external_id: item.external_id,
+      created_at: item.created_at
+    };
+  });
+  return Array.isArray(items) ? mapped : mapped[0];
+};
 
 const saveItem = (resource, data) => {
   const isEdit = Boolean(data.id);
@@ -84,13 +94,19 @@ export const apiService = {
 
   getNoticias: async () => normalizeNews(await request('/noticias')),
   saveNoticia: async data => {
+    const cleanLink = data.linkUrl || data.url || data.url_externa || '';
     const result = await saveItem('noticias', {
       ...data,
       title: data.title || data.titulo,
       summary: data.summary || data.extracto,
       content: data.content || data.contenido,
       category: data.category || data.categoria,
-      img: data.image || data.img || data.imagen
+      img: data.image || data.img || data.imagen,
+      image: data.image || data.img || data.imagen,
+      date: data.date || data.fecha,
+      linkUrl: cleanLink,
+      url: cleanLink,
+      url_externa: cleanLink
     });
     return normalizeNews(result);
   },

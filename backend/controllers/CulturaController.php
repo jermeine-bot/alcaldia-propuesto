@@ -4,84 +4,133 @@ namespace Controllers;
 
 use Config\Database;
 use PDO;
+use Throwable;
 
 class CulturaController {
+    private static function getRawInput(): array {
+        $raw = file_get_contents('php://input');
+        if ($raw) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return $_POST ?: [];
+    }
+
     private static function fetchAll(): array {
         $pdo = Database::getConnection();
         $stmt = $pdo->query("SELECT * FROM cultura ORDER BY created_at DESC");
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
         foreach ($rows as &$r) {
-            $r['is_published'] = (bool)$r['is_published'];
+            $r['is_published'] = (bool)($r['is_published'] ?? true);
+            $img = !empty($r['image_url']) ? $r['image_url'] : (!empty($r['image']) ? $r['image'] : '/img/noticias/festival de la poseia.jpg');
+            $r['image_url'] = $img;
+            $r['image'] = $img;
+            $r['img'] = $img;
+            $r['date'] = $r['event_date'] ?? '';
         }
         return $rows;
     }
 
     public static function getAll(): void {
-        echo json_encode(self::fetchAll());
+        try {
+            echo json_encode(self::fetchAll());
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public static function create(array $body): void {
-        $title = trim((string)($body['title'] ?? ''));
-        if ($title === '') {
-            http_response_code(400);
-            echo json_encode(['error' => 'El título del evento es obligatorio.']);
-            return;
+    public static function create(array $body = []): void {
+        try {
+            $raw = self::getRawInput();
+            $data = array_merge($raw, $body);
+
+            $title = trim((string)($data['title'] ?? ''));
+            if ($title === '') {
+                http_response_code(400);
+                echo json_encode(['error' => 'El título del evento es obligatorio.']);
+                return;
+            }
+
+            $id = $data['id'] ?? ('cultura-' . bin2hex(random_bytes(8)));
+            $image = $data['image'] ?? $data['image_url'] ?? $data['img'] ?? '/img/noticias/festival de la poseia.jpg';
+            $eventDate = $data['event_date'] ?? $data['date'] ?? '';
+
+            $pdo = Database::getConnection();
+            $stmt = $pdo->prepare("
+                INSERT INTO cultura (id, icon, title, `desc`, event_date, event_time, location, image_url, is_published)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $id,
+                $data['icon'] ?? 'fa-cross',
+                $title,
+                $data['desc'] ?? $data['summary'] ?? '',
+                $eventDate,
+                $data['event_time'] ?? 'Todo el día',
+                $data['location'] ?? 'León, Nicaragua',
+                $image,
+                isset($data['is_published']) ? ($data['is_published'] ? 1 : 0) : 1
+            ]);
+
+            http_response_code(201);
+            echo json_encode(self::fetchAll());
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error al crear evento: ' . $e->getMessage()]);
         }
-
-        $id = $body['id'] ?? ('cultura-' . bin2hex(random_bytes(8)));
-        $pdo = Database::getConnection();
-        $stmt = $pdo->prepare("
-            INSERT INTO cultura (id, icon, title, `desc`, event_date, event_time, location, image_url, is_published)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([
-            $id,
-            $body['icon'] ?? '',
-            $title,
-            $body['desc'] ?? '',
-            $body['event_date'] ?? '',
-            $body['event_time'] ?? '',
-            $body['location'] ?? '',
-            $body['image_url'] ?? '',
-            isset($body['is_published']) ? ($body['is_published'] ? 1 : 0) : 1
-        ]);
-
-        http_response_code(201);
-        echo json_encode(self::fetchAll());
     }
 
-    public static function update(string $id, array $body): void {
-        $title = trim((string)($body['title'] ?? ''));
-        if ($title === '') {
-            http_response_code(400);
-            echo json_encode(['error' => 'El título del evento es obligatorio.']);
-            return;
+    public static function update(string $id, array $body = []): void {
+        try {
+            $raw = self::getRawInput();
+            $data = array_merge($raw, $body);
+
+            $title = trim((string)($data['title'] ?? ''));
+            if ($title === '') {
+                http_response_code(400);
+                echo json_encode(['error' => 'El título del evento es obligatorio.']);
+                return;
+            }
+
+            $image = $data['image'] ?? $data['image_url'] ?? $data['img'] ?? '/img/noticias/festival de la poseia.jpg';
+            $eventDate = $data['event_date'] ?? $data['date'] ?? '';
+
+            $pdo = Database::getConnection();
+            $stmt = $pdo->prepare("
+                UPDATE cultura SET icon=?, title=?, `desc`=?, event_date=?, event_time=?, location=?, image_url=?, is_published=?, updated_at=CURRENT_TIMESTAMP
+                WHERE id=?
+            ");
+            $stmt->execute([
+                $data['icon'] ?? 'fa-cross',
+                $title,
+                $data['desc'] ?? $data['summary'] ?? '',
+                $eventDate,
+                $data['event_time'] ?? 'Todo el día',
+                $data['location'] ?? 'León, Nicaragua',
+                $image,
+                isset($data['is_published']) ? ($data['is_published'] ? 1 : 0) : 1,
+                $id
+            ]);
+
+            echo json_encode(self::fetchAll());
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error al actualizar evento: ' . $e->getMessage()]);
         }
-
-        $pdo = Database::getConnection();
-        $stmt = $pdo->prepare("
-            UPDATE cultura SET icon=?, title=?, `desc`=?, event_date=?, event_time=?, location=?, image_url=?, is_published=?, updated_at=CURRENT_TIMESTAMP
-            WHERE id=?
-        ");
-        $stmt->execute([
-            $body['icon'] ?? '',
-            $title,
-            $body['desc'] ?? '',
-            $body['event_date'] ?? '',
-            $body['event_time'] ?? '',
-            $body['location'] ?? '',
-            $body['image_url'] ?? '',
-            isset($body['is_published']) ? ($body['is_published'] ? 1 : 0) : 1,
-            $id
-        ]);
-
-        echo json_encode(self::fetchAll());
     }
 
     public static function delete(string $id): void {
-        $pdo = Database::getConnection();
-        $stmt = $pdo->prepare("DELETE FROM cultura WHERE id = ?");
-        $stmt->execute([$id]);
-        echo json_encode(self::fetchAll());
+        try {
+            $pdo = Database::getConnection();
+            $stmt = $pdo->prepare("DELETE FROM cultura WHERE id = ?");
+            $stmt->execute([$id]);
+            echo json_encode(self::fetchAll());
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error al eliminar evento: ' . $e->getMessage()]);
+        }
     }
 }

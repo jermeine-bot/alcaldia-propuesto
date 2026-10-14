@@ -117,6 +117,15 @@ const NoticiasAdmin = () => {
     });
   };
 
+  const formatUrl = (url) => {
+    if (!url || typeof url !== 'string' || !url.trim()) return '';
+    const trimmed = url.trim();
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title || !formData.summary) {
@@ -128,7 +137,13 @@ const NoticiasAdmin = () => {
       });
       return;
     }
-    saveMutation.mutate(formData);
+    const cleanLink = formatUrl(formData.linkUrl);
+    saveMutation.mutate({
+      ...formData,
+      linkUrl: cleanLink,
+      url: cleanLink,
+      url_externa: cleanLink
+    });
   };
 
   const filteredNoticias = noticias.filter((item) =>
@@ -214,9 +229,22 @@ const NoticiasAdmin = () => {
                           <div className="fw-semibold text-dark mb-1 text-truncate" style={{ maxWidth: 280 }} title={item.title}>
                             {item.title}
                           </div>
-                          <small className="text-muted d-flex align-items-center gap-1">
-                            <Calendar size={12} className="text-danger" /> {item.date || 'Fecha no registrada'}
-                          </small>
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <small className="text-muted d-flex align-items-center gap-1">
+                              <Calendar size={12} className="text-danger" /> {item.date || 'Fecha no registrada'}
+                            </small>
+                            {(item.linkUrl || item.url) && (
+                              <a
+                                href={formatUrl(item.linkUrl || item.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="badge bg-danger-subtle text-danger text-decoration-none d-inline-flex align-items-center gap-1"
+                                title={item.linkUrl || item.url}
+                              >
+                                <LinkIcon size={10} /> Enlace
+                              </a>
+                            )}
+                          </div>
                         </td>
                         <td>
                           <span className="badge bg-light text-dark border text-nowrap">{item.category}</span>

@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS hero (
   primary_btn_link VARCHAR(500),
   secondary_btn_text VARCHAR(255),
   secondary_btn_link VARCHAR(500),
+  badge_text VARCHAR(150) DEFAULT 'Alcaldía Municipal de León',
   is_active BOOLEAN DEFAULT TRUE,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS proyectos (
   progress INT DEFAULT 0,
   startDate VARCHAR(100),
   beneficiaries VARCHAR(255),
+  linkUrl TEXT,
   is_published BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -71,6 +73,7 @@ CREATE TABLE IF NOT EXISTS turismo (
   category VARCHAR(100),
   location VARCHAR(255),
   content TEXT,
+  linkUrl TEXT,
   is_published BOOLEAN DEFAULT TRUE,
   display_order INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -104,6 +107,7 @@ CREATE TABLE IF NOT EXISTS stats (
   color VARCHAR(20),
   description TEXT,
   breakdown JSON,
+  linkUrl TEXT,
   is_published BOOLEAN DEFAULT TRUE,
   display_order INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
