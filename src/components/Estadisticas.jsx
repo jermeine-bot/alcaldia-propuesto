@@ -91,7 +91,7 @@ const Estadisticas = () => {
     ? cityStats 
     : cityStats.filter(s => s.category === activeCategory);
 
-  // Contenido del modal centralizado
+  // Contenido del modal centralizado sin barras de scroll visibles
   const modalContent = selectedStat && (
     <div 
       className="stat-modal-backdrop position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3 p-md-4"
@@ -99,10 +99,18 @@ const Estadisticas = () => {
         backgroundColor: 'rgba(11, 37, 69, 0.65)',
         backdropFilter: 'blur(5px)',
         zIndex: 99999,
-        overflowY: 'auto'
+        overflowY: 'auto',
+        scrollbarWidth: 'none', /* Firefox */
+        msOverflowStyle: 'none'  /* IE y Edge */
       }}
       onClick={() => setSelectedStat(null)}
     >
+      <style>{`
+        .stat-modal-backdrop::-webkit-scrollbar,
+        .stat-modal-card::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       <div 
         className="stat-modal-card bg-white rounded-5 shadow-lg p-4 p-md-5 w-100 position-relative d-flex flex-column border-0" 
         onClick={(e) => e.stopPropagation()}
@@ -110,7 +118,9 @@ const Estadisticas = () => {
           maxWidth: '520px',
           maxHeight: '85vh',
           overflowY: 'auto',
-          margin: 'auto'
+          margin: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
         }}
       >
         {/* Botón de Cierre Superior (X) */}
