@@ -11,21 +11,29 @@ class TurismoController {
         try {
             $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
             if ($driver === 'mysql') {
-                $pdo->exec("ALTER TABLE turismo MODIFY COLUMN img LONGTEXT");
                 try {
+                    $pdo->exec("ALTER TABLE turismo MODIFY COLUMN img LONGTEXT");
+                } catch (Throwable $e) {}
+
+                $cols = $pdo->query("SHOW COLUMNS FROM turismo LIKE 'linkUrl'")->fetchAll();
+                if (empty($cols)) {
                     $pdo->exec("ALTER TABLE turismo ADD COLUMN linkUrl TEXT");
-                } catch (Throwable $e) {
-                    // La columna linkUrl ya existe
                 }
             } else {
-                try {
+                $cols = $pdo->query("PRAGMA table_info(turismo)")->fetchAll(PDO::FETCH_ASSOC);
+                $hasLink = false;
+                foreach ($cols as $col) {
+                    if (isset($col['name']) && strtolower($col['name']) === 'linkurl') {
+                        $hasLink = true;
+                        break;
+                    }
+                }
+                if (!$hasLink) {
                     $pdo->exec("ALTER TABLE turismo ADD COLUMN linkUrl TEXT DEFAULT ''");
-                } catch (Throwable $e) {
-                    // La columna linkUrl ya existe en SQLite
                 }
             }
         } catch (Throwable $e) {
-            // Ignorar errores de migración automática
+            // Ignorar si no requiere alteración
         }
     }
 
@@ -37,13 +45,15 @@ class TurismoController {
         foreach ($rows as &$r) {
             $r['is_published'] = (bool)($r['is_published'] ?? true);
             $r['display_order'] = (int)($r['display_order'] ?? 0);
+
             $imgVal = !empty($r['img']) ? $r['img'] : (!empty($r['image']) ? $r['image'] : '/img/turismo/catedral.jpg');
             $r['img'] = $imgVal;
             $r['image'] = $imgVal;
 
-            $linkVal = $r['linkUrl'] ?? $r['url'] ?? '';
-            $r['linkUrl'] = $linkVal;
-            $r['url'] = $linkVal;
+            // Buscar linkUrl sin importar mayúsculas/minúsculas que devuelva PDO
+            $linkVal = $r['linkUrl'] ?? $r['linkurl'] ?? $r['url'] ?? '';
+            $r['linkUrl'] = (string)$linkVal;
+            $r['url'] = (string)$linkVal;
         }
         return $rows;
     }
@@ -67,7 +77,7 @@ class TurismoController {
             }
 
             $img = $body['image'] ?? $body['img'] ?? '/img/turismo/catedral.jpg';
-            $linkUrl = trim((string)($body['linkUrl'] ?? $body['url'] ?? ''));
+            $linkUrl = trim((string)($body['linkUrl'] ?? $body['linkurl'] ?? $body['url'] ?? $body['link'] ?? ''));
             $id = $body['id'] ?? ('turismo-' . bin2hex(random_bytes(8)));
 
             $pdo = Database::getConnection();
@@ -108,7 +118,7 @@ class TurismoController {
             }
 
             $img = $body['image'] ?? $body['img'] ?? '/img/turismo/catedral.jpg';
-            $linkUrl = trim((string)($body['linkUrl'] ?? $body['url'] ?? ''));
+            $linkUrl = trim((string)($body['linkUrl'] ?? $body['linkurl'] ?? $body['url'] ?? $body['link'] ?? ''));
 
             $pdo = Database::getConnection();
             self::ensureSchema($pdo);
