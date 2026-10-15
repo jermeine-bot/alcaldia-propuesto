@@ -39,6 +39,7 @@ use Controllers\CmsController;
 use Controllers\UsersController;
 use Controllers\AuditController;
 use Controllers\FacebookController;
+use Controllers\AnuncioController;
 
 // 1. Manejo de CORS
 CorsMiddleware::handle();
@@ -117,6 +118,7 @@ if ($path === '/' && $method === 'GET') {
             'stats' => '/api/stats',
             'contacto' => '/api/contacto',
             'cms' => '/api/cms',
+            'anuncio_portal' => '/api/cms/anuncio-portal',
             'auth' => '/api/auth/login'
         ]
     ]);
@@ -378,6 +380,17 @@ if (preg_match('~^/api/servicios/([^/]+)$~', $path, $matches)) {
         exit;
     } elseif ($method === 'DELETE') {
         ServiciosController::delete($id);
+        exit;
+    }
+}
+
+// Anuncio Portal (Flyer / Pop-up)
+if ($path === '/api/cms/anuncio-portal') {
+    if ($method === 'GET') {
+        AnuncioController::get();
+        exit;
+    } elseif ($method === 'PUT' || $method === 'POST') {
+        AnuncioController::save();
         exit;
     }
 }
