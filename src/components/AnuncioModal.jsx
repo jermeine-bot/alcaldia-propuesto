@@ -195,21 +195,7 @@ const AnuncioModal = () => {
               <SkipForward size={14} />
             </button>
 
-            <button
-              type="button"
-              onClick={handleClose}
-              aria-label="Quitar anuncio"
-              title="Quitar anuncio (Esc)"
-              className="btn btn-danger rounded-circle d-flex align-items-center justify-content-center shadow"
-              style={{
-                width: '36px',
-                height: '36px',
-                backgroundColor: '#B22222',
-                border: '2px solid rgba(255,255,255,0.5)'
-              }}
-            >
-              <X size={18} />
-            </button>
+            
           </div>
 
           {targetLink ? (
