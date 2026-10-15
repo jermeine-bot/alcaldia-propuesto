@@ -612,7 +612,7 @@ Sustituye `noticias` por otra tabla mostrada por `SHOW TABLES;`. Puedes limitar 
 
 Credenciales locales iniciales para el panel:
 
-- Correo: `admin@alcaldaleon.gob.ni`
+- Correo: `git `
 - Contraseña: `admin123`
 
 Úsalas solo en desarrollo; cambia o elimina estas credenciales antes de desplegar en producción.

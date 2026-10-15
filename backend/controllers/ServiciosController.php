@@ -4,8 +4,27 @@ namespace Controllers;
 
 use Config\Database;
 use PDO;
+use Throwable;
 
 class ServiciosController {
+    private static function ensureSchema(PDO $pdo): void {
+        try {
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'mysql') {
+                $cols = $pdo->query("SHOW COLUMNS FROM subservicios")->fetchAll(PDO::FETCH_COLUMN);
+                $colsLower = array_map('strtolower', $cols ?: []);
+                if (!in_array('requisitos', $colsLower, true)) {
+                    $pdo->exec("ALTER TABLE subservicios ADD COLUMN requisitos TEXT");
+                }
+                if (!in_array('departamento', $colsLower, true)) {
+                    $pdo->exec("ALTER TABLE subservicios ADD COLUMN departamento VARCHAR(255) DEFAULT ''");
+                }
+            }
+        } catch (Throwable $e) {
+            // Ignorar si las columnas ya existen
+        }
+    }
+
     public static function getSettings(): void {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare("SELECT eyebrow, title, description, phone FROM servicios_settings WHERE id = 'main'");
@@ -57,6 +76,8 @@ class ServiciosController {
 
     private static function fetchAll(): array {
         $pdo = Database::getConnection();
+        self::ensureSchema($pdo);
+
         $stmt = $pdo->query("SELECT * FROM servicios ORDER BY display_order ASC, created_at ASC");
         $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -68,7 +89,7 @@ class ServiciosController {
         $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
 
         $subStmt = $pdo->prepare("
-            SELECT id, servicio_id, title, `desc`, icon, linkText, linkUrl
+            SELECT id, servicio_id, title, `desc`, icon, linkText, linkUrl, requisitos, departamento
             FROM subservicios WHERE servicio_id IN ($placeholders) ORDER BY id ASC
         ");
         $subStmt->execute($serviceIds);
@@ -78,6 +99,15 @@ class ServiciosController {
         foreach ($allSub as $sub) {
             $sid = $sub['servicio_id'];
             unset($sub['servicio_id']);
+
+            $reqs = [];
+            if (!empty($sub['requisitos'])) {
+                $decoded = json_decode($sub['requisitos'], true);
+                $reqs = is_array($decoded) ? $decoded : explode("\n", $sub['requisitos']);
+            }
+            $sub['requisitos'] = array_filter(array_map('trim', $reqs));
+            $sub['departamento'] = $sub['departamento'] ?? '';
+
             $byService[$sid][] = $sub;
         }
 
@@ -106,6 +136,7 @@ class ServiciosController {
 
         $id = $body['id'] ?? ('servicio-' . bin2hex(random_bytes(8)));
         $pdo = Database::getConnection();
+        self::ensureSchema($pdo);
         $pdo->beginTransaction();
 
         try {
@@ -131,10 +162,13 @@ class ServiciosController {
             ]);
 
             $subInsert = $pdo->prepare("
-                INSERT INTO subservicios (id, servicio_id, title, `desc`, icon, linkText, linkUrl)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO subservicios (id, servicio_id, title, `desc`, icon, linkText, linkUrl, requisitos, departamento)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             foreach ($opciones as $opt) {
+                $reqs = $opt['requisitos'] ?? [];
+                $reqsJson = is_array($reqs) ? json_encode(array_values(array_filter($reqs)), JSON_UNESCAPED_UNICODE) : json_encode([$reqs]);
+
                 $subInsert->execute([
                     $opt['id'] ?? ('opt-' . bin2hex(random_bytes(4))),
                     $id,
@@ -142,7 +176,9 @@ class ServiciosController {
                     $opt['desc'] ?? '',
                     $opt['icon'] ?? '',
                     $opt['linkText'] ?? '',
-                    $opt['linkUrl'] ?? ''
+                    $opt['linkUrl'] ?? '',
+                    $reqsJson,
+                    $opt['departamento'] ?? ''
                 ]);
             }
 
@@ -167,6 +203,7 @@ class ServiciosController {
         }
 
         $pdo = Database::getConnection();
+        self::ensureSchema($pdo);
         $pdo->beginTransaction();
 
         try {
@@ -189,10 +226,13 @@ class ServiciosController {
                 $del->execute([$id]);
 
                 $subInsert = $pdo->prepare("
-                    INSERT INTO subservicios (id, servicio_id, title, `desc`, icon, linkText, linkUrl)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO subservicios (id, servicio_id, title, `desc`, icon, linkText, linkUrl, requisitos, departamento)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 foreach ($body['opciones'] as $opt) {
+                    $reqs = $opt['requisitos'] ?? [];
+                    $reqsJson = is_array($reqs) ? json_encode(array_values(array_filter($reqs)), JSON_UNESCAPED_UNICODE) : json_encode([$reqs]);
+
                     $subInsert->execute([
                         $opt['id'] ?? ('opt-' . bin2hex(random_bytes(4))),
                         $id,
@@ -200,7 +240,9 @@ class ServiciosController {
                         $opt['desc'] ?? '',
                         $opt['icon'] ?? '',
                         $opt['linkText'] ?? '',
-                        $opt['linkUrl'] ?? ''
+                        $opt['linkUrl'] ?? '',
+                        $reqsJson,
+                        $opt['departamento'] ?? ''
                     ]);
                 }
 
@@ -235,8 +277,13 @@ class ServiciosController {
         }
 
         $optionId = $subservicioId ?: ($body['id'] ?? ('opt-' . bin2hex(random_bytes(4))));
+        $departamento = $body['departamento'] ?? '';
+        
+        $reqs = $body['requisitos'] ?? [];
+        $reqsJson = is_array($reqs) ? json_encode(array_values(array_filter($reqs)), JSON_UNESCAPED_UNICODE) : json_encode([$reqs]);
 
         $pdo = Database::getConnection();
+        self::ensureSchema($pdo);
         $pdo->beginTransaction();
 
         try {
@@ -245,7 +292,9 @@ class ServiciosController {
 
             if ($check->fetch()) {
                 $update = $pdo->prepare("
-                    UPDATE subservicios SET title=?, `desc`=?, icon=?, linkText=?, linkUrl=? WHERE id=? AND servicio_id=?
+                    UPDATE subservicios 
+                    SET title=?, `desc`=?, icon=?, linkText=?, linkUrl=?, requisitos=?, departamento=? 
+                    WHERE id=? AND servicio_id=?
                 ");
                 $update->execute([
                     $title,
@@ -253,13 +302,15 @@ class ServiciosController {
                     $body['icon'] ?? '',
                     $body['linkText'] ?? '',
                     $body['linkUrl'] ?? '',
+                    $reqsJson,
+                    $departamento,
                     $optionId,
                     $serviceId
                 ]);
             } else {
                 $insert = $pdo->prepare("
-                    INSERT INTO subservicios (id, servicio_id, title, `desc`, icon, linkText, linkUrl)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO subservicios (id, servicio_id, title, `desc`, icon, linkText, linkUrl, requisitos, departamento)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $insert->execute([
                     $optionId,
@@ -268,7 +319,9 @@ class ServiciosController {
                     $desc,
                     $body['icon'] ?? '',
                     $body['linkText'] ?? '',
-                    $body['linkUrl'] ?? ''
+                    $body['linkUrl'] ?? '',
+                    $reqsJson,
+                    $departamento
                 ]);
             }
 
@@ -282,7 +335,7 @@ class ServiciosController {
         } catch (\Exception $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             http_response_code(500);
-            echo json_encode(['error' => 'No se pudo guardar el trámite o servicio.']);
+            echo json_encode(['error' => 'No se pudo guardar el trámite o servicio: ' . $e->getMessage()]);
         }
     }
 
