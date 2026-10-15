@@ -4,12 +4,89 @@ import { apiService } from '../services/apiService';
 
 // Lista enriquecida con sinónimos y palabras clave relacionadas
 const searchSuggestionsList = [
-  { title: 'Trámite de Alcantarillado y Agua', category: 'Servicios', link: '#servicios', synonyms: ['agua', 'alcantarillado', 'pago', 'agua potable'] },
-  { title: 'Catedral de León (Patrimonio)', category: 'Turismo', link: '#turismo', synonyms: ['turismo', 'catedral', 'iglesia', 'visitar', 'patrimonio'] },
-  { title: 'Noticias Municipales Recientes', category: 'Noticias', link: '#noticias', synonyms: ['noticias', 'actualidad', 'alcaldia', 'comunicados'] },
-  { title: 'Proyectos de Desarrollo Urbano', category: 'Proyectos', link: '#proyectos', synonyms: ['proyectos', 'obras', 'desarrollo', 'construccion'] },
-  { title: 'Horarios de Atención Ciudadana', category: 'Contacto', link: '#contacto', synonyms: ['contacto', 'horarios', 'telefono', 'atencion', 'ayuda'] },
-  { title: 'Estadísticas de Población', category: 'Información', link: '#estadisticas', synonyms: ['estadisticas', 'poblacion', 'datos', 'cifras'] }
+  // --- Servicios y Trámites Municipales ---
+  { 
+    title: 'Trámite de Alcantarillado y Agua Potable', 
+    category: 'Servicios', 
+    link: '#servicios', 
+    synonyms: ['agua', 'alcantarillado', 'pago', 'agua potable', 'servicios publicos', 'recibo', 'fontaneria'] 
+  },
+  { 
+    title: 'Impuesto Municipal sobre Bienes Inmuebles (IBI)', 
+    category: 'Servicios', 
+    link: '#servicios', 
+    synonyms: ['ibi', 'impuesto', 'bienes inmuebles', 'catastro', 'pago de propiedad', 'terreno', 'casa', 'solvencia municipal'] 
+  },
+  { 
+    title: 'Licencia de Construcción y Permisos de Obra', 
+    category: 'Servicios', 
+    link: '#servicios', 
+    synonyms: ['construccion', 'permiso de obra', 'edificacion', 'remodelacion', 'planos', 'urbanismo', 'ingenieria'] 
+  },
+  { 
+    title: 'Matrícula y Licencia Comercial de Negocios', 
+    category: 'Servicios', 
+    link: '#servicios', 
+    synonyms: ['negocio', 'empresa', 'licencia comercial', 'comercio', 'matricula municipal', 'apertura de negocio', 'ventanilla unica'] 
+  },
+  { 
+    title: 'Consulta de Requisitos para Trámites', 
+    category: 'Servicios', 
+    link: '#servicios', 
+    synonyms: ['requisitos', 'documentos', 'papeleo', 'ver requisitos', 'pasos para tramite', 'ventanilla'] 
+  },
+  { 
+    title: 'Departamentos y Solicitud de Certificados', 
+    category: 'Servicios', 
+    link: '#servicios', 
+    synonyms: ['departamento', 'direccion de catastro', 'registro civil', 'certificaciones', 'constancia', 'tramites'] 
+  },
+
+  // --- Turismo y Patrimonio de León ---
+  { 
+    title: 'Catedral de León (Patrimonio de la Humanidad)', 
+    category: 'Turismo', 
+    link: '#turismo', 
+    synonyms: ['turismo', 'catedral', 'iglesia', 'visitar', 'patrimonio', 'insigne catedral', 'guia turistica'] 
+  },
+  { 
+    title: 'Rutas Turísticas y Sitios Históricos de León', 
+    category: 'Turismo', 
+    link: '#turismo', 
+    synonyms: ['museos', 'ruinas de leon viejo', 'poneloya', 'las penitas', 'volcan cerro negro', 'playas', 'historia'] 
+  },
+
+  // --- Noticias y Comunicados ---
+  { 
+    title: 'Noticias Municipales Recientes', 
+    category: 'Noticias', 
+    link: '#noticias', 
+    synonyms: ['noticias', 'actualidad', 'alcaldia', 'comunicados', 'eventos', 'actividades'] 
+  },
+
+  // --- Proyectos Urbanos y Obras ---
+  { 
+    title: 'Proyectos de Desarrollo Urbano e Infraestructura', 
+    category: 'Proyectos', 
+    link: '#proyectos', 
+    synonyms: ['proyectos', 'obras', 'desarrollo', 'construccion', 'pavimentacion', 'calles', 'mantenimiento'] 
+  },
+
+  // --- Atención y Contacto ---
+  { 
+    title: 'Horarios de Atención y Contacto Ciudadano', 
+    category: 'Contacto', 
+    link: '#contacto', 
+    synonyms: ['contacto', 'horarios', 'telefono', 'atencion', 'ayuda', 'ventanilla unica', 'linea telefonica', 'consultas'] 
+  },
+
+  // --- Información y Cifras ---
+  { 
+    title: 'Estadísticas de Población y Datos Municipales', 
+    category: 'Información', 
+    link: '#estadisticas', 
+    synonyms: ['estadisticas', 'poblacion', 'datos', 'cifras', 'municipio de leon', 'censo'] 
+  }
 ];
 
 const Hero = () => {

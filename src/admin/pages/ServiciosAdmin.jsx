@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
-import { Briefcase, Plus, Edit, Trash2, Search, Link as LinkIcon, Layers, FileText, Save } from 'lucide-react';
+import { Briefcase, Plus, Edit, Trash2, Search, Layers, FileText, Save, ListChecks, Building, X } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import { initialServiciosSettings } from '../../services/initialData';
 
@@ -10,6 +10,7 @@ const ServiciosAdmin = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSubModal, setShowSubModal] = useState(false);
+  const [showRequisitosModal, setShowRequisitosModal] = useState(false); // Estado para el nuevo modal de requisitos
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingSub, setEditingSub] = useState(null);
   const [selectedCatId, setSelectedCatId] = useState(null);
@@ -33,14 +34,17 @@ const ServiciosAdmin = () => {
     desc: ''
   });
 
-  // Form State para Sub-servicio / Trámite
+  // Form State para Sub-servicio / Trámite (Actualizado con requisitos y departamento)
   const [subFormData, setSubFormData] = useState({
     title: '',
     desc: '',
     icon: 'fa-file-signature',
-    linkText: 'Solicitar Permiso',
-    linkUrl: '#contacto'
+    requisitos: [],
+    departamento: ''
   });
+
+  // Estado temporal para un nuevo requisito dentro del modal secundario
+  const [nuevoRequisitoText, setNuevoRequisitoText] = useState('');
 
   // Fetch de Servicios desde la API del backend
   const { data: servicios = [], isLoading } = useQuery({
@@ -163,9 +167,10 @@ const ServiciosAdmin = () => {
       title: '',
       desc: '',
       icon: 'fa-file-signature',
-      linkText: 'Solicitar Permiso',
-      linkUrl: '#contacto'
+      requisitos: [],
+      departamento: ''
     });
+    setNuevoRequisitoText('');
   };
 
   // Handlers Categorías
@@ -234,8 +239,8 @@ const ServiciosAdmin = () => {
       title: sub.title || '',
       desc: sub.desc || '',
       icon: sub.icon || 'fa-file-signature',
-      linkText: sub.linkText || 'Solicitar Permiso',
-      linkUrl: sub.linkUrl || '#contacto'
+      requisitos: sub.requisitos || [],
+      departamento: sub.departamento || ''
     });
     setShowSubModal(true);
   };
@@ -269,6 +274,21 @@ const ServiciosAdmin = () => {
       return;
     }
     saveSubMutation.mutate({ catId: selectedCatId, subData: subFormData });
+  };
+
+  // Funciones para gestionar los requisitos dentro del modal secundario
+  const handleAddRequisito = () => {
+    if (!nuevoRequisitoText.trim()) return;
+    setSubFormData({
+      ...subFormData,
+      requisitos: [...subFormData.requisitos, nuevoRequisitoText.trim()]
+    });
+    setNuevoRequisitoText('');
+  };
+
+  const handleRemoveRequisito = (index) => {
+    const nuevosRequisitos = subFormData.requisitos.filter((_, i) => i !== index);
+    setSubFormData({ ...subFormData, requisitos: nuevosRequisitos });
   };
 
   // Filtro
@@ -442,7 +462,7 @@ const ServiciosAdmin = () => {
                                     {sub.title}
                                   </h6>
                                   <small className="text-muted text-truncate d-block" style={{ fontSize: '0.75rem' }}>
-                                    Enlace: <span className="text-danger fw-mono">{sub.linkUrl || '#contacto'}</span> ({sub.linkText})
+                                    Depto: <span className="text-danger fw-semibold">{sub.departamento || 'No asignado'}</span> ({sub.requisitos?.length || 0} requisitos)
                                   </small>
                                 </div>
                               </div>
@@ -450,7 +470,7 @@ const ServiciosAdmin = () => {
                                 <button
                                   className="btn btn-sm btn-light text-secondary border p-1"
                                   onClick={() => handleOpenEditSub(cat.id, sub)}
-                                  title="Editar trámite / enlace"
+                                  title="Editar trámite"
                                 >
                                   <Edit size={13} />
                                 </button>
@@ -570,7 +590,7 @@ const ServiciosAdmin = () => {
             <div className="modal-content border-0 shadow-lg">
               <div className="modal-header border-bottom bg-light">
                 <h5 className="modal-title fw-bold">
-                  {editingSub ? 'Editar Trámite / Enlace' : 'Agregar Trámite a la Categoría'}
+                  {editingSub ? 'Editar Trámite' : 'Agregar Trámite a la Categoría'}
                 </h5>
                 <button type="button" className="btn-close" onClick={() => setShowSubModal(false)}></button>
               </div>
@@ -613,31 +633,17 @@ const ServiciosAdmin = () => {
                       />
                     </div>
 
-                    <div className="col-12 col-md-6">
-                      <label className="form-label fw-semibold small">Texto del Botón / Enlace</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ej. Pagar IBI / Iniciar Trámite"
-                        value={subFormData.linkText}
-                        onChange={(e) => setSubFormData({ ...subFormData, linkText: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label fw-semibold small d-flex align-items-center gap-1">
-                        <LinkIcon size={14} className="text-danger" /> URL o Enlace Destino
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ej. #contacto o https://tramites.gob.ni"
-                        value={subFormData.linkUrl}
-                        onChange={(e) => setSubFormData({ ...subFormData, linkUrl: e.target.value })}
-                      />
-                      <div className="form-text text-muted small">
-                        Usa `#contacto` para ir al formulario interno o un link externo HTTP.
-                      </div>
+                    {/* Botón para abrir el modal de Requisitos y Departamento */}
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small d-block">Configuración de Requisitos y Departamento</label>
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-2 py-2"
+                        onClick={() => setShowRequisitosModal(true)}
+                      >
+                        <ListChecks size={16} />
+                        <span>Modificar requisitos ({subFormData.requisitos.length} agregados)</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -651,6 +657,94 @@ const ServiciosAdmin = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NUEVO MODAL SECUNDARIO: REQUISITOS Y DEPARTAMENTO */}
+      {showRequisitosModal && (
+        <div className="modal d-block bg-dark bg-opacity-75" tabIndex="-1" style={{ zIndex: 1060 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header border-bottom bg-light">
+                <h5 className="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                  <ListChecks size={20} className="text-danger" />
+                  <span>Requisitos y Departamento</span>
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setShowRequisitosModal(false)}></button>
+              </div>
+
+              <div className="modal-body">
+                {/* Título del trámite bajo de eso */}
+                <div className="mb-3 p-3 bg-light rounded border">
+                  <small className="text-muted d-block text-uppercase fw-bold" style={{ fontSize: '0.7rem' }}>Trámite Seleccionado:</small>
+                  <span className="fw-semibold text-dark">{subFormData.title || 'Sin título definido'}</span>
+                </div>
+
+                {/* Viñetas donde estarán los requisitos en listados */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold small">Requisitos (Viñetas)</label>
+                  <div className="input-group input-group-sm mb-2">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Escribe un requisito y agrégalo..."
+                      value={nuevoRequisitoText}
+                      onChange={(e) => setNuevoRequisitoText(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddRequisito(); } }}
+                    />
+                    <button type="button" className="btn btn-outline-danger" onClick={handleAddRequisito}>
+                      <Plus size={16} /> Agregar
+                    </button>
+                  </div>
+
+                  <ul className="list-group small" style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                    {subFormData.requisitos.length === 0 ? (
+                      <li className="list-group-item text-muted text-center italic py-2">No hay requisitos listados aún.</li>
+                    ) : (
+                      subFormData.requisitos.map((req, index) => (
+                        <li key={index} className="list-group-item d-flex align-items-center justify-content-between py-1 px-2">
+                          <span>• {req}</span>
+                          <button
+                            type="button"
+                            className="btn btn-link text-danger p-0 ms-2"
+                            onClick={() => handleRemoveRequisito(index)}
+                            title="Eliminar requisito"
+                          >
+                            <X size={14} />
+                          </button>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+
+                {/* Bajo eso quiero que diga el departamento del trámite */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold small d-flex align-items-center gap-1">
+                    <Building size={14} className="text-danger" /> Departamento del Trámite
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="Ej. Dirección de Catastro / Ventanilla Única"
+                    value={subFormData.departamento}
+                    onChange={(e) => setSubFormData({ ...subFormData, departamento: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Botón de guardar */}
+              <div className="modal-footer border-top bg-light">
+                <button
+                  type="button"
+                  className="btn btn-admin-primary btn-sm w-100"
+                  onClick={() => setShowRequisitosModal(false)}
+                >
+                  Guardar Requisitos
+                </button>
+              </div>
             </div>
           </div>
         </div>

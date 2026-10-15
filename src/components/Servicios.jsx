@@ -6,6 +6,7 @@ import { initialServiciosSettings } from '../services/initialData';
 
 const Servicios = () => {
   const [selectedCategoria, setSelectedCategoria] = useState(null);
+  const [selectedTrasnaccionRequisitos, setSelectedTrasnaccionRequisitos] = useState(null); // Estado para el modal de requisitos del trámite
 
   // Fetch de los Servicios desde CMS
   const { data: categoriasServicios = [] } = useQuery({
@@ -31,10 +32,13 @@ const Servicios = () => {
 
   // Lock body scroll when modal is active
   useEffect(() => {
-    if (selectedCategoria) {
+    if (selectedCategoria || selectedTrasnaccionRequisitos) {
       document.body.style.overflow = 'hidden';
       const handleKeyDown = (e) => {
-        if (e.key === 'Escape') setSelectedCategoria(null);
+        if (e.key === 'Escape') {
+          setSelectedTrasnaccionRequisitos(null);
+          setSelectedCategoria(null);
+        }
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => {
@@ -42,27 +46,9 @@ const Servicios = () => {
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [selectedCategoria]);
+  }, [selectedCategoria, selectedTrasnaccionRequisitos]);
 
-  const handleOptionClick = (e, linkUrl) => {
-    if (!linkUrl || linkUrl === '#contacto') {
-      setSelectedCategoria(null);
-      const targetElement = document.getElementById('contacto');
-      if (targetElement) {
-        e.preventDefault();
-        const headerHeight = 70;
-        const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-        window.scrollTo({
-          top: targetPosition,
-          behavior: 'smooth'
-        });
-      }
-    } else if (linkUrl.startsWith('http://') || linkUrl.startsWith('https://')) {
-      setSelectedCategoria(null);
-    }
-  };
-
-  // Contenido del modal con pestañas y barra de desplazamiento oculta
+  // Contenido del modal principal de Categoría con pestañas
   const modalContent = selectedCategoria && (
     <div
       className="modal-backdrop-custom position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3 p-md-4"
@@ -76,7 +62,7 @@ const Servicios = () => {
           maxHeight: '90vh', 
           overflowY: 'auto',
           margin: 'auto',
-          scrollbarWidth: 'none',     /* Oculta scroll en Firefox */
+          scrollbarWidth: 'none',    /* Oculta scroll en Firefox */
           msOverflowStyle: 'none',    /* Oculta scroll en IE/Edge antiguo */
         }}
         onClick={(e) => e.stopPropagation()}
@@ -136,39 +122,32 @@ const Servicios = () => {
         {/* DESCRIPCIÓN CATEGORÍA */}
         <p className="text-secondary mb-4 lead fs-6">{selectedCategoria.desc}</p>
 
-        {/* GRID DE SUB-SERVICIOS / OPCIONES */}
+        {/* GRID DE SUB-SERVICIOS / TRÁMITES */}
         <div className="row g-3">
-          {selectedCategoria.opciones?.map((opcion, idx) => {
-            const targetUrl = opcion.linkUrl || '#contacto';
-            const isExternal = targetUrl.startsWith('http://') || targetUrl.startsWith('https://');
-
-            return (
-              <div key={opcion.id || idx} className="col-12 col-md-6">
-                <div className="subservicio-item p-4 rounded-4 border bg-white h-100 d-flex flex-column shadow-hover transition-all">
-                  <div className="d-flex align-items-start gap-3 mb-3">
-                    <div className="subservicio-icon-box rounded-3 p-3 bg-danger-subtle text-danger d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '45px', height: '45px' }}>
-                      <i className={`fas ${opcion.icon || 'fa-file-alt'}`}></i>
-                    </div>
-                    <div>
-                      <h5 className="h6 fw-bold mb-1 text-dark">{opcion.title}</h5>
-                      <p className="small text-muted mb-0">{opcion.desc}</p>
-                    </div>
+          {selectedCategoria.opciones?.map((opcion, idx) => (
+            <div key={opcion.id || idx} className="col-12 col-md-6">
+              <div className="subservicio-item p-4 rounded-4 border bg-white h-100 d-flex flex-column shadow-hover transition-all">
+                <div className="d-flex align-items-start gap-3 mb-3">
+                  <div className="subservicio-icon-box rounded-3 p-3 bg-danger-subtle text-danger d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '45px', height: '45px' }}>
+                    <i className={`fas ${opcion.icon || 'fa-file-alt'}`}></i>
                   </div>
-                  <div className="mt-auto pt-3 text-end border-top-dashed">
-                    <a
-                      href={targetUrl}
-                      target={isExternal ? '_blank' : '_self'}
-                      rel={isExternal ? 'noopener noreferrer' : undefined}
-                      className="btn btn-sm btn-outline-danger rounded-pill px-4 fw-semibold"
-                      onClick={(e) => handleOptionClick(e, targetUrl)}
-                    >
-                      {opcion.linkText || 'Acceder'} <i className="fas fa-chevron-right ms-1 small"></i>
-                    </a>
+                  <div>
+                    <h5 className="h6 fw-bold mb-1 text-dark">{opcion.title}</h5>
+                    <p className="small text-muted mb-0">{opcion.desc}</p>
                   </div>
                 </div>
+                <div className="mt-auto pt-3 text-end border-top-dashed">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-danger rounded-pill px-4 fw-semibold"
+                    onClick={() => setSelectedTrasnaccionRequisitos(opcion)}
+                  >
+                    Ver requisitos <i className="fas fa-chevron-right ms-1 small"></i>
+                  </button>
+                </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         {/* FOOTER MODAL */}
@@ -181,6 +160,81 @@ const Servicios = () => {
             onClick={() => setSelectedCategoria(null)}
           >
             Cerrar Ventana
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // MODAL SECUNDARIO: Muestra los requisitos y el departamento del trámite seleccionado
+  const requisitosModalContent = selectedTrasnaccionRequisitos && (
+    <div
+      className="modal-backdrop-custom position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(3px)', zIndex: 100000 }}
+      onClick={() => setSelectedTrasnaccionRequisitos(null)}
+    >
+      <div
+        className="bg-white rounded-4 shadow-lg p-4 w-100 position-relative border-0"
+        style={{ maxWidth: '550px', maxHeight: '85vh', overflowY: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
+          <div className="d-flex align-items-center gap-2">
+            <div className="bg-danger-subtle text-danger p-2 rounded-3">
+              <i className="fas fa-list-check"></i>
+            </div>
+            <h5 className="fw-bold mb-0 text-dark">Requisitos del Trámite</h5>
+          </div>
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setSelectedTrasnaccionRequisitos(null)}
+            aria-label="Cerrar"
+          ></button>
+        </div>
+
+        {/* Título del trámite */}
+        <div className="mb-3 p-3 bg-light rounded-3 border">
+          <span className="text-uppercase fw-bold text-muted d-block" style={{ fontSize: '0.7rem' }}>Trámite:</span>
+          <h6 className="fw-bold text-dark mb-0">{selectedTrasnaccionRequisitos.title}</h6>
+        </div>
+
+        {/* Viñetas de Requisitos */}
+        <div className="mb-3">
+          <label className="form-label fw-semibold small text-muted">Requisitos necesarios:</label>
+          {(!selectedTrasnaccionRequisitos.requisitos || selectedTrasnaccionRequisitos.requisitos.length === 0) ? (
+            <p className="text-muted small italic p-2 border rounded bg-white text-center">No hay requisitos especificados para este trámite.</p>
+          ) : (
+            <ul className="list-group list-group-flush border rounded bg-white small">
+              {selectedTrasnaccionRequisitos.requisitos.map((req, i) => (
+                <li key={i} className="list-group-item py-2 d-flex align-items-start gap-2">
+                  <i className="fas fa-check-circle text-danger mt-1 flex-shrink-0"></i>
+                  <span>{req}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Departamento del trámite */}
+        <div className="mb-4 p-3 bg-light rounded-3 border d-flex align-items-center gap-3">
+          <div className="text-danger fs-4">
+            <i className="fas fa-building"></i>
+          </div>
+          <div>
+            <span className="text-uppercase fw-bold text-muted d-block" style={{ fontSize: '0.7rem' }}>Departamento responsable:</span>
+            <span className="fw-semibold text-dark">{selectedTrasnaccionRequisitos.departamento || 'No especificado'}</span>
+          </div>
+        </div>
+
+        {/* Botón de cerrar */}
+        <div className="text-end">
+          <button
+            type="button"
+            className="btn btn-danger btn-sm px-4 rounded-pill fw-semibold"
+            onClick={() => setSelectedTrasnaccionRequisitos(null)}
+          >
+            Entendido
           </button>
         </div>
       </div>
@@ -243,8 +297,14 @@ const Servicios = () => {
         </div>
       </div>
 
-      {/* RENDERIZA EL MODAL FUERA DE LA SECCIÓN DIRECTAMENTE EN EL BODY */}
-      {typeof document !== 'undefined' && ReactDOM.createPortal(modalContent, document.body)}
+      {/* RENDERIZA LOS MODALES FUERA DE LA SECCIÓN DIRECTAMENTE EN EL BODY */}
+      {typeof document !== 'undefined' && ReactDOM.createPortal(
+        <>
+          {modalContent}
+          {requisitosModalContent}
+        </>,
+        document.body
+      )}
     </section>
   );
 };
