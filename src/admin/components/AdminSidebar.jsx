@@ -12,8 +12,7 @@ import {
   Briefcase,
   Menu,
   MapPin,
-  Share2
-} from 'lucide-react';
+  Share2, Megaphone } from 'lucide-react';
 
 const AdminSidebar = () => {
   const [isOpen, setIsOpen] = useState(false); // Por defecto cerrado en móvil/tablet
@@ -29,6 +28,7 @@ const AdminSidebar = () => {
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/hero', label: 'Portada / Hero', icon: Image },
+    { path: '/admin/anuncios', label: 'Anuncio / Flyer', icon: Megaphone },
     { path: '/admin/servicios', label: 'Trámites y Servicios', icon: Briefcase },
     { path: '/admin/noticias', label: 'Noticias', icon: Newspaper },
     { path: '/admin/proyectos', label: 'Proyectos Municipales', icon: Building2 },

@@ -17,7 +17,8 @@ import CentrosAtencion from './components/CentrosAtencion';
 import Galeria from './components/Galeria';
 import RedesSociales from './components/RedesSociales';
 import Contacto from './components/Contacto';
-import Footer from './components/Footer';
+import Footer from './components/Footer'; 
+import AnuncioModal from './components/AnuncioModal';
 
 // Admin imports
 import ProtectedRoute from './admin/components/ProtectedRoute';
@@ -34,6 +35,7 @@ import EstadisticasAdmin from './admin/pages/EstadisticasAdmin';
 import ContactoAdmin from './admin/pages/ContactoAdmin';
 import CentrosAtencionAdmin from './admin/pages/CentrosAtencionAdmin';
 import RedesSocialesAdmin from './admin/pages/RedesSocialesAdmin';
+import AnuncioAdmin from './admin/pages/AnuncioAdmin';
 
 function PublicLanding() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -75,6 +77,7 @@ function PublicLanding() {
   return (
     <div className="app-container">
       <Preloader />
+      <AnuncioModal />
       <Header onOpenSearch={() => setIsSearchOpen(true)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <main ref={mainRef}>
@@ -128,6 +131,8 @@ export default function App() {
           <Route path="contacto" element={<ContactoAdmin />} />
           <Route path="centros-atencion" element={<CentrosAtencionAdmin />} />
           <Route path="redes-sociales" element={<RedesSocialesAdmin />} />
+          <Route path="anuncios" element={<AnuncioAdmin />} />
+          <Route path="anuncio" element={<AnuncioAdmin />} />
         </Route>
 
         {/* Catch-all */}
