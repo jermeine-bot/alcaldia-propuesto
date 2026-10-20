@@ -61,6 +61,19 @@ const deleteItem = (resource, id) => request(`/${resource}/${encodeURIComponent(
   method: 'DELETE'
 });
 
+const uploadFile = async (path, field, file) => {
+  const headers = {};
+  const token = getAuthData()?.token;
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const form = new FormData();
+  form.append(field, file);
+  const response = await fetch(`${API_BASE_URL}${path}`, { method: 'POST', headers, body: form });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'No se pudo subir el archivo.');
+  if (result.url?.startsWith('/')) result.url = new URL(result.url, API_BASE_URL).toString();
+  return result;
+};
+
 export const apiService = {
   login: async (email, password) => {
     const result = await request('/auth/login', {
@@ -91,6 +104,14 @@ export const apiService = {
 
   getHero: () => request('/hero'),
   updateHero: data => request('/hero', { method: 'PUT', data }),
+  uploadHeroVideo: file => uploadFile('/hero/upload-video', 'video', file),
+
+  getAnuncios: () => request('/anuncios'),
+  getPublicAnuncios: () => request('/anuncios/public', { authenticated: false }),
+  saveAnuncio: data => saveItem('anuncios', data),
+  deleteAnuncio: id => deleteItem('anuncios', id),
+  toggleAnuncioStatus: id => request(`/anuncios/${encodeURIComponent(id)}/toggle`, { method: 'PATCH' }),
+  uploadAnuncioImage: file => uploadFile('/anuncios/upload-image', 'image', file),
 
   getNoticias: async () => normalizeNews(await request('/noticias')),
   saveNoticia: async data => {

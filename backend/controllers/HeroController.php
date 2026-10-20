@@ -141,4 +141,40 @@ class HeroController {
             echo json_encode(['error' => 'Error al actualizar portada: ' . $e->getMessage()]);
         }
     }
+
+    public static function uploadVideo(): void {
+        try {
+            $file = $_FILES['video'] ?? $_FILES['file'] ?? null;
+            if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Selecciona un video para subir.']);
+                return;
+            }
+            if (($file['size'] ?? 0) > 100 * 1024 * 1024) {
+                http_response_code(413);
+                echo json_encode(['error' => 'El video no puede superar 100 MB.']);
+                return;
+            }
+            $extension = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
+            $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+            $allowed = ['mp4' => ['video/mp4'], 'webm' => ['video/webm', 'application/octet-stream']];
+            if (!isset($allowed[$extension]) || !in_array($mime, $allowed[$extension], true)) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Solo se permiten videos MP4 o WebM válidos.']);
+                return;
+            }
+            $uploadsDir = dirname(__DIR__) . '/uploads';
+            if (!is_dir($uploadsDir) && !mkdir($uploadsDir, 0755, true) && !is_dir($uploadsDir)) {
+                throw new \RuntimeException('No se pudo crear la carpeta de subidas.');
+            }
+            $filename = 'hero_' . bin2hex(random_bytes(12)) . '.' . $extension;
+            if (!move_uploaded_file($file['tmp_name'], $uploadsDir . '/' . $filename)) {
+                throw new \RuntimeException('No se pudo guardar el video.');
+            }
+            echo json_encode(['url' => '/uploads/' . $filename]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error al subir video: ' . $e->getMessage()]);
+        }
+    }
 }

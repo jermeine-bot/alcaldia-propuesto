@@ -24,6 +24,7 @@ const HeroAdmin = () => {
     secondaryBtnText: 'Servicios Rápidos',
     secondaryBtnLink: '#servicios'
   });
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   useEffect(() => {
     if (heroData) {
@@ -60,6 +61,21 @@ const HeroAdmin = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     mutation.mutate(formData);
+  };
+
+  const handleVideoUpload = async (file) => {
+    if (!file) return;
+    if (!['video/mp4', 'video/webm'].includes(file.type)) {
+      Swal.fire({ icon: 'warning', title: 'Formato no permitido', text: 'Selecciona un archivo MP4 o WebM.' });
+      return;
+    }
+    setUploadingVideo(true);
+    try {
+      const result = await apiService.uploadHeroVideo(file);
+      setFormData(prev => ({ ...prev, videoUrl: result.url }));
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Error al subir video', text: err.message });
+    } finally { setUploadingVideo(false); }
   };
 
   if (isLoading) {
@@ -147,7 +163,9 @@ const HeroAdmin = () => {
                   onChange={handleChange}
                   required
                 />
-                <small className="text-muted">Ej: /video/leon nicaragua vista de un dron.mp4</small>
+                <input className="form-control form-control-sm mt-2" type="file" accept="video/mp4,video/webm" disabled={uploadingVideo} onChange={e => handleVideoUpload(e.target.files?.[0])} />
+                <small className="text-muted">Pega una URL o sube MP4/WebM (máximo 100 MB). {uploadingVideo && 'Subiendo…'}</small>
+                {formData.videoUrl && <video key={formData.videoUrl} controls muted className="w-100 rounded mt-2" style={{ maxHeight: 220, background: '#111' }} onError={e => { e.currentTarget.poster = formData.fallbackImg || ''; }}><source src={formData.videoUrl} type={/\.webm(?:$|\?)/i.test(formData.videoUrl) ? 'video/webm' : 'video/mp4'} /></video>}
               </div>
 
               {/* Imagen Fallback / Banner */}

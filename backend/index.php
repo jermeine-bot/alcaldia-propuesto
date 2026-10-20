@@ -40,6 +40,7 @@ use Controllers\UsersController;
 use Controllers\AuditController;
 use Controllers\FacebookController;
 use Controllers\AnuncioController;
+use Controllers\AnunciosController;
 
 // 1. Manejo de CORS
 CorsMiddleware::handle();
@@ -193,6 +194,12 @@ if (preg_match('~^/api/noticias/([^/]+)$~', $path, $matches)) {
 }
 
 // Portada Hero
+if ($path === '/api/hero/upload-video' && $method === 'POST') {
+    AuthMiddleware::handle();
+    HeroController::uploadVideo();
+    exit;
+}
+
 if ($path === '/api/hero') {
     if ($method === 'GET') {
         HeroController::getHero();
@@ -202,6 +209,29 @@ if ($path === '/api/hero') {
         HeroController::updateHero($body);
         exit;
     }
+}
+
+// Anuncios públicos y administración de flyers
+if ($path === '/api/anuncios/public' && $method === 'GET') {
+    AnunciosController::getPublic();
+    exit;
+}
+if ($path === '/api/anuncios/upload-image' && $method === 'POST') {
+    AuthMiddleware::handle();
+    AnunciosController::uploadImage();
+    exit;
+}
+if ($path === '/api/anuncios') {
+    if ($method === 'GET') { AuthMiddleware::handle(); AnunciosController::getAll(); exit; }
+    if ($method === 'POST') { $user = AuthMiddleware::handle(); AnunciosController::create($user, $body); exit; }
+}
+if (preg_match('~^/api/anuncios/([^/]+)/toggle$~', $path, $matches) && $method === 'PATCH') {
+    $user = AuthMiddleware::handle(); AnunciosController::toggleActive(urldecode($matches[1]), $user); exit;
+}
+if (preg_match('~^/api/anuncios/([^/]+)$~', $path, $matches)) {
+    $id = urldecode($matches[1]);
+    if ($method === 'PUT') { $user = AuthMiddleware::handle(); AnunciosController::update($id, $user, $body); exit; }
+    if ($method === 'DELETE') { $user = AuthMiddleware::handle(); AnunciosController::delete($id, $user); exit; }
 }
 
 // Proyectos

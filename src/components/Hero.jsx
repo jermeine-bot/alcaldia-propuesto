@@ -91,6 +91,7 @@ const searchSuggestionsList = [
 
 const Hero = () => {
   const [offsetY, setOffsetY] = useState(0);
+  const [videoFailed, setVideoFailed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const searchRef = useRef(null);
@@ -133,6 +134,7 @@ const Hero = () => {
   const subtitle = hero?.subtitle || 'Construyendo juntos el futuro de nuestra ciudad, con transparencia, innovación y compromiso con cada leonés.';
   const videoUrl = hero?.videoUrl || '/video/leon nicaragua vista de un dron.mp4';
   const fallbackImg = hero?.fallbackImg || '/img/hero-bg.jpg';
+  useEffect(() => { setVideoFailed(false); }, [videoUrl]);
   const primaryBtnText = hero?.primaryBtnText || 'Conoce León';
   const primaryBtnLink = hero?.primaryBtnLink || '#turismo';
   const secondaryBtnText = hero?.secondaryBtnText || 'Servicios Rápidos';
@@ -141,10 +143,9 @@ const Hero = () => {
   return (
     <section id="hero" className="hero-section position-relative overflow-hidden w-100">
       <div className="hero-video-wrapper position-absolute w-100 h-100 top-0 start-0">
-        <video autoPlay muted loop playsInline className="hero-video w-100 h-100 object-fit-cover" key={videoUrl}>
-          <source src={videoUrl} type="video/mp4" />
-          <img src={fallbackImg} alt="León Nicaragua" className="hero-fallback w-100 h-100 object-fit-cover" />
-        </video>
+        {videoFailed ? <img src={fallbackImg} alt="León Nicaragua" className="hero-fallback position-absolute w-100 h-100 object-fit-cover" /> : <video autoPlay muted loop playsInline className="hero-video w-100 h-100 object-fit-cover" key={videoUrl} onError={() => setVideoFailed(true)}>
+          <source src={videoUrl} type={/\.webm(?:$|\?)/i.test(videoUrl) ? 'video/webm' : 'video/mp4'} />
+        </video>}
         <div className="hero-overlay position-absolute w-100 h-100 top-0 start-0 bg-dark opacity-50"></div>
       </div>
 
