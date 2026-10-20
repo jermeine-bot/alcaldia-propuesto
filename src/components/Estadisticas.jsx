@@ -356,9 +356,9 @@ const Estadisticas = () => {
                   <div className="d-inline-flex align-items-center gap-2 bg-white bg-opacity-20 px-3 py-1 rounded-pill text-white small mb-2 fw-semibold">
                     <i className="fas fa-crown text-warning"></i> Ciudad Creativa y del Aprendizaje
                   </div>
-                  <h3 className="fw-bold text-white mb-2">León, Capital de la Revolución sandinista y Orgullo Nacional</h3>
+                  <h3 className="fw-bold text-white mb-2">Capital de la Revolución sandinista y Orgullo Nacional</h3>
                   <p className="text-white-50 mb-0">
-                    Impulsando el desarrollo sostenible, la conservación histórica y el bienestar social de todas las familias leonesas.
+                    Impulsando el desarrollo sostenible, la conservación histórica y el bienestar social de todas las familias Leonesas.
                   </p>
                 </div>
                 <div className="col-lg-4 text-lg-end mt-4 mt-lg-0">
