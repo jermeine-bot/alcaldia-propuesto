@@ -39,6 +39,8 @@ const ServiciosAdmin = () => {
     title: '',
     desc: '',
     icon: 'fa-file-signature',
+    linkText: '',
+    linkUrl: '',
     requisitos: [],
     departamento: ''
   });
@@ -167,6 +169,8 @@ const ServiciosAdmin = () => {
       title: '',
       desc: '',
       icon: 'fa-file-signature',
+      linkText: '',
+      linkUrl: '',
       requisitos: [],
       departamento: ''
     });
@@ -239,6 +243,8 @@ const ServiciosAdmin = () => {
       title: sub.title || '',
       desc: sub.desc || '',
       icon: sub.icon || 'fa-file-signature',
+      linkText: sub.linkText || '',
+      linkUrl: sub.linkUrl || '',
       requisitos: sub.requisitos || [],
       departamento: sub.departamento || ''
     });
@@ -630,6 +636,28 @@ const ServiciosAdmin = () => {
                         value={subFormData.desc}
                         onChange={(e) => setSubFormData({ ...subFormData, desc: e.target.value })}
                         required
+                      />
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <label className="form-label fw-semibold small">Texto del Enlace (opcional)</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej. Ir al trámite"
+                        value={subFormData.linkText}
+                        onChange={(e) => setSubFormData({ ...subFormData, linkText: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <label className="form-label fw-semibold small">URL del Enlace (opcional)</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="https://... o #contacto"
+                        value={subFormData.linkUrl}
+                        onChange={(e) => setSubFormData({ ...subFormData, linkUrl: e.target.value })}
                       />
                     </div>
 

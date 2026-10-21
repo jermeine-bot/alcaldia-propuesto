@@ -19,14 +19,15 @@ const Contacto = () => {
   const address = contacto?.address || 'Palacio Municipal, León, Nicaragua';
   const email = contacto?.email || 'info@alcaldaleon.gob.ni';
   const schedule = contacto?.schedule || 'Lunes a Viernes: 8:00 AM - 4:00 PM';
-  
-  // Número de WhatsApp configurado directamente
-  const whatsappNumber = '50578863343'; // Número de WhatsApp en formato internacional sin signos ni espacios
-  const phoneDisplay = '+505 78863343';
+  const phoneDisplay = contacto?.phone || '+505 7886 3343';
+  const secondaryPhone = contacto?.secondary_phone || '';
+  // El WhatsApp se deriva del teléfono oficial guardado en el CMS.
+  const whatsappNumber = phoneDisplay.replace(/\D/g, '') || '50578863343';
 
   const facebook = contacto?.facebook || '#';
   const twitter = contacto?.twitter || '#';
   const instagram = contacto?.instagram || '#';
+  const tiktok = contacto?.tiktok || '#';
   const youtube = contacto?.youtube || '#';
 
   const handleChange = (e) => {
@@ -79,7 +80,10 @@ const Contacto = () => {
                 <i className="fas fa-phone-alt"></i>
                 <div>
                   <h6>WhatsApp / Teléfono</h6>
-                  <p>{phoneDisplay}</p>
+                  <p className="mb-1">{phoneDisplay}</p>
+                  {secondaryPhone && (
+                    <p className="small text-muted mb-0">{secondaryPhone}</p>
+                  )}
                 </div>
               </div>
               <div className="contact-item">
@@ -101,6 +105,7 @@ const Contacto = () => {
                 <a href={facebook} className="social-link" aria-label="Facebook" target="_blank" rel="noreferrer"><i className="fab fa-facebook-f"></i></a>
                 <a href={twitter} className="social-link" aria-label="Twitter" target="_blank" rel="noreferrer"><i className="fab fa-twitter"></i></a>
                 <a href={instagram} className="social-link" aria-label="Instagram" target="_blank" rel="noreferrer"><i className="fab fa-instagram"></i></a>
+                <a href={tiktok} className="social-link" aria-label="TikTok" target="_blank" rel="noreferrer"><i className="fab fa-tiktok"></i></a>
                 <a href={youtube} className="social-link" aria-label="YouTube" target="_blank" rel="noreferrer"><i className="fab fa-youtube"></i></a>
               </div>
             </div>

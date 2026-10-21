@@ -18,8 +18,25 @@ class CulturaController {
         return $_POST ?: [];
     }
 
+    private static function ensureSchema(PDO $pdo): void {
+        try {
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'mysql') {
+                // ImageUploader guarda Base64; TEXT (64 KB) es insuficiente en MySQL.
+                try {
+                    $pdo->exec("ALTER TABLE cultura MODIFY COLUMN image_url LONGTEXT");
+                } catch (Throwable $e) {
+                    // Ignorar si la columna ya es LONGTEXT o no se puede alterar.
+                }
+            }
+        } catch (Throwable $e) {
+            // Ignorar errores de introspección.
+        }
+    }
+
     private static function fetchAll(): array {
         $pdo = Database::getConnection();
+        self::ensureSchema($pdo);
         $stmt = $pdo->query("SELECT * FROM cultura ORDER BY created_at DESC");
         $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
         foreach ($rows as &$r) {
@@ -59,6 +76,7 @@ class CulturaController {
             $eventDate = $data['event_date'] ?? $data['date'] ?? '';
 
             $pdo = Database::getConnection();
+            self::ensureSchema($pdo);
             $stmt = $pdo->prepare("
                 INSERT INTO cultura (id, icon, title, `desc`, event_date, event_time, location, image_url, is_published)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -99,6 +117,7 @@ class CulturaController {
             $eventDate = $data['event_date'] ?? $data['date'] ?? '';
 
             $pdo = Database::getConnection();
+            self::ensureSchema($pdo);
             $stmt = $pdo->prepare("
                 UPDATE cultura SET icon=?, title=?, `desc`=?, event_date=?, event_time=?, location=?, image_url=?, is_published=?, updated_at=CURRENT_TIMESTAMP
                 WHERE id=?

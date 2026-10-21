@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import { Building2, Plus, Edit, Trash2, Search, CheckCircle2, Clock, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import ImageUploader from '../components/ImageUploader';
+import { isPublished } from '../../utils/formatUrl';
 
 const ProyectosAdmin = () => {
   const queryClient = useQueryClient();
@@ -19,9 +20,11 @@ const ProyectosAdmin = () => {
     location: 'León, Nicaragua',
     image: '/img/proyectos/proyecto1.jpg',
     desc: '',
+    detailed_desc: '',
     beneficiaries: '20,000 Habitantes',
     start_date: 'Enero 2026',
-    linkUrl: ''
+    linkUrl: '',
+    is_published: true
   });
 
   const { data: proyectos = [], isLoading } = useQuery({
@@ -71,9 +74,11 @@ const ProyectosAdmin = () => {
       location: 'León, Nicaragua',
       image: '/img/proyectos/proyecto1.jpg',
       desc: '',
+      detailed_desc: '',
       beneficiaries: '20,000 Habitantes',
       start_date: 'Enero 2026',
-      linkUrl: ''
+      linkUrl: '',
+      is_published: true
     });
   };
 
@@ -93,9 +98,11 @@ const ProyectosAdmin = () => {
       location: item.location || 'León, Nicaragua',
       image: item.image || item.img || '/img/proyectos/proyecto1.jpg',
       desc: item.desc || item.summary || '',
+      detailed_desc: item.detailed_desc || item.detailedDesc || '',
       beneficiaries: item.beneficiaries || '20,000 Habitantes',
       start_date: item.start_date || item.startDate || 'Enero 2026',
-      linkUrl: item.linkUrl || item.url || ''
+      linkUrl: item.linkUrl || item.url || '',
+      is_published: isPublished(item)
     });
     setShowModal(true);
   };
@@ -201,19 +208,21 @@ const ProyectosAdmin = () => {
                   <th style={{ minWidth: '110px' }}>Monto Inversión</th>
                   <th style={{ minWidth: '140px' }}>Avance (%)</th>
                   <th style={{ minWidth: '110px' }}>Estado</th>
+                  <th style={{ minWidth: '110px' }}>Publicación</th>
                   <th className="text-end" style={{ minWidth: '100px' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProyectos.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-4">
+                    <td colSpan={8} className="text-center text-muted py-4">
                       No hay proyectos registrados.
                     </td>
                   </tr>
                 ) : (
                   filteredProyectos.map((item) => {
                     const isCompleted = Number(item.progress) === 100;
+                    const published = isPublished(item);
                     const imgSrc = item.image || item.img || '/img/proyectos/proyecto1.jpg';
                     return (
                       <tr key={item.id}>
@@ -272,6 +281,12 @@ const ProyectosAdmin = () => {
                           <span className={`badge-status text-nowrap ${isCompleted ? 'badge-status-published' : 'badge-status-progress'}`}>
                             {isCompleted ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                             {isCompleted ? 'Completado' : 'En Progreso'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge text-nowrap ${published ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`}>
+                            <i className={`fas ${published ? 'fa-eye' : 'fa-eye-slash'} me-1`}></i>
+                            {published ? 'Publicado' : 'Borrador'}
                           </span>
                         </td>
                         <td className="text-end">
@@ -334,7 +349,7 @@ const ProyectosAdmin = () => {
                       </select>
                     </div>
 
-                    <div className="col-12 col-md-6">
+                    <div className="col-12 col-md-4">
                       <label className="form-label fw-semibold small">Ubicación Exacta</label>
                       <input
                         type="text"
@@ -345,8 +360,8 @@ const ProyectosAdmin = () => {
                       />
                     </div>
 
-                    <div className="col-12 col-md-3">
-                      <label className="form-label fw-semibold small">Porcentaje de Avance (0 - 100%)</label>
+                    <div className="col-6 col-md-2">
+                      <label className="form-label fw-semibold small">Avance (%)</label>
                       <input
                         type="number"
                         min="0"
@@ -358,13 +373,24 @@ const ProyectosAdmin = () => {
                       />
                     </div>
 
-                    <div className="col-12 col-md-3">
+                    <div className="col-6 col-md-3">
                       <label className="form-label fw-semibold small">Inversión (Ej: C$ 45.2M)</label>
                       <input
                         type="text"
                         className="form-control"
                         value={formData.cost}
                         onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="col-12 col-md-3">
+                      <label className="form-label fw-semibold small">Inicio de Ejecución</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej: Enero 2026"
+                        value={formData.start_date}
+                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                       />
                     </div>
 
@@ -402,14 +428,48 @@ const ProyectosAdmin = () => {
                     </div>
 
                     <div className="col-12">
-                      <label className="form-label fw-semibold small">Descripción de la Obra</label>
+                      <label className="form-label fw-semibold small">Descripción Corta de la Obra</label>
                       <textarea
                         className="form-control"
                         rows={3}
                         value={formData.desc}
                         onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
+                        placeholder="Resumen que aparece en las tarjetas del inicio y de la página de proyectos."
                         required
                       />
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">Descripción Ampliada (Ficha Completa)</label>
+                      <textarea
+                        className="form-control"
+                        rows={5}
+                        value={formData.detailed_desc}
+                        onChange={(e) => setFormData({ ...formData, detailed_desc: e.target.value })}
+                        placeholder="Detalle completo de la obra: antecedentes, alcance, componentes y resultados."
+                      />
+                      <small className="text-muted">
+                        Se muestra en la ficha completa del proyecto en la página pública. Si se deja vacía, se usa la descripción corta.
+                      </small>
+                    </div>
+
+                    <div className="col-12">
+                      <div className="form-check form-switch">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="proyecto-publicado"
+                          checked={Boolean(formData.is_published)}
+                          onChange={(e) => setFormData({ ...formData, is_published: e.target.checked })}
+                        />
+                        <label className="form-check-label fw-semibold small" htmlFor="proyecto-publicado">
+                          Publicar este proyecto en el sitio web
+                        </label>
+                      </div>
+                      <small className="text-muted">
+                        Los proyectos en borrador se conservan en el CMS y la base de datos, pero no aparecen en el inicio ni en la página pública de proyectos.
+                      </small>
                     </div>
                   </div>
                 </div>

@@ -4,6 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 import { initialServiciosSettings } from '../services/initialData';
 
+const formatUrl = (url) => {
+  if (!url || !url.trim()) return '';
+  const value = url.trim();
+  return /^(https?:\/\/|\/|#)/i.test(value) ? value : `https://${value}`;
+};
+
 const Servicios = () => {
   const [selectedCategoria, setSelectedCategoria] = useState(null);
   const [selectedTrasnaccionRequisitos, setSelectedTrasnaccionRequisitos] = useState(null); // Estado para el modal de requisitos del trámite
@@ -136,7 +142,17 @@ const Servicios = () => {
                     <p className="small text-muted mb-0">{opcion.desc}</p>
                   </div>
                 </div>
-                <div className="mt-auto pt-3 text-end border-top-dashed">
+                <div className="mt-auto pt-3 d-flex justify-content-end align-items-center gap-2 flex-wrap border-top-dashed">
+                  {opcion.linkUrl && (
+                    <a
+                      href={formatUrl(opcion.linkUrl)}
+                      target={/^https?:\/\//i.test(formatUrl(opcion.linkUrl)) ? '_blank' : undefined}
+                      rel="noopener noreferrer"
+                      className="btn btn-sm btn-danger rounded-pill px-4 fw-semibold"
+                    >
+                      {opcion.linkText || 'Más información'} <i className="fas fa-external-link-alt ms-1 small"></i>
+                    </a>
+                  )}
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-danger rounded-pill px-4 fw-semibold"
@@ -228,7 +244,17 @@ const Servicios = () => {
         </div>
 
         {/* Botón de cerrar */}
-        <div className="text-end">
+        <div className="d-flex justify-content-end align-items-center gap-2 flex-wrap">
+          {selectedTrasnaccionRequisitos.linkUrl && (
+            <a
+              href={formatUrl(selectedTrasnaccionRequisitos.linkUrl)}
+              target={/^https?:\/\//i.test(formatUrl(selectedTrasnaccionRequisitos.linkUrl)) ? '_blank' : undefined}
+              rel="noopener noreferrer"
+              className="btn btn-outline-danger btn-sm px-4 rounded-pill fw-semibold"
+            >
+              {selectedTrasnaccionRequisitos.linkText || 'Más información'}
+            </a>
+          )}
           <button
             type="button"
             className="btn btn-danger btn-sm px-4 rounded-pill fw-semibold"

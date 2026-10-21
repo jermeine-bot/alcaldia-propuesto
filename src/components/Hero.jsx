@@ -134,18 +134,75 @@ const Hero = () => {
   const subtitle = hero?.subtitle || 'Construyendo juntos el futuro de nuestra ciudad, con transparencia, innovación y compromiso con cada leonés.';
   const videoUrl = hero?.videoUrl || '/video/leon nicaragua vista de un dron.mp4';
   const fallbackImg = hero?.fallbackImg || '/img/hero-bg.jpg';
+  const bgType = hero?.bgType || hero?.bg_type || 'video';
+  const bgImageUrl = hero?.bgImageUrl || hero?.bg_image_url || '';
   useEffect(() => { setVideoFailed(false); }, [videoUrl]);
   const primaryBtnText = hero?.primaryBtnText || 'Conoce León';
   const primaryBtnLink = hero?.primaryBtnLink || '#turismo';
   const secondaryBtnText = hero?.secondaryBtnText || 'Servicios Rápidos';
   const secondaryBtnLink = hero?.secondaryBtnLink || '#servicios';
 
+  // Renderizar el fondo según el tipo configurado
+  const renderBackground = () => {
+    if (bgType === 'none') {
+      // Fondo sólido oscuro sin media
+      return (
+        <div
+          className="position-absolute w-100 h-100 top-0 start-0"
+          style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 50%, #16213e 100%)' }}
+        />
+      );
+    }
+
+    if (bgType === 'image') {
+      const imgSrc = bgImageUrl || fallbackImg;
+      return (
+        <img
+          src={imgSrc}
+          alt="Fondo de portada"
+          className="position-absolute w-100 h-100 top-0 start-0"
+          style={{ objectFit: 'cover' }}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = fallbackImg || '/img/hero-bg.jpg';
+          }}
+        />
+      );
+    }
+
+    // bgType === 'video' (default)
+    if (videoFailed) {
+      return (
+        <img
+          src={fallbackImg}
+          alt="León Nicaragua"
+          className="hero-fallback position-absolute w-100 h-100 object-fit-cover"
+        />
+      );
+    }
+
+    return (
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="hero-video w-100 h-100 object-fit-cover"
+        key={videoUrl}
+        onError={() => setVideoFailed(true)}
+      >
+        <source
+          src={videoUrl}
+          type={/\.webm(?:$|\?)/i.test(videoUrl) ? 'video/webm' : 'video/mp4'}
+        />
+      </video>
+    );
+  };
+
   return (
     <section id="hero" className="hero-section position-relative overflow-hidden w-100">
       <div className="hero-video-wrapper position-absolute w-100 h-100 top-0 start-0">
-        {videoFailed ? <img src={fallbackImg} alt="León Nicaragua" className="hero-fallback position-absolute w-100 h-100 object-fit-cover" /> : <video autoPlay muted loop playsInline className="hero-video w-100 h-100 object-fit-cover" key={videoUrl} onError={() => setVideoFailed(true)}>
-          <source src={videoUrl} type={/\.webm(?:$|\?)/i.test(videoUrl) ? 'video/webm' : 'video/mp4'} />
-        </video>}
+        {renderBackground()}
         <div className="hero-overlay position-absolute w-100 h-100 top-0 start-0 bg-dark opacity-50"></div>
       </div>
 

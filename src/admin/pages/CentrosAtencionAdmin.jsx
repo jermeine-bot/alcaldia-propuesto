@@ -84,7 +84,7 @@ const CentrosAtencionAdmin = () => {
             </div>
             <div className="col-12 col-md-6">
               <label className="form-label small fw-semibold">URL de la fotografía</label>
-              <input className="form-control" type="url" value={center.image} onChange={(event) => updateCenter(center.id, 'image', event.target.value)} placeholder="https://... o ruta /img/..." />
+              <input className="form-control" type="text" value={center.image} onChange={(event) => updateCenter(center.id, 'image', event.target.value)} placeholder="https://... o ruta /img/..." />
             </div>
             <div className="col-12 col-md-4">
               <label className="form-label small fw-semibold">Etiqueta</label>

@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 
 const Header = ({ onOpenSearch }) => {
   const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isHome = location.pathname === '/';
+  const isProjectsPage = location.pathname === '/proyectos';
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    if (!isHome) {
+      setActiveSection('');
+      return undefined;
+    }
+
     const handleScroll = () => {
       if (window.scrollY > 50) {
         setScrolled(true);
@@ -16,7 +26,7 @@ const Header = ({ onOpenSearch }) => {
       }
 
       // Highlight active section
-      const sections = ['hero', 'noticias', 'autoridades', 'servicios', 'estadisticas', 'proyectos', 'redes-sociales', 'turismo', 'centros-atencion', 'contacto'];
+      const sections = ['hero', 'noticias', 'autoridades', 'servicios', 'estadisticas', 'redes-sociales', 'turismo', 'centros-atencion', 'contacto'];
       const scrollPosition = window.scrollY + 120;
 
       for (let i = sections.length - 1; i >= 0; i--) {
@@ -30,11 +40,18 @@ const Header = ({ onOpenSearch }) => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isHome]);
 
   const handleNavClick = (e, targetId) => {
     e.preventDefault();
     setMobileMenuOpen(false);
+
+    // Desde una página interna se vuelve al inicio y luego se desplaza a la sección.
+    if (!isHome) {
+      navigate(`/#${targetId}`);
+      return;
+    }
+
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
       const headerHeight = 70;
@@ -106,7 +123,18 @@ const Header = ({ onOpenSearch }) => {
                 <a className={`nav-link ${activeSection === 'estadisticas' ? 'active' : ''}`} href="#estadisticas" onClick={(e) => handleNavClick(e, 'estadisticas')}>Población</a>
               </li>
               <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'proyectos' ? 'active' : ''}`} href="#proyectos" onClick={(e) => handleNavClick(e, 'proyectos')}>Proyectos</a>
+                <Link
+                  className={`nav-link ${isProjectsPage ? 'active' : ''}`}
+                  to="/proyectos"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (isProjectsPage) {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  Proyectos
+                </Link>
               </li>
               <li className="nav-item">
                 <a className={`nav-link ${activeSection === 'redes-sociales' ? 'active' : ''}`} href="#redes-sociales" onClick={(e) => handleNavClick(e, 'redes-sociales')}>Seguidores</a>

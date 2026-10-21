@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import Preloader from './components/Preloader';
 import Header from './components/Header';
@@ -19,6 +19,7 @@ import RedesSociales from './components/RedesSociales';
 import Contacto from './components/Contacto';
 import Footer from './components/Footer'; 
 import AnuncioModal from './components/AnuncioModal';
+import ProyectosPage from './pages/ProyectosPage';
 
 // Admin imports
 import ProtectedRoute from './admin/components/ProtectedRoute';
@@ -40,6 +41,64 @@ import AnuncioAdmin from './admin/pages/AnuncioAdmin';
 function PublicLanding() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const mainRef = useRef(null);
+  const location = useLocation();
+
+  // Permite llegar desde otra página a una sección concreta (ej. /#contacto).
+  // Reintenta mientras cargan las secciones e imágenes, porque el contenido
+  // inferior cambia de altura y el destino puede desplazarse.
+  useEffect(() => {
+    if (!location.hash) return undefined;
+
+    const id = decodeURIComponent(location.hash.slice(1));
+    let attempts = 0;
+    let timerId = null;
+    let cancelled = false;
+
+    const cancelOnUserAction = () => {
+      cancelled = true;
+      if (timerId) window.clearTimeout(timerId);
+    };
+
+    const scrollToTarget = () => {
+      if (cancelled) return;
+      const target = document.getElementById(id);
+      const headerOffset = 70;
+
+      if (target) {
+        const rect = target.getBoundingClientRect();
+        const distance = Math.abs(rect.top - headerOffset);
+
+        if (distance > 10) {
+          window.scrollTo({
+            top: Math.max(0, rect.top + window.pageYOffset - headerOffset),
+            behavior: 'instant'
+          });
+        } else {
+          cancelled = true;
+          return;
+        }
+      }
+
+      attempts += 1;
+      if (attempts < 32) {
+        timerId = window.setTimeout(scrollToTarget, 150);
+      }
+    };
+
+    window.addEventListener('wheel', cancelOnUserAction, { passive: true, once: true });
+    window.addEventListener('touchstart', cancelOnUserAction, { passive: true, once: true });
+    window.addEventListener('keydown', cancelOnUserAction, { once: true });
+
+    timerId = window.setTimeout(scrollToTarget, 120);
+
+    return () => {
+      cancelled = true;
+      if (timerId) window.clearTimeout(timerId);
+      window.removeEventListener('wheel', cancelOnUserAction);
+      window.removeEventListener('touchstart', cancelOnUserAction);
+      window.removeEventListener('keydown', cancelOnUserAction);
+    };
+  }, [location]);
 
   useEffect(() => {
     const sections = mainRef.current?.querySelectorAll(':scope > section:not(:first-child)');
@@ -117,6 +176,9 @@ export default function App() {
       <Routes>
         {/* Landing Page Pública */}
         <Route path="/" element={<PublicLanding />} />
+
+        {/* Página pública con el catálogo completo de proyectos */}
+        <Route path="/proyectos" element={<ProyectosPage />} />
 
         {/* Login de Administración */}
         <Route path="/admin/login" element={<LoginPage />} />

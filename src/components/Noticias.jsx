@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
 import { apiService } from '../services/apiService';
+import ContentModal from './ContentModal';
 
 const formatUrl = (url) => {
   if (!url || typeof url !== 'string') return '#contacto';
@@ -15,6 +16,7 @@ const formatUrl = (url) => {
 };
 
 const Noticias = () => {
+  const [selectedNoticia, setSelectedNoticia] = useState(null);
   const { data: noticias = [] } = useQuery({
     queryKey: ['noticias'],
     queryFn: apiService.getNoticias
@@ -48,8 +50,13 @@ const Noticias = () => {
           >
             {publishedNoticias.map((item) => {
               const rawLink = item.linkUrl || item.url || item.url_externa;
-              const targetUrl = formatUrl(rawLink);
-              const isExternal = /^https?:\/\//i.test(targetUrl);
+              const hasLink = typeof rawLink === 'string' && rawLink.trim() !== '';
+              const targetUrl = hasLink ? formatUrl(rawLink) : '#noticias';
+              const isExternal = hasLink && /^https?:\/\//i.test(targetUrl);
+              const openDetail = (event) => {
+                if (event) event.preventDefault();
+                setSelectedNoticia(item);
+              };
 
               return (
                 <SwiperSlide key={item.id}>
@@ -60,6 +67,7 @@ const Noticias = () => {
                       rel={isExternal ? 'noopener noreferrer' : undefined}
                       className="d-block overflow-hidden text-decoration-none"
                       title={item.title}
+                      onClick={hasLink ? undefined : openDetail}
                     >
                       <img
                         src={item.image || item.img}
@@ -80,21 +88,21 @@ const Noticias = () => {
                           target={isExternal ? '_blank' : '_self'}
                           rel={isExternal ? 'noopener noreferrer' : undefined}
                           className="text-dark text-decoration-none"
+                          onClick={hasLink ? undefined : openDetail}
                         >
                           {item.title}
                         </a>
                       </h5>
                       <p className="flex-grow-1">{item.summary || item.desc}</p>
-                      
+
                       <div className="mt-auto pt-2">
-                        <a
-                          href={targetUrl}
-                          target={isExternal ? '_blank' : '_self'}
-                          rel={isExternal ? 'noopener noreferrer' : undefined}
-                          className="noticia-link d-inline-flex align-items-center gap-1"
+                        <button
+                          type="button"
+                          className="noticia-link btn btn-link p-0 border-0 d-inline-flex align-items-center gap-1"
+                          onClick={openDetail}
                         >
                           Ver más <i className="fas fa-arrow-right ms-1"></i>
-                        </a>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -103,6 +111,20 @@ const Noticias = () => {
             })}
           </Swiper>
         )}
+
+        <ContentModal
+          open={!!selectedNoticia}
+          onClose={() => setSelectedNoticia(null)}
+          image={selectedNoticia ? (selectedNoticia.image || selectedNoticia.img) : ''}
+          fallbackImage="/img/noticias/noticia1.jpg"
+          eyebrow={selectedNoticia?.category}
+          meta={selectedNoticia?.date}
+          title={selectedNoticia?.title}
+          description={selectedNoticia?.summary || selectedNoticia?.desc}
+          content={selectedNoticia?.content}
+          link={selectedNoticia?.linkUrl || selectedNoticia?.url || selectedNoticia?.url_externa}
+          linkText="Abrir enlace original"
+        />
       </div>
     </section>
   );

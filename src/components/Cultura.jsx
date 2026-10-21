@@ -2,6 +2,8 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 
+const FALLBACK_IMAGE = '/img/noticias/festival de la poseia.jpg';
+
 const Cultura = () => {
   const { data: cultura = [] } = useQuery({
     queryKey: ['cultura'],
@@ -21,22 +23,47 @@ const Cultura = () => {
           <div className="text-center text-muted py-4">No hay eventos culturales registrados.</div>
         ) : (
           <div className="row g-4">
-            {cultura.map((item) => (
-              <div key={item.id} className="col-lg-4 col-md-6">
-                <div className="cultura-card">
-                  <div className="cultura-icon">
-                    <i className={`fas ${item.icon || 'fa-star'}`}></i>
-                  </div>
-                  <h4>{item.title}</h4>
-                  <p>{item.desc || item.summary}</p>
-                  {item.event_date && (
-                    <div className="small text-danger fw-semibold mb-2">
-                      <i className="far fa-calendar-alt me-1"></i> {item.event_date}
+            {cultura.map((item) => {
+              const image = item.image_url || item.image || item.img || FALLBACK_IMAGE;
+
+              return (
+                <div key={item.id} className="col-lg-4 col-md-6">
+                  <div className="cultura-card">
+                    <img
+                      src={image}
+                      alt={item.title || 'Evento cultural'}
+                      className="cultura-card-image"
+                      loading="lazy"
+                      onError={(e) => {
+                        if (e.currentTarget.src !== window.location.origin + FALLBACK_IMAGE) {
+                          e.currentTarget.src = FALLBACK_IMAGE;
+                        }
+                      }}
+                    />
+                    <div className="cultura-icon">
+                      <i className={`fas ${item.icon || 'fa-star'}`}></i>
                     </div>
-                  )}
+                    <h4>{item.title}</h4>
+                    <p>{item.desc || item.summary}</p>
+                    {item.event_date && (
+                      <div className="small text-danger fw-semibold mb-2">
+                        <i className="far fa-calendar-alt me-1"></i> {item.event_date}
+                      </div>
+                    )}
+                    {item.event_time && (
+                      <div className="small text-muted mb-1">
+                        <i className="far fa-clock me-1"></i> {item.event_time}
+                      </div>
+                    )}
+                    {item.location && (
+                      <div className="small text-muted">
+                        <i className="fas fa-map-marker-alt me-1"></i> {item.location}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

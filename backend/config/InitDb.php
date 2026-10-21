@@ -53,6 +53,8 @@ class InitDb {
                     secondary_btn_text TEXT,
                     secondary_btn_link TEXT,
                     badge_text TEXT DEFAULT 'Alcaldía Municipal de León',
+                    bg_type TEXT DEFAULT 'video',
+                    bg_image_url TEXT DEFAULT '',
                     is_active INTEGER DEFAULT 1,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
@@ -351,7 +353,9 @@ class InitDb {
                         'linkUrl' => "ALTER TABLE stats ADD COLUMN linkUrl TEXT DEFAULT ''"
                     ],
                     'hero' => [
-                        'badge_text' => "ALTER TABLE hero ADD COLUMN badge_text TEXT DEFAULT 'Alcaldía Municipal de León'"
+                        'badge_text' => "ALTER TABLE hero ADD COLUMN badge_text TEXT DEFAULT 'Alcaldía Municipal de León'",
+                        'bg_type' => "ALTER TABLE hero ADD COLUMN bg_type TEXT DEFAULT 'video'",
+                        'bg_image_url' => "ALTER TABLE hero ADD COLUMN bg_image_url TEXT DEFAULT ''"
                     ]
                 ];
 
@@ -393,7 +397,9 @@ class InitDb {
                         'linkUrl' => "ALTER TABLE stats ADD COLUMN linkUrl TEXT"
                     ],
                     'hero' => [
-                        'badge_text' => "ALTER TABLE hero ADD COLUMN badge_text VARCHAR(150) DEFAULT 'Alcaldía Municipal de León'"
+                        'badge_text' => "ALTER TABLE hero ADD COLUMN badge_text VARCHAR(150) DEFAULT 'Alcaldía Municipal de León'",
+                        'bg_type' => "ALTER TABLE hero ADD COLUMN bg_type VARCHAR(20) DEFAULT 'video'",
+                        'bg_image_url' => "ALTER TABLE hero ADD COLUMN bg_image_url LONGTEXT NULL"
                     ]
                 ];
 

@@ -36,12 +36,14 @@ CREATE TABLE IF NOT EXISTS hero (
   title TEXT,
   subtitle TEXT,
   video_url TEXT,
-  fallback_image_url TEXT,
+  fallback_image_url LONGTEXT,
   primary_btn_text VARCHAR(255),
   primary_btn_link VARCHAR(500),
   secondary_btn_text VARCHAR(255),
   secondary_btn_link VARCHAR(500),
   badge_text VARCHAR(150) DEFAULT 'Alcaldía Municipal de León',
+  bg_type VARCHAR(20) DEFAULT 'video',
+  bg_image_url LONGTEXT,
   is_active BOOLEAN DEFAULT TRUE,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -89,7 +91,7 @@ CREATE TABLE IF NOT EXISTS cultura (
   event_date VARCHAR(100),
   event_time VARCHAR(100),
   location VARCHAR(255),
-  image_url TEXT,
+  image_url LONGTEXT,
   is_published BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

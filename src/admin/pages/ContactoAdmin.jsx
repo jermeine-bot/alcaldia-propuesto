@@ -15,6 +15,7 @@ const ContactoAdmin = () => {
   const [formData, setFormData] = useState({
     address: 'Palacio Municipal, León, Nicaragua',
     phone: '+505 2315-0000',
+    secondary_phone: '',
     email: 'info@alcaldaleon.gob.ni',
     schedule: 'Lunes a Viernes: 8:00 AM - 4:00 PM',
     facebook: 'https://facebook.com',
@@ -112,6 +113,17 @@ const ContactoAdmin = () => {
                   value={formData.phone || ''}
                   onChange={handleChange}
                   required
+                />
+              </div>
+
+              <div className="col-12 col-md-6">
+                <label className="form-label fw-semibold small">Teléfono Secundario (opcional)</label>
+                <input
+                  type="text"
+                  name="secondary_phone"
+                  className="form-control"
+                  value={formData.secondary_phone || ''}
+                  onChange={handleChange}
                 />
               </div>
 

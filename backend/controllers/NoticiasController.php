@@ -4,6 +4,7 @@ namespace Controllers;
 
 use Config\Database;
 use Services\AuditService;
+use Services\MediaService;
 use PDO;
 use Throwable;
 
@@ -210,7 +211,7 @@ class NoticiasController {
             $summary = $data['summary'] ?? $data['extracto'] ?? $data['text'] ?? '';
             $content = $data['content'] ?? $data['contenido'] ?? $summary;
             $category = $data['category'] ?? $data['categoria'] ?? 'General';
-            $image = $data['image'] ?? $data['img'] ?? $data['imagen'] ?? '/img/noticias/noticia1.jpg';
+            $image = MediaService::localize($data['image'] ?? $data['img'] ?? $data['imagen'] ?? null, '/img/noticias/noticia1.jpg');
             $author = $data['author'] ?? $data['autor'] ?? 'Prensa Alcaldía';
             $date = self::extractDate($data);
             $status = $data['status'] ?? 'published';
@@ -272,7 +273,7 @@ class NoticiasController {
             $summary = $data['summary'] ?? $data['extracto'] ?? $data['text'] ?? '';
             $content = $data['content'] ?? $data['contenido'] ?? $summary;
             $category = $data['category'] ?? $data['categoria'] ?? 'General';
-            $image = $data['image'] ?? $data['img'] ?? $data['imagen'] ?? '/img/noticias/noticia1.jpg';
+            $image = MediaService::localize($data['image'] ?? $data['img'] ?? $data['imagen'] ?? null, '/img/noticias/noticia1.jpg');
             $author = $data['author'] ?? $data['autor'] ?? 'Prensa Alcaldía';
             $date = self::extractDate($data);
             $status = $data['status'] ?? 'published';

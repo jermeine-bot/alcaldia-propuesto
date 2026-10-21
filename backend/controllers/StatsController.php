@@ -92,7 +92,12 @@ class StatsController {
             $data = array_merge($raw, $body);
 
             $id = $data['id'] ?? ('stat-' . bin2hex(random_bytes(8)));
-            $breakdown = isset($data['breakdown']) ? json_encode($data['breakdown'], JSON_UNESCAPED_UNICODE) : '[]';
+            $breakdown = '[]';
+            if (array_key_exists('breakdown', $data)) {
+                $breakdown = is_array($data['breakdown'])
+                    ? json_encode($data['breakdown'], JSON_UNESCAPED_UNICODE)
+                    : (string)$data['breakdown'];
+            }
             $linkUrl = trim((string)($data['linkUrl'] ?? $data['linkurl'] ?? $data['url'] ?? $data['externalLink'] ?? ''));
             $desc = $data['description'] ?? $data['descripcion'] ?? $data['subtitle'] ?? '';
 
@@ -134,7 +139,13 @@ class StatsController {
             $raw = self::getRawInput();
             $data = array_merge($raw, $body);
 
-            $breakdown = isset($data['breakdown']) ? json_encode($data['breakdown'], JSON_UNESCAPED_UNICODE) : '[]';
+            // Si el CMS no envía breakdown, conservar el valor existente en lugar de borrarlo.
+            $breakdown = null;
+            if (array_key_exists('breakdown', $data)) {
+                $breakdown = is_array($data['breakdown'])
+                    ? json_encode($data['breakdown'], JSON_UNESCAPED_UNICODE)
+                    : (string)$data['breakdown'];
+            }
             $linkUrl = trim((string)($data['linkUrl'] ?? $data['linkurl'] ?? $data['url'] ?? $data['externalLink'] ?? ''));
             $desc = $data['description'] ?? $data['descripcion'] ?? $data['subtitle'] ?? '';
 
@@ -143,7 +154,7 @@ class StatsController {
 
             $stmt = $pdo->prepare("
                 UPDATE stats SET icon=?, number=?, suffix=?, title=?, subtitle=?, category=?, badge=?, percentage=?,
-                color=?, description=?, breakdown=?, is_published=?, display_order=?, linkUrl=?, updated_at=CURRENT_TIMESTAMP
+                color=?, description=?, breakdown=COALESCE(?, breakdown), is_published=?, display_order=?, linkUrl=?, updated_at=CURRENT_TIMESTAMP
                 WHERE id=?
             ");
             $stmt->execute([

@@ -84,6 +84,9 @@ class FacebookService {
             $extracto = mb_substr(implode(' ', array_slice($lines, 0, 2)), 0, 250);
             $id = 'noticia-fb-' . bin2hex(random_bytes(8));
 
+            // Descarga la imagen de Facebook a almacenamiento local para evitar URLs que caducan.
+            $image = MediaService::localize($post['full_picture'] ?? '', '/img/hero-bg.jpg');
+
             $insert = $pdo->prepare("
                 INSERT INTO noticias (id, titulo, slug, extracto, contenido, categoria, imagen, autor, date, status, fuente, url_externa, external_id, created_at)
                 VALUES (?, ?, ?, ?, ?, 'Facebook Oficial', ?, 'Facebook Alcaldía León', ?, 'published', 'facebook', ?, ?, ?)
@@ -94,7 +97,7 @@ class FacebookService {
                 $slug,
                 $extracto,
                 $post['message'],
-                $post['full_picture'] ?? '/img/hero-bg.jpg',
+                $image,
                 $date,
                 $post['permalink_url'] ?? null,
                 $post['id'],
