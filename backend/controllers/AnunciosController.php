@@ -266,20 +266,21 @@ class AnunciosController {
             $pdo = Database::getConnection();
             self::ensureTable($pdo);
 
-            $stmt = $pdo->prepare("SELECT is_active FROM anuncios WHERE id = ?");
-            $stmt->execute([$id]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            // Cambia el estado en una sola operación para evitar que dos clics
+            // rápidos lean el mismo valor y terminen dejando el anuncio activo.
+            $update = $pdo->prepare("
+                UPDATE anuncios
+                SET is_active = CASE WHEN COALESCE(is_active, 1) = 1 THEN 0 ELSE 1 END,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ");
+            $update->execute([$id]);
 
-            if (!$row) {
+            if ($update->rowCount() === 0) {
                 http_response_code(404);
                 echo json_encode(['error' => 'Anuncio no encontrado.']);
                 return;
             }
-
-            $newStatus = ($row['is_active'] == 1) ? 0 : 1;
-
-            $update = $pdo->prepare("UPDATE anuncios SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-            $update->execute([$newStatus, $id]);
 
             self::getById($id);
         } catch (Throwable $e) {
@@ -313,8 +314,11 @@ class AnunciosController {
 
             $file = $_FILES['image'] ?? $_FILES['file'];
             if ($file['error'] !== UPLOAD_ERR_OK) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Error al transferir el archivo: ' . $file['error']]);
+                $tooLarge = in_array($file['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
+                http_response_code($tooLarge ? 413 : 400);
+                echo json_encode(['error' => $tooLarge
+                    ? 'El servidor rechazó la imagen por tamaño. El máximo permitido es 15 MB.'
+                    : 'Error al transferir el archivo: ' . $file['error']]);
                 return;
             }
             if (($file['size'] ?? 0) > 15 * 1024 * 1024) {

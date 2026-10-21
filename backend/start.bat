@@ -8,5 +8,5 @@ set "PHP_PATH=C:\Users\yacel\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.3
 if exist "%PHP_PATH%\php.exe" (
     set "PATH=%PHP_PATH%;%PATH%"
 )
-php -S 0.0.0.0:5505 router.php
+php -d upload_max_filesize=100M -d post_max_size=105M -d max_execution_time=120 -S 0.0.0.0:5505 router.php
 pause

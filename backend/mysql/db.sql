@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS noticias (
   extracto TEXT,
   contenido TEXT,
   categoria VARCHAR(100),
-  imagen TEXT,
+  imagen LONGTEXT,
   autor VARCHAR(255) DEFAULT 'Prensa Alcaldía',
   date VARCHAR(100),
   status VARCHAR(50) DEFAULT 'published',
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS hero (
 
 CREATE TABLE IF NOT EXISTS proyectos (
   id VARCHAR(255) PRIMARY KEY,
-  img TEXT,
+  img LONGTEXT,
   category VARCHAR(100),
   status VARCHAR(50),
   isCompleted BOOLEAN DEFAULT FALSE,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS proyectos (
 
 CREATE TABLE IF NOT EXISTS turismo (
   id VARCHAR(255) PRIMARY KEY,
-  img TEXT,
+  img LONGTEXT,
   title VARCHAR(500),
   `desc` TEXT,
   category VARCHAR(100),
@@ -184,6 +184,22 @@ CREATE TABLE IF NOT EXISTS cms_content (
   content JSON NOT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS anuncios (
+  id VARCHAR(50) PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  image MEDIUMTEXT NOT NULL,
+  linkUrl VARCHAR(500) DEFAULT '',
+  buttonText VARCHAR(100) DEFAULT 'Ver más información',
+  badge VARCHAR(100) DEFAULT 'Aviso Importante',
+  is_active TINYINT(1) DEFAULT 1,
+  display_order INT DEFAULT 0,
+  start_date VARCHAR(50) DEFAULT NULL,
+  end_date VARCHAR(50) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS anuncio_portal (
   id VARCHAR(50) PRIMARY KEY,

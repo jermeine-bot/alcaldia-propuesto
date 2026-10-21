@@ -62,6 +62,13 @@ function PublicLanding() {
     sections.forEach((section, index) => {
       section.classList.add('scroll-reveal');
       section.style.setProperty('--scroll-reveal-delay', `${Math.min(index, 4) * 55}ms`);
+      const revealItems = section.querySelectorAll(
+        '.section-header, .row > [class*="col-"], .gallery-item, .centro-atencion-card, .cultura-card'
+      );
+      revealItems.forEach((item, itemIndex) => {
+        item.classList.add('scroll-reveal-item');
+        item.style.setProperty('--scroll-item-delay', `${Math.min(itemIndex, 7) * 75}ms`);
+      });
       observer.observe(section);
     });
 
@@ -70,6 +77,10 @@ function PublicLanding() {
       sections.forEach((section) => {
         section.classList.remove('scroll-reveal', 'scroll-reveal-visible');
         section.style.removeProperty('--scroll-reveal-delay');
+        section.querySelectorAll('.scroll-reveal-item').forEach((item) => {
+          item.classList.remove('scroll-reveal-item');
+          item.style.removeProperty('--scroll-item-delay');
+        });
       });
     };
   }, []);

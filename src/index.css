@@ -69,11 +69,44 @@ html {
     transform: translate3d(0, 0, 0);
 }
 
+.hero-section .hero-content .badge,
+.hero-section .hero-content .hero-title,
+.hero-section .hero-content .hero-subtitle,
+.hero-section .hero-content .hero-search-container,
+.hero-section .hero-content .hero-buttons {
+    animation: landing-enter 700ms both;
+}
+
+.hero-section .hero-content .badge { animation-delay: 100ms; }
+.hero-section .hero-content .hero-title { animation-delay: 220ms; }
+.hero-section .hero-content .hero-subtitle { animation-delay: 340ms; }
+.hero-section .hero-content .hero-search-container { animation-delay: 460ms; }
+.hero-section .hero-content .hero-buttons { animation-delay: 580ms; }
+
+.scroll-reveal-visible .scroll-reveal-item {
+    animation: landing-enter 650ms both;
+    animation-delay: var(--scroll-item-delay, 0ms);
+}
+
+@keyframes landing-enter {
+    from { opacity: 0; transform: translate3d(0, 22px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .app-container main > section.scroll-reveal {
         opacity: 1;
         transform: none;
         transition: none;
+    }
+
+    .hero-section .hero-content .badge,
+    .hero-section .hero-content .hero-title,
+    .hero-section .hero-content .hero-subtitle,
+    .hero-section .hero-content .hero-search-container,
+    .hero-section .hero-content .hero-buttons,
+    .scroll-reveal-visible .scroll-reveal-item {
+        animation: none;
     }
 }
 

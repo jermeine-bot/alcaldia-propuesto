@@ -2,6 +2,12 @@
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
+// Production seed contains the user-provided database backup and must never be served publicly.
+if (str_starts_with($uri, '/data/')) {
+    http_response_code(404);
+    exit;
+}
+
 // Si es un archivo estático en uploads, servirlo directamente
 if (str_starts_with($uri, '/uploads/')) {
     $filePath = __DIR__ . $uri;

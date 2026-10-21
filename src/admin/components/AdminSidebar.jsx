@@ -64,7 +64,7 @@ const AdminSidebar = () => {
             className="admin-sidebar-logo"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = '/public/img/nav_logo/logo principal.png';
+              e.target.src = '/img/nav_logo/logo principal.png';
             }}
           />
         </div>

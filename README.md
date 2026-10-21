@@ -23,6 +23,7 @@ Este proyecto se compone de una aplicación web fullstack:
 10. [Seguridad, roles y bitácora](#-seguridad-roles-y-bitácora)
 11. [Autenticación y credenciales de desarrollo](#-autenticación-y-credenciales-de-desarrollo)
 12. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
+13. [Anuncios y carga de imágenes en producción](#anuncios-y-carga-de-imágenes-en-producción)
 
 ---
 
@@ -459,8 +460,8 @@ La distribución siguiente supone que el sitio y la API se publican bajo el mism
 - Sitio: `https://tudominio.com/`
 - API: `https://tudominio.com/api/`
 
-1. **Crea una base MySQL en el panel.** En cPanel usa *MySQL Database Wizard*; en Plesk usa *Databases*. Crea la base y un usuario propio, asigna ese usuario a la base con los permisos que el backend necesite para crear y modificar tablas, y guarda el nombre completo, usuario, contraseña y host que muestra el proveedor. En muchos cPanel se antepone el usuario de la cuenta al nombre de base y al usuario.
-2. **Configura el backend antes de subirlo.** En `backend/.env`, sustituye los valores locales de XAMPP por los datos del hosting:
+1. **Crea una base MySQL en el panel.** En cPanel usa *MySQL Database Wizard*; en Plesk usa *Databases*. Crea la base y un usuario propio, asígnalo a la base con permisos para crear y modificar tablas, y guarda el nombre completo, usuario, contraseña y host que muestra el proveedor. En muchos cPanel se antepone el usuario de la cuenta al nombre de base y al usuario. No importes manualmente el respaldo SQL: el backend carga los datos incluidos en el proyecto al inicializar MySQL por primera vez.
+2. **Prepara el archivo de configuración del backend.** Crea `backend/.env` localmente con los datos del hosting (o crea `api/.env` desde el Administrador de archivos después de subirlo):
    ```env
    DB_DRIVER=mysql
    MYSQL_HOST=HOST_MYSQL_DEL_PROVEEDOR
@@ -471,7 +472,7 @@ La distribución siguiente supone que el sitio y la API se publican bajo el mism
    JWT_SECRET=SECRETO_ALEATORIO_LARGO_Y_UNICO
    FRONTEND_URL=https://tudominio.com
    ```
-   Genera un secreto aleatorio nuevo (por ejemplo, con `openssl rand -hex 32`) y no reutilices las credenciales locales de XAMPP. El backend necesita leer este archivo en su carpeta raíz. Si esa carpeta está bajo `public_html`, bloquéalo mediante `.htaccess` y verifica desde el navegador que `https://tudominio.com/api/.env` devuelva `403` o `404`, nunca el contenido del archivo.
+   Genera un secreto aleatorio nuevo (por ejemplo, con `openssl rand -hex 32`) y no reutilices las credenciales locales de XAMPP. El archivo debe quedar en la raíz del backend (`public_html/api/.env`) y el usuario MySQL debe tener acceso a la base. No lo subas a `public_html/` como archivo descargable: la regla `.htaccess` del backend lo bloquea; verifica que `https://tudominio.com/api/.env` devuelva `403` o `404`, nunca su contenido.
 3. **Compila el frontend para la URL pública de la API.** Desde la raíz del proyecto, en una terminal con Node.js:
    ```bash
    npm ci
@@ -485,8 +486,8 @@ La distribución siguiente supone que el sitio y la API se publican bajo el mism
    Remove-Item Env:VITE_API_BASE_URL
    ```
    La compilación genera `dist/`. Si cambias el dominio o la URL de la API, vuelve a compilar y subir el frontend: Vite incorpora esa URL en los archivos generados.
-4. **Sube el frontend.** Mediante el Administrador de archivos del panel o SFTP, sube el **contenido** de `dist/` (no la carpeta `dist` como subcarpeta) a `public_html/` o al directorio público equivalente. Incluye archivos ocultos como `.htaccess` si existen.
-5. **Sube el backend.** Coloca el contenido necesario de `backend/` en `public_html/api/` para que la entrada de la API sea `https://tudominio.com/api/`. Incluye `config/`, `controllers/`, `middlewares/`, `services/`, `uploads/`, `index.php` y `router.php`. No subas `adminer.php`, `database.sqlite` ni archivos de configuración local que no necesite el servidor. El proveedor debe ejecutar PHP y permitir las extensiones PDO MySQL.
+4. **Sube el frontend.** En el Administrador de archivos del panel, abre `public_html/` y sube el **contenido** de `dist/` (no la carpeta `dist` como subcarpeta). Incluye archivos ocultos como `.htaccess` si existen.
+5. **Sube el backend.** Crea `public_html/api/` y sube allí las carpetas `config/`, `controllers/`, `middlewares/`, `services/`, `uploads/`, `data/` y los archivos `index.php` y `router.php`. La carpeta `data/` debe incluir `production_seed.php` y su `.htaccess`; activa la opción del Administrador de archivos para mostrar archivos ocultos y confirma que también se subió ese `.htaccess`. No subas `adminer.php` ni `database.sqlite`. Crea `public_html/api/.env` con la configuración del paso 2. El proveedor debe ejecutar PHP y permitir PDO MySQL.
 6. **Configura las rutas de Apache.** Si no hay reglas equivalentes, crea `public_html/.htaccess` para las rutas SPA del frontend y para exponer las imágenes que el backend guarda en `api/uploads/`:
    ```apache
    RewriteEngine On
@@ -510,7 +511,7 @@ La distribución siguiente supone que el sitio y la API se publican bajo el mism
    ```
    Estas reglas requieren Apache con `mod_rewrite` y `AllowOverride` habilitado. Si el hosting usa Nginx o rechaza `.htaccess`, solicita al proveedor las reglas equivalentes para SPA, API y bloqueo de archivos ocultos; no continúes dejando `.env` accesible.
 7. **Ajusta permisos y HTTPS.** La carpeta `public_html/api/uploads/` debe poder recibir archivos por PHP, pero no debe permitir ejecutar scripts subidos. Activa el certificado HTTPS del hosting y usa HTTPS para el sitio y la API.
-8. **Verifica la instalación.** Abre `https://tudominio.com/api/health`; debe responder con `"database":"mysql"`. Una respuesta `"database":"sqlite"` significa que la conexión MySQL falló: revisa el log PHP y las credenciales del panel antes de guardar contenido. Comprueba la portada, `/admin/login`, la carga de imágenes y que las tablas aparezcan en phpMyAdmin.
+8. **Inicializa y verifica la instalación.** Después de subir archivos y configurar `.env`, abre `https://tudominio.com/api/health`. Esa primera solicitud crea las tablas MySQL y carga una sola vez los registros del respaldo en `data/production_seed.php`; el health debe indicar `"database":"mysql"`. En phpMyAdmin confirma que existan las tablas y sus registros (por ejemplo, `proyectos`, `noticias`, `turismo`, `servicios`, `subservicios` y `anuncios`) y que `app_migrations` contenga `production_backup_2026_10_20_v1`. Verifica también que `https://tudominio.com/api/data/production_seed.php` y `/api/.env` devuelvan 403 o 404. Una respuesta `"database":"sqlite"` indica que falló MySQL: revisa `.env` y el log PHP del panel antes de usar el CMS. Por último, comprueba la portada, `/admin/login` y la carga de imágenes.
 
 Antes de abrir el sitio al público, cambia o elimina las credenciales de administrador iniciales de desarrollo, usa un `JWT_SECRET` propio y cambia `backend/middlewares/CorsMiddleware.php` para permitir solo el origen HTTPS del frontend (actualmente permite cualquier origen). No dejes phpMyAdmin ni Adminer expuestos públicamente sin las protecciones del proveedor. Los planes compartidos pueden limitar cargas de archivos o creación automática de tablas; si algo falla, consulta los límites y logs de PHP del panel.
 
@@ -543,7 +544,7 @@ JWT_SECRET=un_secreto_largo_y_aleatorio
 
 En una instalación local de XAMPP donde `root` no tiene contraseña, deja `MYSQL_PASSWORD=` vacío. El lector de configuración conserva ese valor vacío.
 
-El backend crea las tablas y los datos iniciales al arrancar mediante `backend/config/InitDb.php`. No subas contraseñas ni secretos al repositorio.
+El backend crea las tablas y los datos iniciales al arrancar mediante `backend/config/InitDb.php`. No subas `backend/.env` ni secretos al repositorio. El archivo `backend/data/production_seed.php` contiene datos de producción y debe mantenerse en un repositorio y despliegue privados.
 
 Para usar SQLite en desarrollo, configura `DB_DRIVER=sqlite` en `backend/.env`; el archivo de base de datos es `backend/database.sqlite`. PHP debe tener habilitada la extensión PDO correspondiente al driver elegido. Para comprobar las extensiones cargadas:
 
@@ -616,3 +617,49 @@ Credenciales locales iniciales para el panel:
 - Contraseña: `admin123`
 
 Úsalas solo en desarrollo; cambia o elimina estas credenciales antes de desplegar en producción.
+
+## Anuncios y carga de imágenes en producción
+
+El administrador usa `POST /api/anuncios/upload-image` para subir el archivo y después guarda el anuncio mediante `POST` o `PUT /api/anuncios`. La imagen no se guarda como binario en MySQL:
+
+- PHP guarda el archivo en `backend/uploads/` (en producción, por ejemplo, `public_html/api/uploads/`).
+- La respuesta de la carga contiene una ruta `/uploads/nombre-del-archivo.webp`; el frontend la convierte en una URL absoluta y guarda esa URL o ruta en `anuncios.image`.
+- También se puede pegar una URL/ruta en el formulario. En ese caso el servidor no copia ni hospeda la imagen: el navegador debe poder acceder a esa URL.
+- El campo `image` es `MEDIUMTEXT` en MySQL porque guarda texto (la URL/ruta), no el contenido de la imagen.
+
+La tabla que consulta el panel y el anuncio público es `anuncios`. `anuncio_portal` es otra tabla, usada por el endpoint CMS anterior `/api/cms/anuncio-portal`; no se debe copiar el anuncio entre esas tablas para resolver la carga de flyers.
+
+### Comprobación y cambio de esquema MySQL
+
+Primero confirma en phpMyAdmin que estás en la base configurada en `backend/.env`, y revisa el esquema y los registros sin modificarlos:
+
+```sql
+SELECT DATABASE();
+SHOW TABLES LIKE 'anuncios';
+SHOW CREATE TABLE anuncios;
+SELECT id, title, image, is_active, created_at, updated_at
+FROM anuncios
+ORDER BY created_at DESC;
+```
+
+El esquema esperado está en `backend/mysql/db.sql`. Si `anuncios` no existe, ejecuta en producción únicamente el `CREATE TABLE IF NOT EXISTS anuncios` de ese archivo (o despliega el cambio y deja que la inicialización del backend aplique el esquema). La definición incluye `image MEDIUMTEXT NOT NULL`, `title`, `description`, `linkUrl`, `buttonText`, `badge`, `is_active`, `display_order`, `start_date`, `end_date`, `created_at` y `updated_at`.
+
+`CREATE TABLE IF NOT EXISTS` no modifica una tabla existente. Si `SHOW CREATE TABLE anuncios` revela que faltan columnas o que `image` tiene un tipo incompatible, haz primero un respaldo y compara con `backend/mysql/db.sql`; aplica solo una migración `ALTER TABLE` para la diferencia confirmada. No borres la tabla ni cambies `image` a `BLOB`: eso podría perder anuncios y no coincide con el formato que usa el controlador. No hace falta cambiar `anuncio_portal` para el panel actual.
+
+### Diagnóstico cuando no sube o no se ve la imagen
+
+1. `GET /api/health` debe indicar `"database":"mysql"` en producción. Si indica `sqlite`, el backend no conectó al MySQL configurado; corrige la conexión antes de guardar, porque los datos podrían estar yendo al archivo SQLite del servidor.
+2. En las herramientas de desarrollador del navegador, revisa la solicitud de carga y su respuesta. Flyers JPEG, PNG, WEBP y GIF aceptan hasta 15 MiB; videos Hero hasta 100 MiB. Los scripts locales de Windows pasan a PHP `upload_max_filesize=100M` y `post_max_size=105M`; para otros servidores configura esos límites y el límite del proxy/webserver por encima del tamaño máximo.
+3. Si la carga devuelve error 500 al mover el archivo, verifica que el usuario de PHP pueda escribir en `api/uploads/`. Esa carpeta debe persistir entre despliegues y no debe permitir ejecutar scripts subidos.
+4. Si la carga responde correctamente pero la imagen no abre, visita la URL que devolvió la API. Debe responder con la imagen (HTTP 200). En Apache, la regla indicada en la sección de publicación debe exponer `/uploads/...` desde `api/uploads/...`; en otros servidores configura la ruta equivalente.
+5. Guarda en la fila `anuncios.image` la URL devuelta o una URL pública válida. Para que una imagen subida siga disponible después de un despliegue, respalda y conserva el contenido de `api/uploads/`; restaurar solo la base de datos no restaura esos archivos.
+
+La tabla `anuncios` está declarada en el esquema MySQL y en la inicialización SQLite. Al iniciar, el backend copia una vez el flyer legado de `anuncio_portal` a `anuncios` con el id `legacy-main`, para que aparezca en el CMS nuevo.
+
+### Respaldo SQL integrado en el entorno local
+
+El archivo `alcaldia_leon (2).sql` está incluido como `backend/data/production_seed.php`. Al inicializar una base nueva, `InitDb.php` importa una sola vez sus registros mediante inserciones que conservan las filas preexistentes. Después migra el anuncio único de `anuncio_portal` a `anuncios`. La marca `production_backup_2026_10_20_v1` evita repetir la carga o pisar cambios posteriores. El seed se importa también en SQLite; la base local ya contiene los datos. Se conservó la contraseña del usuario local que ya existía para no cambiar el acceso al panel. Hay una copia previa en `/tmp/alcaldia-database-before-import.sqlite`.
+
+La configuración local apunta a MySQL en `127.0.0.1:3307`, pero ese servidor no aceptó la conexión durante la importación. El backend usa SQLite como fallback; por eso los datos ya están disponibles en la base local SQLite. En el hosting, la primera solicitud que conecte correctamente a MySQL crea las tablas y carga automáticamente los datos iniciales, siempre que se haya subido `backend/data/production_seed.php`. El respaldo no contiene `DROP` ni `TRUNCATE`.
+
+Los campos `noticias.imagen`, `proyectos.img` y `turismo.img` son `LONGTEXT` porque el respaldo incluye imágenes Base64 grandes. La tabla `anuncios.image` guarda una URL/ruta o un data URL, no los bytes del archivo cargado. `backend/data/production_seed.php` contiene registros de usuarios y auditoría del respaldo; mantenlo dentro del despliegue privado del backend y conserva el bloqueo HTTP de la carpeta `data/`.

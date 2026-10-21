@@ -161,6 +161,7 @@ class InitDb {
                     title TEXT,
                     `desc` TEXT,
                     icon TEXT,
+                    link TEXT,
                     linkText TEXT,
                     linkUrl TEXT,
                     requisitos TEXT,
@@ -195,6 +196,22 @@ class InitDb {
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
+                CREATE TABLE IF NOT EXISTS anuncios (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    image TEXT NOT NULL,
+                    linkUrl TEXT DEFAULT '',
+                    buttonText TEXT DEFAULT 'Ver más información',
+                    badge TEXT DEFAULT 'Aviso Importante',
+                    is_active INTEGER DEFAULT 1,
+                    display_order INTEGER DEFAULT 0,
+                    start_date TEXT,
+                    end_date TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+
                 CREATE TABLE IF NOT EXISTS anuncio_portal (
                     id TEXT PRIMARY KEY,
                     content TEXT,
@@ -224,7 +241,87 @@ class InitDb {
         }
 
         self::migrateSchema($pdo);
+        self::applyProductionSeed($pdo);
+        self::migrateLegacyAnnouncement($pdo);
         self::seedData($pdo);
+    }
+
+    private static function applyProductionSeed(PDO $pdo): void {
+        $isSqlite = Database::getDriver() === 'sqlite';
+        if ($isSqlite) {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS app_migrations (id TEXT PRIMARY KEY, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+        } else {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS app_migrations (id VARCHAR(120) PRIMARY KEY, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        }
+
+        $migrationId = 'production_backup_2026_10_20_v1';
+        $check = $pdo->prepare('SELECT id FROM app_migrations WHERE id = ?');
+        $check->execute([$migrationId]);
+        if ($check->fetchColumn()) return;
+
+        $seedFile = dirname(__DIR__) . '/data/production_seed.php';
+        if (!is_file($seedFile)) return;
+        $seed = require $seedFile;
+        if (!is_array($seed)) throw new \RuntimeException('El respaldo inicial no es JSON válido.');
+
+        $pdo->beginTransaction();
+        try {
+            foreach ($seed as $table => $rows) {
+                if (!preg_match('/^[a-z_]+$/i', (string)$table) || !is_array($rows)) {
+                    throw new \RuntimeException('El respaldo inicial contiene una tabla inválida.');
+                }
+                foreach ($rows as $row) {
+                    if (!is_array($row) || !$row) continue;
+                    $columns = array_keys($row);
+                    foreach ($columns as $column) {
+                        if (!preg_match('/^[a-z_][a-z0-9_]*$/i', (string)$column)) {
+                            throw new \RuntimeException('El respaldo inicial contiene una columna inválida.');
+                        }
+                    }
+                    $quotedColumns = implode(', ', array_map(static fn($column) => '`' . $column . '`', $columns));
+                    $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+                    $verb = $isSqlite ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+                    $insert = $pdo->prepare("{$verb} INTO `{$table}` ({$quotedColumns}) VALUES ({$placeholders})");
+                    $insert->execute(array_values($row));
+                }
+            }
+
+            $mark = $pdo->prepare('INSERT INTO app_migrations (id) VALUES (?)');
+            $mark->execute([$migrationId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log('No se pudo importar el respaldo inicial: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    private static function migrateLegacyAnnouncement(PDO $pdo): void {
+        try {
+            $legacy = $pdo->query("SELECT content FROM anuncio_portal WHERE id = 'main'")->fetchColumn();
+            if (!$legacy) return;
+
+            $data = is_array($legacy) ? $legacy : json_decode((string)$legacy, true);
+            if (!is_array($data) || empty($data['image'])) return;
+
+            $insertPrefix = Database::getDriver() === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+            $stmt = $pdo->prepare("{$insertPrefix} INTO anuncios (id, title, description, image, linkUrl, buttonText, badge, is_active, display_order, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                'legacy-main',
+                $data['title'] ?? 'Aviso institucional',
+                $data['description'] ?? '',
+                $data['image'],
+                $data['linkUrl'] ?? $data['link_url'] ?? '',
+                $data['buttonText'] ?? $data['button_text'] ?? 'Ver más información',
+                $data['badge'] ?? 'Aviso Importante',
+                !empty($data['is_active'] ?? $data['isActive'] ?? true) ? 1 : 0,
+                (int)($data['display_order'] ?? 0),
+                $data['start_date'] ?? null,
+                $data['end_date'] ?? null
+            ]);
+        } catch (\Throwable $e) {
+            error_log('No se pudo migrar el anuncio legado: ' . $e->getMessage());
+        }
     }
 
     private static function migrateSchema(PDO $pdo): void {
@@ -240,6 +337,7 @@ class InitDb {
                         'url_externa' => "ALTER TABLE noticias ADD COLUMN url_externa TEXT DEFAULT ''"
                     ],
                     'subservicios' => [
+                        'link' => "ALTER TABLE subservicios ADD COLUMN link TEXT DEFAULT ''",
                         'requisitos' => "ALTER TABLE subservicios ADD COLUMN requisitos TEXT DEFAULT ''",
                         'departamento' => "ALTER TABLE subservicios ADD COLUMN departamento TEXT DEFAULT ''"
                     ],
@@ -281,6 +379,7 @@ class InitDb {
                         'url_externa' => "ALTER TABLE noticias ADD COLUMN url_externa TEXT"
                     ],
                     'subservicios' => [
+                        'link' => "ALTER TABLE subservicios ADD COLUMN link VARCHAR(500)",
                         'requisitos' => "ALTER TABLE subservicios ADD COLUMN requisitos TEXT",
                         'departamento' => "ALTER TABLE subservicios ADD COLUMN departamento VARCHAR(255) DEFAULT ''"
                     ],
@@ -335,25 +434,7 @@ class InitDb {
             ]);
         }
 
-        // 2. Anuncio por defecto en anuncio_portal si está vacío
-        $stmtAnuncio = $pdo->prepare("SELECT id FROM anuncio_portal WHERE id = 'main'");
-        $stmtAnuncio->execute();
-        if (!$stmtAnuncio->fetch()) {
-            $defaultAnuncioData = [
-                'isActive' => true,
-                'badge' => 'Aviso Importante',
-                'title' => 'Comunicado Oficial — Alcaldía Municipal de León',
-                'description' => 'Conoce las nuevas jornadas, trámites en línea y actividades municipales.',
-                'image' => '/img/turismo/catedral.jpg',
-                'linkUrl' => '',
-                'buttonText' => 'Ver más información',
-                'showOncePerSession' => false
-            ];
-            $insertAnuncio = $pdo->prepare("INSERT INTO anuncio_portal (id, content) VALUES ('main', ?)");
-            $insertAnuncio->execute([json_encode($defaultAnuncioData, JSON_UNESCAPED_UNICODE)]);
-        }
-
-        // 3. Hero
+        // 2. Hero
         $stmt = $pdo->prepare("SELECT id FROM hero WHERE id = ?");
         $stmt->execute(['hero-1']);
         if (!$stmt->fetch()) {

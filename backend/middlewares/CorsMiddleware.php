@@ -5,7 +5,7 @@ namespace Middlewares;
 class CorsMiddleware {
     public static function handle(): void {
         header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Authorization, Content-Type, Accept, Origin, X-Requested-With');
         header('Access-Control-Allow-Credentials: true');
 
