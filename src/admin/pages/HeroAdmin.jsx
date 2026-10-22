@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
-import { Save, Image, Video, Link as LinkIcon, Eye, EyeOff, Monitor } from 'lucide-react';
+import { Save, Image, Video, Link as LinkIcon, Eye, EyeOff, Monitor, Palette } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import ImageUploader from '../components/ImageUploader';
 
 const BG_TYPES = [
   { value: 'video', label: 'Video de Fondo', icon: Video, desc: 'Reproduce un video MP4 o WebM como fondo animado de la portada.' },
   { value: 'image', label: 'Imagen de Fondo', icon: Image, desc: 'Muestra una imagen estática de alta resolución como fondo de la portada.' },
-  { value: 'none',  label: 'Sin Fondo Visual', icon: EyeOff, desc: 'La portada se muestra con un fondo oscuro sólido, sin video ni imagen.' }
+  { value: 'none',  label: 'Sin Fondo Visual', icon: EyeOff, desc: 'Muestra un color sólido elegido, sin video ni imagen.' }
 ];
 
 const HeroAdmin = () => {
@@ -27,6 +27,8 @@ const HeroAdmin = () => {
     fallbackImg: '/img/hero-bg.jpg',
     bgType: 'video',
     bgImageUrl: '',
+    overlayColor: '#1a1816',
+    overlayOpacity: 0.35,
     primaryBtnText: 'Conoce León',
     primaryBtnLink: '#turismo',
     secondaryBtnText: 'Servicios Rápidos',
@@ -40,7 +42,9 @@ const HeroAdmin = () => {
         ...prev,
         ...heroData,
         bgType: heroData.bgType || heroData.bg_type || 'video',
-        bgImageUrl: heroData.bgImageUrl || heroData.bg_image_url || ''
+        bgImageUrl: heroData.bgImageUrl || heroData.bg_image_url || '',
+        overlayColor: heroData.overlayColor || heroData.overlay_color || '#1a1816',
+        overlayOpacity: Number(heroData.overlayOpacity ?? heroData.overlay_opacity ?? 0.35)
       }));
     }
   }, [heroData]);
@@ -134,6 +138,54 @@ const HeroAdmin = () => {
                   placeholder="Ej: Alcaldía Municipal de León"
                   required
                 />
+              </div>
+
+              <div className="col-12">
+                <div className="border rounded-3 p-3">
+                  <label className="form-label fw-semibold small d-flex align-items-center gap-2">
+                    <Palette size={16} className="text-danger" /> Color de fondo y tinte de la imagen
+                  </label>
+                  <div className="row g-3 align-items-center">
+                    <div className="col-12 col-md-4">
+                      <div className="d-flex align-items-center gap-2">
+                        <input
+                          aria-label="Color de fondo y tinte"
+                          type="color"
+                          className="form-control form-control-color"
+                          value={formData.overlayColor || '#1a1816'}
+                          onChange={e => setFormData(prev => ({ ...prev, overlayColor: e.target.value }))}
+                        />
+                        <code>{formData.overlayColor || '#1a1816'}</code>
+                      </div>
+                      <small className="text-muted">En “Sin Fondo Visual” se usa como color sólido.</small>
+                    </div>
+                    <div className="col-12 col-md-8">
+                      <label className="form-label small mb-1" htmlFor="hero-overlay-opacity">
+                        Intensidad del tinte sobre video o imagen: {Math.round((Number(formData.overlayOpacity) || 0) * 100)}%
+                      </label>
+                      <input
+                        id="hero-overlay-opacity"
+                        type="range"
+                        className="form-range"
+                        min="0"
+                        max="0.9"
+                        step="0.05"
+                        value={formData.overlayOpacity ?? 0.35}
+                        onChange={e => setFormData(prev => ({ ...prev, overlayOpacity: Number(e.target.value) }))}
+                        disabled={formData.bgType === 'none'}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => setFormData(prev => ({ ...prev, overlayOpacity: 0 }))}
+                        disabled={formData.bgType === 'none' || Number(formData.overlayOpacity) === 0}
+                      >
+                        Dejar imagen/video sin tinte
+                      </button>
+                    </div>
+                  </div>
+                  <small className="text-muted d-block mt-2">Usa intensidad 0% para ver la foto o el video con sus colores originales.</small>
+                </div>
               </div>
 
               {/* Título Principal */}
@@ -280,7 +332,7 @@ const HeroAdmin = () => {
                   <div className="alert alert-warning d-flex align-items-start gap-2 mb-0">
                     <EyeOff size={20} className="mt-1 flex-shrink-0" />
                     <div>
-                      <strong>Fondo desactivado.</strong> La portada se mostrará con un fondo oscuro sólido sin video ni imagen.
+                      <strong>Fondo desactivado.</strong> La portada se mostrará con el color elegido arriba, sin video ni imagen.
                       Los textos, botones y el buscador seguirán visibles normalmente.
                     </div>
                   </div>

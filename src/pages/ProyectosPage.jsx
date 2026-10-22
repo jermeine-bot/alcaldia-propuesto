@@ -230,7 +230,7 @@ const ProyectosPage = () => {
                 <div className="col-12 col-lg-5">
                   <label htmlFor="proyectos-search" className="proyectos-filter-label">Buscar proyecto</label>
                   <div className="input-group">
-                    <span className="input-group-text bg-white border-end-0"><i className="fas fa-search text-muted"></i></span>
+                    <span className="input-group-text border-end-0"><i className="fas fa-search text-muted"></i></span>
                     <input
                       id="proyectos-search"
                       type="search"
@@ -299,8 +299,8 @@ const ProyectosPage = () => {
                   ))}
                 </div>
                 <span className="text-muted small">
-                  Mostrando <strong className="text-dark">{filteredProjects.length}</strong> de{' '}
-                  <strong className="text-dark">{publishedProjects.length}</strong> proyectos
+                  Mostrando <strong className="fw-bold">{filteredProjects.length}</strong> de{' '}
+                  <strong className="fw-bold">{publishedProjects.length}</strong> proyectos
                 </span>
               </div>
             </div>
