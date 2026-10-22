@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS hero (
   badge_text VARCHAR(150) DEFAULT 'Alcaldía Municipal de León',
   bg_type VARCHAR(20) DEFAULT 'video',
   bg_image_url LONGTEXT,
+  overlay_color VARCHAR(7) DEFAULT '#1a1816',
+  overlay_opacity DECIMAL(3,2) DEFAULT 0.35,
   is_active BOOLEAN DEFAULT TRUE,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

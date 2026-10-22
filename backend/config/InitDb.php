@@ -55,6 +55,8 @@ class InitDb {
                     badge_text TEXT DEFAULT 'Alcaldía Municipal de León',
                     bg_type TEXT DEFAULT 'video',
                     bg_image_url TEXT DEFAULT '',
+                    overlay_color TEXT DEFAULT '#1a1816',
+                    overlay_opacity REAL DEFAULT 0.35,
                     is_active INTEGER DEFAULT 1,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );

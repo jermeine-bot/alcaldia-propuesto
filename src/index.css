@@ -2952,7 +2952,7 @@ header#mainHeader.header-scrolled {
 
 .proyecto-category-badge {
     position: absolute;
-    bottom: 12px;
+    top: 12px;
     left: 12px;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(6px);
@@ -3301,6 +3301,7 @@ html, body, #root, .app-container {
 }
 
 .proyectos-page-toolbar .input-group-text {
+    background: var(--white);
     color: #6b7280;
 }
 

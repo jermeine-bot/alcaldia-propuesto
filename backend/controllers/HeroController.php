@@ -29,6 +29,8 @@ class HeroController {
                 'badge_text'   => "TEXT DEFAULT 'Alcaldía Municipal de León'",
                 'bg_type'      => "TEXT DEFAULT 'video'",
                 'bg_image_url' => "TEXT DEFAULT ''",
+                'overlay_color' => "TEXT DEFAULT '#1a1816'",
+                'overlay_opacity' => "REAL DEFAULT 0.35",
             ];
 
             if ($driver === 'mysql') {
@@ -37,6 +39,8 @@ class HeroController {
                     'bg_type'      => "VARCHAR(20)  DEFAULT 'video'",
                     // Las imágenes del CMS se guardan como data URLs base64 y superan el límite de TEXT (64 KB).
                     'bg_image_url' => "LONGTEXT NULL",
+                    'overlay_color' => "VARCHAR(7) DEFAULT '#1a1816'",
+                    'overlay_opacity' => "DECIMAL(3,2) DEFAULT 0.35",
                 ];
                 foreach ($needed as $col => $_) {
                     $check = $pdo->query("SHOW COLUMNS FROM hero LIKE '{$col}'")->fetchAll();
@@ -93,6 +97,8 @@ class HeroController {
             $row['badgeText']        = $row['badge_text'] ?? 'Alcaldía Municipal de León';
             $row['bgType']           = $row['bg_type'] ?? 'video';
             $row['bgImageUrl']       = $row['bg_image_url'] ?? '';
+            $row['overlayColor']     = $row['overlay_color'] ?? '#1a1816';
+            $row['overlayOpacity']  = (float)($row['overlay_opacity'] ?? 0.35);
 
             echo json_encode($row);
         } catch (Throwable $e) {
@@ -121,6 +127,11 @@ class HeroController {
             $badgeText       = $data['badgeText'] ?? $data['badge_text'] ?? 'Alcaldía Municipal de León';
             $bgType          = $data['bgType'] ?? $data['bg_type'] ?? 'video';
             $bgImageUrl      = $data['bgImageUrl'] ?? $data['bg_image_url'] ?? '';
+            $overlayColor    = $data['overlayColor'] ?? $data['overlay_color'] ?? '#1a1816';
+            $overlayOpacity  = max(0, min(1, (float)($data['overlayOpacity'] ?? $data['overlay_opacity'] ?? 0.35)));
+            if (!preg_match('/^#[0-9a-fA-F]{6}$/', (string)$overlayColor)) {
+                $overlayColor = '#1a1816';
+            }
 
             // Validar bgType
             if (!in_array($bgType, ['video', 'image', 'none'], true)) {
@@ -133,7 +144,7 @@ class HeroController {
                 $update = $pdo->prepare("
                     UPDATE hero SET title=?, subtitle=?, video_url=?, fallback_image_url=?, primary_btn_text=?,
                     primary_btn_link=?, secondary_btn_text=?, secondary_btn_link=?, is_active=?, badge_text=?,
-                    bg_type=?, bg_image_url=?, updated_at=CURRENT_TIMESTAMP
+                    bg_type=?, bg_image_url=?, overlay_color=?, overlay_opacity=?, updated_at=CURRENT_TIMESTAMP
                     WHERE id=?
                 ");
                 $update->execute([
@@ -149,13 +160,15 @@ class HeroController {
                     $badgeText,
                     $bgType,
                     $bgImageUrl,
+                    $overlayColor,
+                    $overlayOpacity,
                     self::HERO_ID
                 ]);
             } else {
                 $insert = $pdo->prepare("
                     INSERT INTO hero (id, title, subtitle, video_url, fallback_image_url, primary_btn_text, primary_btn_link,
-                        secondary_btn_text, secondary_btn_link, is_active, badge_text, bg_type, bg_image_url)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        secondary_btn_text, secondary_btn_link, is_active, badge_text, bg_type, bg_image_url, overlay_color, overlay_opacity)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $insert->execute([
                     self::HERO_ID,
@@ -170,7 +183,9 @@ class HeroController {
                     $isActive,
                     $badgeText,
                     $bgType,
-                    $bgImageUrl
+                    $bgImageUrl,
+                    $overlayColor,
+                    $overlayOpacity
                 ]);
             }
 

@@ -136,7 +136,12 @@ const Hero = () => {
   const fallbackImg = hero?.fallbackImg || '/img/hero-bg.jpg';
   const bgType = hero?.bgType || hero?.bg_type || 'video';
   const bgImageUrl = hero?.bgImageUrl || hero?.bg_image_url || '';
-  useEffect(() => { setVideoFailed(false); }, [videoUrl]);
+  const overlayColor = hero?.overlayColor || hero?.overlay_color || '#1a1816';
+  const overlayOpacity = Math.max(0, Math.min(1, Number(hero?.overlayOpacity ?? hero?.overlay_opacity ?? 0.35)));
+  const overlayRgb = /^#[0-9a-f]{6}$/i.test(overlayColor)
+    ? `${parseInt(overlayColor.slice(1, 3), 16)}, ${parseInt(overlayColor.slice(3, 5), 16)}, ${parseInt(overlayColor.slice(5, 7), 16)}`
+    : '26, 24, 22';
+  useEffect(() => { setVideoFailed(false); }, [videoUrl, bgType]);
   const primaryBtnText = hero?.primaryBtnText || 'Conoce León';
   const primaryBtnLink = hero?.primaryBtnLink || '#turismo';
   const secondaryBtnText = hero?.secondaryBtnText || 'Servicios Rápidos';
@@ -145,11 +150,11 @@ const Hero = () => {
   // Renderizar el fondo según el tipo configurado
   const renderBackground = () => {
     if (bgType === 'none') {
-      // Fondo sólido oscuro sin media
+      // Color sólido elegido en la configuración, sin el overlay de medios.
       return (
         <div
           className="position-absolute w-100 h-100 top-0 start-0"
-          style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 50%, #16213e 100%)' }}
+          style={{ backgroundColor: overlayColor }}
         />
       );
     }
@@ -203,7 +208,12 @@ const Hero = () => {
     <section id="hero" className="hero-section position-relative overflow-hidden w-100">
       <div className="hero-video-wrapper position-absolute w-100 h-100 top-0 start-0">
         {renderBackground()}
-        <div className="hero-overlay position-absolute w-100 h-100 top-0 start-0 bg-dark opacity-50"></div>
+        {bgType !== 'none' && overlayOpacity > 0 && (
+          <div
+            className="hero-overlay position-absolute w-100 h-100 top-0 start-0"
+            style={{ background: `rgba(${overlayRgb}, ${overlayOpacity})` }}
+          />
+        )}
       </div>
 
       <div
