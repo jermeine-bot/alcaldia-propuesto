@@ -171,5 +171,12 @@ export const apiService = {
   getCentrosAtencion: () => request('/cms/centros-atencion'),
   saveCentrosAtencion: data => request('/cms/centros-atencion', { method: 'PUT', data }),
   getRedesSociales: () => request('/cms/redes-sociales'),
-  saveRedesSociales: data => request('/cms/redes-sociales', { method: 'PUT', data })
+  saveRedesSociales: data => request('/cms/redes-sociales', { method: 'PUT', data }),
+
+  getGaleria: () => request('/galeria'),
+  getPublicGaleria: () => request('/galeria/public', { authenticated: false }),
+  saveGaleriaItem: data => saveItem('galeria', data),
+  deleteGaleriaItem: id => deleteItem('galeria', id),
+  toggleGaleriaStatus: id => request(`/galeria/${encodeURIComponent(id)}/toggle`, { method: 'PATCH' }),
+  uploadGaleriaImage: file => uploadFile('/galeria/upload-image', 'image', file)
 };

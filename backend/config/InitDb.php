@@ -221,6 +221,18 @@ class InitDb {
                     content TEXT,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
+
+                CREATE TABLE IF NOT EXISTS galeria (
+                    id TEXT PRIMARY KEY,
+                    title TEXT DEFAULT '',
+                    description TEXT,
+                    category TEXT DEFAULT 'General',
+                    image TEXT NOT NULL,
+                    display_order INTEGER DEFAULT 0,
+                    is_active INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
             ");
         } else {
             // MySQL Schema con soporte para anuncio_portal
@@ -248,6 +260,41 @@ class InitDb {
         self::applyProductionSeed($pdo);
         self::migrateLegacyAnnouncement($pdo);
         self::seedData($pdo);
+        self::seedGallery($pdo);
+    }
+
+    private static function seedGallery(PDO $pdo): void {
+        $migrationId = 'galeria_default_images_2026_10_22';
+        $check = $pdo->prepare('SELECT id FROM app_migrations WHERE id = ?');
+        $check->execute([$migrationId]);
+        if ($check->fetchColumn()) return;
+
+        $pdo->beginTransaction();
+        try {
+            $verb = Database::getDriver() === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+            $insert = $pdo->prepare("
+                {$verb} INTO galeria (id, title, description, category, image, display_order, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+            ");
+
+            for ($i = 1; $i <= 7; $i++) {
+                $insert->execute([
+                    "galeria-default-{$i}",
+                    "Galería León {$i}",
+                    'Momento destacado de nuestra ciudad.',
+                    'General',
+                    "/img/galeria/{$i}.jpg",
+                    $i
+                ]);
+            }
+
+            $mark = $pdo->prepare('INSERT INTO app_migrations (id) VALUES (?)');
+            $mark->execute([$migrationId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log('No se pudo importar la galería inicial: ' . $e->getMessage());
+        }
     }
 
     private static function applyProductionSeed(PDO $pdo): void {

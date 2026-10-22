@@ -1679,6 +1679,36 @@ header.header-scrolled .sublogo-img-right {
     line-height: 1;
 }
 
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 46px;
+    height: 46px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: background 0.2s ease;
+}
+
+.lightbox-nav:hover {
+    background: rgba(178, 34, 34, 0.9);
+}
+
+.lightbox-nav-prev {
+    left: 10px;
+}
+
+.lightbox-nav-next {
+    right: 10px;
+}
+
 /* Modal Búsqueda */
 .search-overlay {
     position: fixed;

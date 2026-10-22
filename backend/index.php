@@ -41,6 +41,7 @@ use Controllers\AuditController;
 use Controllers\FacebookController;
 use Controllers\AnuncioController;
 use Controllers\AnunciosController;
+use Controllers\GaleriaController;
 
 // 1. Manejo de CORS
 CorsMiddleware::handle();
@@ -119,6 +120,8 @@ if ($path === '/' && $method === 'GET') {
             'stats' => '/api/stats',
             'contacto' => '/api/contacto',
             'cms' => '/api/cms',
+            'galeria' => '/api/galeria',
+            'galeria_public' => '/api/galeria/public',
             'anuncio_portal' => '/api/cms/anuncio-portal',
             'auth' => '/api/auth/login'
         ]
@@ -232,6 +235,49 @@ if (preg_match('~^/api/anuncios/([^/]+)$~', $path, $matches)) {
     $id = urldecode($matches[1]);
     if ($method === 'PUT') { $user = AuthMiddleware::handle(); AnunciosController::update($id, $user, $body); exit; }
     if ($method === 'DELETE') { $user = AuthMiddleware::handle(); AnunciosController::delete($id, $user); exit; }
+}
+
+// Galería (imágenes administrables desde el CMS)
+if ($path === '/api/galeria/public' && $method === 'GET') {
+    GaleriaController::getPublic();
+    exit;
+}
+if ($path === '/api/galeria/upload-image' && $method === 'POST') {
+    AuthMiddleware::handle();
+    GaleriaController::uploadImage();
+    exit;
+}
+if ($path === '/api/galeria') {
+    if ($method === 'GET') {
+        AuthMiddleware::handle();
+        GaleriaController::getAll();
+        exit;
+    } elseif ($method === 'POST') {
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
+        GaleriaController::create($body);
+        exit;
+    }
+}
+if (preg_match('~^/api/galeria/([^/]+)/toggle$~', $path, $matches) && $method === 'PATCH') {
+    $user = AuthMiddleware::handle();
+    RoleMiddleware::check($user, ['superadmin', 'editor']);
+    GaleriaController::toggleActive(urldecode($matches[1]));
+    exit;
+}
+if (preg_match('~^/api/galeria/([^/]+)$~', $path, $matches)) {
+    $id = urldecode($matches[1]);
+    if ($method === 'PUT') {
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
+        GaleriaController::update($id, $body);
+        exit;
+    } elseif ($method === 'DELETE') {
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
+        GaleriaController::delete($id);
+        exit;
+    }
 }
 
 // Proyectos
