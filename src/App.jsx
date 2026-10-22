@@ -20,6 +20,7 @@ import Contacto from './components/Contacto';
 import Footer from './components/Footer'; 
 import AnuncioModal from './components/AnuncioModal';
 import ProyectosPage from './pages/ProyectosPage';
+import CulturaPage from './pages/CulturaPage';
 
 // Admin imports
 import ProtectedRoute from './admin/components/ProtectedRoute';
@@ -40,12 +41,21 @@ import AnuncioAdmin from './admin/pages/AnuncioAdmin';
 
 function PublicLanding() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showPreloader, setShowPreloader] = useState(false);
   const mainRef = useRef(null);
   const location = useLocation();
 
+  // Controlar que el Preloader solo aparezca la primera vez en la sesión actual
+  useEffect(() => {
+    const hasLoadedBefore = sessionStorage.getItem('hasLoadedBefore');
+    
+    if (!hasLoadedBefore) {
+      setShowPreloader(true);
+      sessionStorage.setItem('hasLoadedBefore', 'true');
+    }
+  }, []);
+
   // Permite llegar desde otra página a una sección concreta (ej. /#contacto).
-  // Reintenta mientras cargan las secciones e imágenes, porque el contenido
-  // inferior cambia de altura y el destino puede desplazarse.
   useEffect(() => {
     if (!location.hash) return undefined;
 
@@ -146,7 +156,7 @@ function PublicLanding() {
 
   return (
     <div className="app-container">
-      <Preloader />
+      {showPreloader && <Preloader />}
       <AnuncioModal />
       <Header onOpenSearch={() => setIsSearchOpen(true)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
@@ -177,8 +187,11 @@ export default function App() {
         {/* Landing Page Pública */}
         <Route path="/" element={<PublicLanding />} />
 
-        {/* Página pública con el catálogo completo de proyectos */}
+        {/* Página pública de Proyectos */}
         <Route path="/proyectos" element={<ProyectosPage />} />
+
+        {/* Página pública de Cultura y Efemérides */}
+        <Route path="/cultura" element={<CulturaPage />} />
 
         {/* Login de Administración */}
         <Route path="/admin/login" element={<LoginPage />} />

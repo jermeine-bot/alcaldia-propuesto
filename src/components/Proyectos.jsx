@@ -11,7 +11,7 @@ import {
   PROJECT_FALLBACK_IMAGE
 } from '../utils/formatUrl';
 
-const HOME_LIMIT = 6;
+const HOME_LIMIT = 2; // Mostramos únicamente 2 proyectos en la sección de inicio
 
 const Proyectos = () => {
   const sectionRef = useRef(null);
@@ -69,7 +69,7 @@ const Proyectos = () => {
   }, [publishedProjects, activeFilter]);
 
   const visibleProjects = filteredProyectos.slice(0, HOME_LIMIT);
-  const hasMoreProjects = publishedProjects.length > HOME_LIMIT;
+  const hasMoreProjects = filteredProyectos.length > HOME_LIMIT || publishedProjects.length > HOME_LIMIT;
 
   return (
     <section id="proyectos" ref={sectionRef} className="proyectos-section py-5 position-relative">
@@ -99,7 +99,7 @@ const Proyectos = () => {
           ))}
         </div>
 
-        {/* LISTADO DE PROYECTOS (MÁXIMO 6 EN EL INICIO) */}
+        {/* LISTADO DE PROYECTOS (MÁXIMO 2 EN EL INICIO) */}
         <div className="row g-4">
           {visibleProjects.length === 0 ? (
             <div className="col-12 text-center text-muted py-4">
@@ -211,14 +211,11 @@ const Proyectos = () => {
         {/* ACCESO A LA PÁGINA COMPLETA DE PROYECTOS */}
         {hasMoreProjects && (
           <div className="proyectos-home-footer text-center mt-5">
-            <p className="text-muted small mb-3">
-              {filteredProyectos.length > HOME_LIMIT
-                ? `Mostrando ${HOME_LIMIT} de ${filteredProyectos.length} proyectos de este filtro.`
-                : `Mostrando ${filteredProyectos.length} de ${publishedProjects.length} proyectos publicados.`}
-            </p>
-            <Link to="/proyectos" className="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2">
-              Ver todos los proyectos
-              <span className="badge bg-white text-danger rounded-pill">{publishedProjects.length}</span>
+            <Link 
+              to="/proyectos" 
+              className="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2"
+            >
+              Ver más proyectos
               <i className="fas fa-arrow-right small"></i>
             </Link>
           </div>

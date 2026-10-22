@@ -41,7 +41,6 @@ const Contacto = () => {
       const text = `*Nueva Denuncia / Mensaje Ciudadano*%0A` +
                    `----------------------------------%0A` +
                    `*Nombre:* ${encodeURIComponent(formData.nombre)}%0A` +
-                   `*Correo:* ${encodeURIComponent(formData.email)}%0A` +
                    `*Asunto:* ${encodeURIComponent(formData.asunto || 'Sin asunto')}%0A` +
                    `*Mensaje:* ${encodeURIComponent(formData.mensaje)}`;
 
@@ -132,17 +131,7 @@ const Contacto = () => {
                       required
                     />
                   </div>
-                  <div className="col-md-6">
-                    <input
-                      type="email"
-                      name="email"
-                      className="form-control"
-                      placeholder="Correo electrónico"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
+                  
                   <div className="col-12">
                     <input
                       type="text"
