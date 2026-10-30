@@ -7,11 +7,20 @@ import { apiService } from '../../services/apiService';
 const blank = {
   title: '',
   description: '',
-  category: 'General',
+  category: 'Parques y plazas',
   image: '',
   display_order: 0,
   is_active: true
 };
+
+const CATEGORIAS_GALERIA = [
+  'Parques y plazas',
+  'Playas y naturaleza',
+  'Patrimonio e historia',
+  'Cultura y tradición',
+  'Proyectos u obras',
+  'Otras'
+];
 
 const GaleriaAdmin = () => {
   const client = useQueryClient();
@@ -93,7 +102,7 @@ const GaleriaAdmin = () => {
         await apiService.saveGaleriaItem({
           title: cleanTitle || 'Galería',
           description: '',
-          category: 'General',
+          category: 'Parques y plazas',
           image: uploaded.url,
           display_order: nextOrder++,
           is_active: 1
@@ -316,12 +325,17 @@ const GaleriaAdmin = () => {
 
                 <div className="col-md-4">
                   <label className="form-label">Categoría</label>
-                  <input
-                    className="form-control"
-                    value={form.category || ''}
+                  <select
+                    className="form-select"
+                    value={form.category || 'Parques y plazas'}
                     onChange={(event) => change('category', event.target.value)}
-                    placeholder="General"
-                  />
+                  >
+                    {CATEGORIAS_GALERIA.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="col-12">

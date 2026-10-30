@@ -11,7 +11,7 @@ import {
   PROJECT_FALLBACK_IMAGE
 } from '../utils/formatUrl';
 
-const HOME_LIMIT = 2; // Mostramos únicamente 2 proyectos en la sección de inicio
+const HOME_LIMIT = 4; // Mostramos únicamente 4 proyectos en la sección de inicio
 
 const Proyectos = () => {
   const sectionRef = useRef(null);
@@ -68,7 +68,10 @@ const Proyectos = () => {
     });
   }, [publishedProjects, activeFilter]);
 
+  // Se limitan los proyectos visibles en la home a un máximo de 4
   const visibleProjects = filteredProyectos.slice(0, HOME_LIMIT);
+  
+  // El botón de ver más se habilita/muestra si hay más de 4 proyectos en total (el 5to en adelante)
   const hasMoreProjects = filteredProyectos.length > HOME_LIMIT || publishedProjects.length > HOME_LIMIT;
 
   return (
@@ -99,7 +102,7 @@ const Proyectos = () => {
           ))}
         </div>
 
-        {/* LISTADO DE PROYECTOS (MÁXIMO 2 EN EL INICIO) */}
+        {/* LISTADO DE PROYECTOS (MÁXIMO 4 EN EL INICIO) */}
         <div className="row g-4">
           {visibleProjects.length === 0 ? (
             <div className="col-12 text-center text-muted py-4">
@@ -115,7 +118,7 @@ const Proyectos = () => {
                 <div key={item.id} className="col-lg-6">
                   <article
                     className={`proyecto-card shadow-sm ${isVisible ? 'proyecto-card-animated' : ''}`}
-                    style={{ transitionDelay: `${idx * 120}ms` }}
+                    style={{ transitionDelay: `${Math.min(idx, 7) * 70}ms` }}
                   >
                     <div className="proyecto-img-wrapper position-relative">
                       <img
@@ -164,7 +167,7 @@ const Proyectos = () => {
                             className={`progress-bar rounded-pill ${isCompleted ? 'bg-success' : 'bg-danger'}`}
                             style={{
                               width: isVisible ? `${item.progress}%` : '0%',
-                              transition: `width 1.5s cubic-bezier(0.25, 1, 0.5, 1) ${idx * 150}ms`
+                              transition: `width 1.5s cubic-bezier(0.25, 1, 0.5, 1) ${Math.min(idx, 7) * 150}ms`
                             }}
                           ></div>
                         </div>
@@ -208,7 +211,7 @@ const Proyectos = () => {
           )}
         </div>
 
-        {/* ACCESO A LA PÁGINA COMPLETA DE PROYECTOS */}
+        {/* ACCESO A LA PÁGINA COMPLETA DE PROYECTOS (HABILITADO A PARTIR DEL 5TO PROYECTO) */}
         {hasMoreProjects && (
           <div className="proyectos-home-footer text-center mt-5">
             <Link 

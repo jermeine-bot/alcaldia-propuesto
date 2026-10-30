@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
-import { Save, Image, Video, Link as LinkIcon, Eye, EyeOff, Monitor, Palette } from 'lucide-react';
+import { Save, Image, Video, Link as LinkIcon, Eye, EyeOff, Monitor, Palette, Layers } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import ImageUploader from '../components/ImageUploader';
 
 const BG_TYPES = [
   { value: 'video', label: 'Video de Fondo', icon: Video, desc: 'Reproduce un video MP4 o WebM como fondo animado de la portada.' },
   { value: 'image', label: 'Imagen de Fondo', icon: Image, desc: 'Muestra una imagen estática de alta resolución como fondo de la portada.' },
-  { value: 'none',  label: 'Sin Fondo Visual', icon: EyeOff, desc: 'Muestra un color sólido elegido, sin video ni imagen.' }
+  { value: 'carousel', label: 'Carrusel de Fotos', icon: Layers, desc: 'Muestra una secuencia rotativa de 4 imágenes como fondo de la portada.' },
+  { value: 'none', label: 'Sin Fondo Visual', icon: EyeOff, desc: 'Muestra un color sólido elegido, sin video ni imagen.' }
 ];
 
 const HeroAdmin = () => {
@@ -27,6 +28,7 @@ const HeroAdmin = () => {
     fallbackImg: '/img/hero-bg.jpg',
     bgType: 'video',
     bgImageUrl: '',
+    carouselImages: ['', '', '', ''],
     overlayColor: '#1a1816',
     overlayOpacity: 0.35,
     primaryBtnText: 'Conoce León',
@@ -43,6 +45,7 @@ const HeroAdmin = () => {
         ...heroData,
         bgType: heroData.bgType || heroData.bg_type || 'video',
         bgImageUrl: heroData.bgImageUrl || heroData.bg_image_url || '',
+        carouselImages: heroData.carouselImages || heroData.carousel_images || ['', '', '', ''],
         overlayColor: heroData.overlayColor || heroData.overlay_color || '#1a1816',
         overlayOpacity: Number(heroData.overlayOpacity ?? heroData.overlay_opacity ?? 0.35)
       }));
@@ -73,6 +76,14 @@ const HeroAdmin = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCarouselChange = (index, value) => {
+    setFormData((prev) => {
+      const newCarousel = [...(prev.carouselImages || ['', '', '', ''])];
+      newCarousel[index] = value;
+      return { ...prev, carouselImages: newCarousel };
+    });
   };
 
   const handleSubmit = (e) => {
@@ -143,7 +154,7 @@ const HeroAdmin = () => {
               <div className="col-12">
                 <div className="border rounded-3 p-3">
                   <label className="form-label fw-semibold small d-flex align-items-center gap-2">
-                    <Palette size={16} className="text-danger" /> Color de fondo y tinte de la imagen
+                    <Palette size={16} className="text-danger" /> Color de fondo y tinte de la imagen/carrusel
                   </label>
                   <div className="row g-3 align-items-center">
                     <div className="col-12 col-md-4">
@@ -161,7 +172,7 @@ const HeroAdmin = () => {
                     </div>
                     <div className="col-12 col-md-8">
                       <label className="form-label small mb-1" htmlFor="hero-overlay-opacity">
-                        Intensidad del tinte sobre video o imagen: {Math.round((Number(formData.overlayOpacity) || 0) * 100)}%
+                        Intensidad del tinte sobre video, imagen o carrusel: {Math.round((Number(formData.overlayOpacity) || 0) * 100)}%
                       </label>
                       <input
                         id="hero-overlay-opacity"
@@ -180,11 +191,11 @@ const HeroAdmin = () => {
                         onClick={() => setFormData(prev => ({ ...prev, overlayOpacity: 0 }))}
                         disabled={formData.bgType === 'none' || Number(formData.overlayOpacity) === 0}
                       >
-                        Dejar imagen/video sin tinte
+                        Dejar sin tinte
                       </button>
                     </div>
                   </div>
-                  <small className="text-muted d-block mt-2">Usa intensidad 0% para ver la foto o el video con sus colores originales.</small>
+                  <small className="text-muted d-block mt-2">Usa intensidad 0% para ver los elementos con sus colores originales.</small>
                 </div>
               </div>
 
@@ -225,7 +236,7 @@ const HeroAdmin = () => {
                     const Icon = opt.icon;
                     const isSelected = formData.bgType === opt.value;
                     return (
-                      <div className="col-12 col-md-4" key={opt.value}>
+                      <div className="col-12 col-md-3" key={opt.value}>
                         <div
                           role="button"
                           onClick={() => setFormData(prev => ({ ...prev, bgType: opt.value }))}
@@ -236,11 +247,11 @@ const HeroAdmin = () => {
                           }`}
                           style={{ cursor: 'pointer', borderWidth: isSelected ? '2px' : '1px' }}
                         >
-                          <Icon size={28} className={isSelected ? 'text-danger' : 'text-muted'} />
+                          <Icon size={26} className={isSelected ? 'text-danger' : 'text-muted'} />
                           <span className={`fw-semibold small ${isSelected ? 'text-danger' : 'text-dark'}`}>
                             {opt.label}
                           </span>
-                          <small className="text-muted" style={{ fontSize: '0.72rem', lineHeight: 1.3 }}>
+                          <small className="text-muted" style={{ fontSize: '0.70rem', lineHeight: 1.3 }}>
                             {opt.desc}
                           </small>
                         </div>
@@ -248,7 +259,6 @@ const HeroAdmin = () => {
                     );
                   })}
                 </div>
-                {/* Hidden input to keep value in formData */}
                 <input type="hidden" name="bgType" value={formData.bgType || 'video'} />
               </div>
 
@@ -326,13 +336,41 @@ const HeroAdmin = () => {
                 </div>
               )}
 
+              {/* ============== SECCIÓN CARRUSEL (solo si bgType === 'carousel') ============== */}
+              {formData.bgType === 'carousel' && (
+                <div className="col-12">
+                  <div className="border rounded-3 p-3 bg-light">
+                    <label className="form-label fw-semibold small d-flex align-items-center gap-2 mb-2">
+                      <Layers size={18} className="text-danger" />
+                      Ingrese fotos para carrusel (4 imágenes)
+                    </label>
+                    <p className="text-muted small mb-3">
+                      Sube o ingresa la URL de exactamente 4 imágenes que rotarán como fondo animado en la portada principal.
+                    </p>
+                    <div className="row g-3">
+                      {[0, 1, 2, 3].map((index) => (
+                        <div className="col-12 col-md-6" key={index}>
+                          <div className="border rounded p-2 bg-white">
+                            <ImageUploader
+                              label={`Foto del Carrusel #${index + 1}`}
+                              value={formData.carouselImages?.[index] || ''}
+                              onChange={(imgUrl) => handleCarouselChange(index, imgUrl)}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* ============== AVISO SI EL FONDO ESTÁ DESACTIVADO ============== */}
               {formData.bgType === 'none' && (
                 <div className="col-12">
                   <div className="alert alert-warning d-flex align-items-start gap-2 mb-0">
                     <EyeOff size={20} className="mt-1 flex-shrink-0" />
                     <div>
-                      <strong>Fondo desactivado.</strong> La portada se mostrará con el color elegido arriba, sin video ni imagen.
+                      <strong>Fondo desactivado.</strong> La portada se mostrará con el color sólido elegido arriba, sin video ni imagen.
                       Los textos, botones y el buscador seguirán visibles normalmente.
                     </div>
                   </div>

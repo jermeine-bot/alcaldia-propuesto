@@ -6,8 +6,13 @@ const Header = ({ onOpenSearch }) => {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
+  
   const isHome = location.pathname === '/';
   const isProjectsPage = location.pathname === '/proyectos';
+  const isNoticiasPage = location.pathname === '/noticias';
+  const isCulturaPage = location.pathname === '/cultura';
+  const isGaleriaPage = location.pathname === '/galeria';
+
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -25,7 +30,6 @@ const Header = ({ onOpenSearch }) => {
         setScrolled(false);
       }
 
-      // Highlight active section
       const sections = ['hero', 'noticias', 'autoridades', 'servicios', 'estadisticas', 'redes-sociales', 'turismo', 'centros-atencion', 'contacto'];
       const scrollPosition = window.scrollY + 120;
 
@@ -46,7 +50,6 @@ const Header = ({ onOpenSearch }) => {
     e.preventDefault();
     setMobileMenuOpen(false);
 
-    // Desde una página interna se vuelve al inicio y luego se desplaza a la sección.
     if (!isHome) {
       navigate(`/#${targetId}`);
       return;
@@ -68,7 +71,6 @@ const Header = ({ onOpenSearch }) => {
       <nav className="navbar navbar-expand-xl">
         <div className="container header-container">
           
-          {/* PRIMER LOGO PRINCIPAL EN EL EXTREMO IZQUIERDO */}
           <a className="navbar-brand main-brand" href="#hero" onClick={(e) => handleNavClick(e, 'hero')}>
             <img 
               src="/img/nav_logo/logo%20principal.png" 
@@ -82,7 +84,6 @@ const Header = ({ onOpenSearch }) => {
             </div>
           </a>
 
-          {/* CONTENEDOR DERECHO: AGRUPA EL LOGO SECUNDARIO Y EL BOTÓN HAMBURGUESA EN MÓVIL */}
           <div className="d-flex align-items-center ms-auto">
             <div className="header-sublogos-right me-2">
               <img 
@@ -93,7 +94,6 @@ const Header = ({ onOpenSearch }) => {
               />
             </div>
 
-            {/* BOTÓN MÓVIL TOGGLER (AHORA FIJO EN LA ESQUINA DERECHA) */}
             <button
               className="navbar-toggler ms-2"
               type="button"
@@ -104,49 +104,67 @@ const Header = ({ onOpenSearch }) => {
             </button>
           </div>
 
-          {/* MENÚ NAVEGACIÓN CENTRADO Y ACOMODADO */}
           <div className={`collapse navbar-collapse ${mobileMenuOpen ? 'show' : ''}`} id="mainNav">
             <ul className="navbar-nav mx-auto">
               <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'hero' ? 'active' : ''}`} href="#hero" onClick={(e) => handleNavClick(e, 'hero')}>Inicio</a>
+                <a className={`nav-link ${isHome && activeSection === 'hero' ? 'active' : ''}`} href="#hero" onClick={(e) => handleNavClick(e, 'hero')}>Inicio</a>
+              </li>
+              
+              <li className="nav-item">
+                <Link
+                  className={`nav-link ${isNoticiasPage ? 'active' : ''}`}
+                  to="/noticias"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Noticias
+                </Link>
+              </li>
+
+              <li className="nav-item">
+                <a className={`nav-link ${isHome && activeSection === 'autoridades' ? 'active' : ''}`} href="#autoridades" onClick={(e) => handleNavClick(e, 'autoridades')}>Autoridades</a>
               </li>
               <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'noticias' ? 'active' : ''}`} href="#noticias" onClick={(e) => handleNavClick(e, 'noticias')}>Noticias</a>
+                <a className={`nav-link ${isHome && activeSection === 'servicios' ? 'active' : ''}`} href="#servicios" onClick={(e) => handleNavClick(e, 'servicios')}>Servicios</a>
               </li>
               <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'autoridades' ? 'active' : ''}`} href="#autoridades" onClick={(e) => handleNavClick(e, 'autoridades')}>Autoridades</a>
+                <a className={`nav-link ${isHome && activeSection === 'estadisticas' ? 'active' : ''}`} href="#estadisticas" onClick={(e) => handleNavClick(e, 'estadisticas')}>Población</a>
               </li>
-              <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'servicios' ? 'active' : ''}`} href="#servicios" onClick={(e) => handleNavClick(e, 'servicios')}>Servicios</a>
-              </li>
-              <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'estadisticas' ? 'active' : ''}`} href="#estadisticas" onClick={(e) => handleNavClick(e, 'estadisticas')}>Población</a>
-              </li>
+              
               <li className="nav-item">
                 <Link
                   className={`nav-link ${isProjectsPage ? 'active' : ''}`}
                   to="/proyectos"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    if (isProjectsPage) {
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-                  }}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   Proyectos
                 </Link>
               </li>
+
               <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'redes-sociales' ? 'active' : ''}`} href="#redes-sociales" onClick={(e) => handleNavClick(e, 'redes-sociales')}>Seguidores</a>
+                <Link
+                  className={`nav-link ${isCulturaPage ? 'active' : ''}`}
+                  to="/cultura"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Cultura
+                </Link>
+              </li>
+
+              <li className="nav-item">
+                <Link
+                  className={`nav-link ${isGaleriaPage ? 'active' : ''}`}
+                  to="/galeria"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Galería
+                </Link>
+              </li>
+
+              <li className="nav-item">
+                <a className={`nav-link ${isHome && activeSection === 'turismo' ? 'active' : ''}`} href="#turismo" onClick={(e) => handleNavClick(e, 'turismo')}>Turismo</a>
               </li>
               <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'turismo' ? 'active' : ''}`} href="#turismo" onClick={(e) => handleNavClick(e, 'turismo')}>Turismo</a>
-              </li>
-              <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'centros-atencion' ? 'active' : ''}`} href="#centros-atencion" onClick={(e) => handleNavClick(e, 'centros-atencion')}>Centros de Atención</a>
-              </li>
-              <li className="nav-item">
-                <a className={`nav-link ${activeSection === 'contacto' ? 'active' : ''}`} href="#contacto" onClick={(e) => handleNavClick(e, 'contacto')}>Contacto</a>
+                <a className={`nav-link ${isHome && activeSection === 'contacto' ? 'active' : ''}`} href="#contacto" onClick={(e) => handleNavClick(e, 'contacto')}>Contacto</a>
               </li>
             </ul>
           </div>

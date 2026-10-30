@@ -21,6 +21,8 @@ import Footer from './components/Footer';
 import AnuncioModal from './components/AnuncioModal';
 import ProyectosPage from './pages/ProyectosPage';
 import CulturaPage from './pages/CulturaPage';
+import GaleriaPage from './pages/GaleriaPage';
+import NoticiasPage from './pages/NoticiasPage';
 
 // Admin imports
 import ProtectedRoute from './admin/components/ProtectedRoute';
@@ -188,11 +190,11 @@ export default function App() {
         {/* Landing Page Pública */}
         <Route path="/" element={<PublicLanding />} />
 
-        {/* Página pública de Proyectos */}
+        {/* Páginas Públicas Detalladas */}
         <Route path="/proyectos" element={<ProyectosPage />} />
-
-        {/* Página pública de Cultura y Efemérides */}
         <Route path="/cultura" element={<CulturaPage />} />
+        <Route path="/noticias" element={<NoticiasPage />} />
+        <Route path="/galeria" element={<GaleriaPage />} />
 
         {/* Login de Administración */}
         <Route path="/admin/login" element={<LoginPage />} />
