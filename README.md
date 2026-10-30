@@ -12,18 +12,21 @@ Este proyecto se compone de una aplicación web fullstack:
 
 ## Tabla de Contenidos
 1. [Ficha Técnica y Tecnologías](#-ficha-técnica-y-tecnologías)
-2. [Módulo CMS de Trámites y Servicios](#-módulo-cms-de-trámites-y-servicios)
-3. [CMS de Centros de Atención](#-cms-de-centros-de-atención)
-4. [CMS de Redes Sociales](#-cms-de-redes-sociales)
-5. [Persistencia y configuración](#-persistencia-y-configuración-del-cms)
-6. [Estructura Completa del Proyecto](#-estructura-completa-del-proyecto)
-7. [Arquitectura del Backend](#-arquitectura-del-backend)
-8. [Diagrama de la base de datos](#-diagrama-de-la-base-de-datos)
-9. [Integración con Facebook Graph API](#integración-con-facebook-graph-api)
-10. [Seguridad, roles y bitácora](#-seguridad-roles-y-bitácora)
-11. [Autenticación y credenciales de desarrollo](#-autenticación-y-credenciales-de-desarrollo)
-12. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
-13. [Anuncios y carga de imágenes en producción](#anuncios-y-carga-de-imágenes-en-producción)
+2. [CMS de Portada / Hero y Carrusel](#-cms-de-portada--hero-y-carrusel)
+3. [Módulo CMS de Trámites y Servicios](#-módulo-cms-de-trámites-y-servicios)
+4. [CMS de Centros de Atención](#-cms-de-centros-de-atención)
+5. [CMS de Redes Sociales](#-cms-de-redes-sociales)
+6. [Persistencia y configuración](#-persistencia-y-configuración-del-cms)
+7. [Estructura Completa del Proyecto](#-estructura-completa-del-proyecto)
+8. [Arquitectura del Backend](#-arquitectura-del-backend)
+9. [Diagrama de la base de datos](#-diagrama-de-la-base-de-datos)
+10. [Integración con Facebook Graph API](#integración-con-facebook-graph-api)
+11. [Seguridad, roles y bitácora](#-seguridad-roles-y-bitácora)
+12. [Módulo de Seguridad y Credenciales del CMS](#-módulo-de-seguridad-y-credenciales-del-cms)
+13. [Autenticación y credenciales de desarrollo](#-autenticación-y-credenciales-de-desarrollo)
+14. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
+15. [Anuncios y carga de imágenes en producción](#anuncios-y-carga-de-imágenes-en-producción)
+16. [Flujo de trabajo con Git](#-flujo-de-trabajo-con-git)
 
 ---
 
@@ -51,6 +54,22 @@ Este proyecto se compone de una aplicación web fullstack:
 | **Social Sync** | Facebook Graph API | `v19.0` | Importación manual de noticias desde Facebook |
 
 ---
+
+##  CMS de Portada / Hero y Carrusel
+
+La pantalla `/admin/hero` administra la sección principal del portal público: título, subtítulo, botones, video o imagen de fondo y la capa de superposición (*overlay*). Todos los cambios se guardan en la tabla `hero` y se reflejan en la landing al recargar.
+
+### Carrusel de imágenes
+
+El Hero admite un carrusel de **exactamente 4 imágenes** que se muestra en el portal público:
+
+- En el panel se seleccionan las 4 imágenes en orden; cada una puede reemplazarse o quitarse.
+- El backend guarda el arreglo como JSON en la columna `hero.carousel_images` (`LONGTEXT` en MySQL, `TEXT` en SQLite).
+- El endpoint `GET /api/hero` devuelve el campo `carouselImages` ya decodificado; el guardado se hace con `PUT /api/hero` y requiere autenticación.
+- El componente `src/components/Hero.jsx` renderiza el carrusel solo si hay imágenes configuradas; si no, muestra el fondo individual (`bgType` / `bgImageUrl`).
+- El tipo de fondo (`bgType`) permite alternar entre imagen y video, y `bgImageUrl` conserva la imagen de respaldo.
+
+> El carrusel se guarda como JSON, no como filas independientes, por lo que siempre se actualiza el mismo registro del Hero.
 
 ##  Módulo CMS de Trámites y Servicios
 
@@ -83,7 +102,7 @@ Los enlaces, contadores y galerías de la landing se leen desde esta configuraci
 
 ##  Persistencia y configuración del CMS
 
-- **Trámites y Servicios**, **Centros de Atención** y **Redes Sociales**: se leen y guardan mediante los endpoints REST del backend.
+- **Trámites y Servicios**, **Centros de Atención**, **Redes Sociales** y **Portada / Hero**: se leen y guardan mediante los endpoints REST del backend.
 - **Esquema y datos iniciales**: `backend/config/InitDb.php` crea las tablas compatibles con el driver activo y agrega datos iniciales al iniciar el backend.
 - La conexión se configura en `backend/.env` con `DB_DRIVER` y, para MySQL, `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` y `MYSQL_DATABASE`. Si MySQL no está disponible, la configuración actual permite usar SQLite como alternativa.
 - La API del frontend se configura con `VITE_API_BASE_URL`; por defecto usa `http://localhost:5505/api`.
@@ -166,7 +185,7 @@ flowchart LR
 
 | Prefijo | Responsabilidad principal |
 |---|---|
-| `/api/auth` | Inicio de sesión, usuario autenticado y cambio de contraseña |
+| `/api/auth` | Inicio de sesión, usuario autenticado, cambio de contraseña y actualización de credenciales (`PUT /api/auth/credentials`) |
 | `/api/noticias` | Consulta y administración de noticias |
 | `/api/hero` | Contenido principal del portal |
 | `/api/proyectos` | Proyectos municipales |
@@ -195,6 +214,7 @@ erDiagram
         varchar password
         varchar role
         varchar avatar
+        int token_version
         timestamp created_at
         timestamp updated_at
     }
@@ -221,6 +241,7 @@ erDiagram
         text subtitle
         text video_url
         text fallback_image_url
+        text carousel_images
         boolean is_active
         timestamp updated_at
     }
@@ -340,7 +361,83 @@ erDiagram
 Las acciones auditadas generan registros en la tabla `activity_logs`, que guarda:
 `id`, `userEmail`, `userName`, `role`, `action`, `module`, `details`, `ip` y `timestamp`.
 
-El middleware valida la firma y expiración del JWT, y rechaza solicitudes privadas sin token o con token inválido. Las rutas de Usuarios, Auditoría y Servicios aplican controles de rol; otras rutas de contenido actualmente exigen autenticación, pero no todas filtran por rol.
+El middleware valida la firma y expiración del JWT, y rechaza solicitudes privadas sin token o con token inválido. Además comprueba que el usuario siga existiendo y que el token corresponda a la versión vigente (`token_version`), lo que permite revocar sesiones. Las rutas de Usuarios, Auditoría y Servicios aplican controles de rol; otras rutas de contenido actualmente exigen autenticación, pero no todas filtran por rol.
+
+---
+
+##  Módulo de Seguridad y Credenciales del CMS
+
+La pantalla `/admin/seguridad` (también accesible desde **Mi seguridad** en el menú del usuario) permite que cada usuario autenticado administre sus propias credenciales de acceso.
+
+### Funcionalidades
+
+- **Datos de la cuenta**: cambio de nombre y correo electrónico.
+- **Cambio de contraseña**: contraseña actual, nueva contraseña y confirmación.
+- **Indicador de seguridad**: barra visual que evalúa longitud, letras, números y símbolos.
+- **Recomendaciones**: buenas prácticas de contraseña y sesión.
+- El nombre y el rol mostrados en el encabezado del panel se actualizan sin recargar la página.
+
+### Endpoint de credenciales
+
+```http
+PUT /api/auth/credentials
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+Cuerpo admitido (todos los campos son opcionales, pero se exige `currentPassword`):
+
+```json
+{
+  "currentPassword": "contraseña actual",
+  "name": "Nombre completo",
+  "email": "correo@dominio.com",
+  "newPassword": "NuevaClave123",
+  "confirmPassword": "NuevaClave123"
+}
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "message": "Credenciales actualizadas correctamente.",
+  "user": { "id": "...", "name": "...", "email": "...", "role": "...", "avatar": "..." },
+  "token": "<nuevo JWT>"
+}
+```
+
+### Validaciones y reglas de seguridad
+
+| Regla | Comportamiento |
+|---|---|
+| Contraseña actual obligatoria | Sin ella responde `400` |
+| Contraseña actual incorrecta | Responde `401` y registra el intento en la bitácora |
+| Correo inválido | Responde `400` |
+| Correo ya registrado por otro usuario | Responde `409` |
+| Nueva contraseña igual a la actual | Responde `400` |
+| Contraseña menor a 8 caracteres o sin letra/número | Responde `400` |
+| Sin cambios detectados | Responde `400` |
+| Cambio exitoso | Responde `200`, devuelve un JWT nuevo y registra `ACTUALIZAR_CREDENCIALES` |
+
+- Las contraseñas se almacenan con `password_hash(..., PASSWORD_BCRYPT)`; nunca se devuelven al frontend.
+- Cada cambio de contraseña, correo o rol incrementa `users.token_version`, por lo que los tokens anteriores dejan de ser válidos (`401`).
+- La ruta anterior `PUT /api/auth/change-password` se conserva como alias compatible.
+- La sesión del frontend se guarda en `sessionStorage` (clave `alcaldia_cms_auth`), por lo que se mantiene al recargar la pestaña y se elimina al cerrar el navegador.
+
+### Protección contra fuerza bruta
+
+El inicio de sesión registra cada intento fallido en `activity_logs` con la acción `LOGIN_FALLIDO`. Si un mismo correo e IP acumulan **5 intentos fallidos en 15 minutos**, el backend bloquea temporalmente el acceso:
+
+- Los intentos posteriores responden `429` con el mensaje: *"Demasiados intentos fallidos. Espera 15 minutos antes de volver a intentar."*
+- El bloqueo se registra como `LOGIN_BLOQUEADO` en la bitácora.
+
+### Roles y permisos
+
+- Cualquier usuario autenticado puede cambiar **sus propias** credenciales.
+- Solo `superadmin` y `editor` pueden administrar usuarios y contenidos.
+- Al cambiar la contraseña o el rol de un usuario desde `/api/users/:id`, se revocan sus sesiones activas.
+- La ruta `/api/cms/anuncio-portal` ahora exige autenticación y rol autorizado para escritura.
 
 ---
 
@@ -358,7 +455,18 @@ La integración es opcional y la sincronización se inicia manualmente desde el 
   * **Correo**: `admin@alcaldaleon.gob.ni`
   * **Contraseña**: `admin123`
 
-El middleware rechaza solicitudes privadas sin un JWT válido. Configura un `JWT_SECRET` propio antes de desplegar. El frontend conserva el JWT devuelto por la API para autenticar las solicitudes administrativas.
+El middleware rechaza solicitudes privadas sin un JWT válido. Configura un `JWT_SECRET` propio antes de desplegar. El frontend conserva el JWT devuelto por la API para autenticar las solicitudes administrativas y lo guarda en `sessionStorage` (clave `alcaldia_cms_auth`), de modo que la sesión sobrevive a una recarga pero se cierra al cerrar la pestaña.
+
+Endpoints de autenticación disponibles:
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/api/auth/login` | Inicia sesión y devuelve `user` + `token` |
+| `GET` | `/api/auth/me` | Devuelve el usuario autenticado |
+| `PUT` | `/api/auth/credentials` | Actualiza nombre, correo y/o contraseña |
+| `PUT` | `/api/auth/change-password` | Alias compatible para cambiar contraseña |
+
+Al cambiar la contraseña, el correo o el rol, el backend devuelve un token nuevo e invalida los anteriores. Si una petición recibe `401`, el frontend borra la sesión y redirige al login.
 
 ---
 
@@ -613,7 +721,7 @@ Sustituye `noticias` por otra tabla mostrada por `SHOW TABLES;`. Puedes limitar 
 
 Credenciales locales iniciales para el panel:
 
-- Correo: `git `
+- Correo: `admin@alcaldaleon.gob.ni`
 - Contraseña: `admin123`
 
 Úsalas solo en desarrollo; cambia o elimina estas credenciales antes de desplegar en producción.
@@ -663,3 +771,72 @@ El archivo `alcaldia_leon (2).sql` está incluido como `backend/data/production_
 La configuración local apunta a MySQL en `127.0.0.1:3307`, pero ese servidor no aceptó la conexión durante la importación. El backend usa SQLite como fallback; por eso los datos ya están disponibles en la base local SQLite. En el hosting, la primera solicitud que conecte correctamente a MySQL crea las tablas y carga automáticamente los datos iniciales, siempre que se haya subido `backend/data/production_seed.php`. El respaldo no contiene `DROP` ni `TRUNCATE`.
 
 Los campos `noticias.imagen`, `proyectos.img` y `turismo.img` son `LONGTEXT` porque el respaldo incluye imágenes Base64 grandes. La tabla `anuncios.image` guarda una URL/ruta o un data URL, no los bytes del archivo cargado. `backend/data/production_seed.php` contiene registros de usuarios y auditoría del respaldo; mantenlo dentro del despliegue privado del backend y conserva el bloqueo HTTP de la carpeta `data/`.
+
+---
+
+##  Flujo de trabajo con Git
+
+El repositorio usa la rama `main` con seguimiento de `origin/main`:
+
+```text
+origin  https://github.com/jermeine-bot/alcaldia-propuesto.git
+```
+
+### 1. Revisar qué cambió antes de subir
+
+```bash
+git status
+git diff
+```
+
+`git status` muestra archivos modificados (`M`), eliminados (`D`) y nuevos (`??`). `git diff` muestra el detalle de los cambios ya rastreados.
+
+### 2. Agregar los cambios al área de preparación
+
+```bash
+git add -A
+```
+
+- `git add -A` incluye archivos nuevos, modificados y eliminados.
+- Para agregar solo algunos archivos: `git add ruta/del/archivo`.
+- Para revisar lo que quedó preparado: `git status` o `git diff --cached`.
+
+### 3. Crear el commit
+
+```bash
+git commit -m "feat: carrusel del hero y módulo de seguridad"
+```
+
+Se recomienda un mensaje corto y descriptivo. Ejemplos de prefijos habituales: `feat:` (funcionalidad nueva), `fix:` (corrección), `docs:` (documentación), `refactor:` (reestructuración).
+
+### 4. Subir los cambios a GitHub
+
+```bash
+git push origin main
+```
+
+Si es la primera vez que subes esta rama:
+
+```bash
+git push -u origin main
+```
+
+### 5. Verificar que quedó publicado
+
+```bash
+git log --oneline -3
+git status
+```
+
+`git status` debe indicar `Your branch is up to date with 'origin/main'`.
+
+### Resumen rápido
+
+```bash
+git status
+git add -A
+git commit -m "feat: carrusel del hero y módulo de seguridad"
+git push origin main
+```
+
+> Antes de ejecutar `git push`, confirma que no se están subiendo archivos privados como `backend/.env`, respaldos de base de datos o credenciales. Revisa siempre la salida de `git status`.

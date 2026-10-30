@@ -4,6 +4,7 @@ namespace Middlewares;
 
 use Config\Database;
 use Config\Jwt;
+use PDO;
 
 class AuthMiddleware {
     public static function handle(): array {
@@ -40,6 +41,25 @@ class AuthMiddleware {
         if (!$payload) {
             http_response_code(401);
             echo json_encode(['error' => 'El token de acceso no es válido o ha expirado.']);
+            exit;
+        }
+
+        // Verifica que la sesión siga vigente (revocación tras cambiar credenciales o rol).
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT token_version FROM users WHERE id = ?");
+        $stmt->execute([(string)($payload['id'] ?? '')]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            http_response_code(401);
+            echo json_encode(['error' => 'La cuenta asociada a esta sesión ya no existe.']);
+            exit;
+        }
+
+        $tokenVersion = (int)($payload['tv'] ?? 0);
+        if ($tokenVersion !== (int)($row['token_version'] ?? 0)) {
+            http_response_code(401);
+            echo json_encode(['error' => 'La sesión ya no es válida. Inicia sesión nuevamente.']);
             exit;
         }
 

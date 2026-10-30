@@ -36,7 +36,7 @@ const NoticiasAdmin = () => {
   const saveMutation = useMutation({
     mutationFn: apiService.saveNoticia,
     onSuccess: () => {
-      queryClient.invalidateQueries(['noticias']);
+      queryClient.invalidateQueries({ queryKey: ['noticias'] });
       setShowModal(false);
       resetForm();
       Swal.fire({
@@ -53,7 +53,7 @@ const NoticiasAdmin = () => {
   const deleteMutation = useMutation({
     mutationFn: apiService.deleteNoticia,
     onSuccess: () => {
-      queryClient.invalidateQueries(['noticias']);
+      queryClient.invalidateQueries({ queryKey: ['noticias'] });
       Swal.fire({
         icon: 'success',
         title: 'Noticia Eliminada',

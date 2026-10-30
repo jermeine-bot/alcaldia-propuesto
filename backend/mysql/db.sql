@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   role VARCHAR(50) DEFAULT 'admin',
   avatar VARCHAR(500),
+  token_version INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -44,6 +45,7 @@ CREATE TABLE IF NOT EXISTS hero (
   badge_text VARCHAR(150) DEFAULT 'Alcaldía Municipal de León',
   bg_type VARCHAR(20) DEFAULT 'video',
   bg_image_url LONGTEXT,
+  carousel_images LONGTEXT,
   overlay_color VARCHAR(7) DEFAULT '#1a1816',
   overlay_opacity DECIMAL(3,2) DEFAULT 0.35,
   is_active BOOLEAN DEFAULT TRUE,

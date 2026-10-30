@@ -1,7 +1,48 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5505/api').replace(/\/+$/, '');
+const AUTH_STORAGE_KEY = 'alcaldia_cms_auth';
 let authData = null;
 
+const readStoredAuth = () => {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = window.sessionStorage.getItem(AUTH_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const persistAuth = () => {
+  try {
+    if (typeof window === 'undefined') return;
+    if (authData) {
+      window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+    } else {
+      window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  } catch {
+    // Si el almacenamiento no está disponible, la sesión sigue solo en memoria.
+  }
+};
+
+authData = readStoredAuth();
+
 const getAuthData = () => authData;
+
+const applyAuthResult = (result) => {
+  if (!result?.token) return result;
+  authData = {
+    token: result.token,
+    user: result.user || authData?.user || null
+  };
+  persistAuth();
+  try {
+    window.dispatchEvent(new Event('alcaldia-auth-updated'));
+  } catch {
+    // Sin window (por ejemplo, en pruebas) no hay nada que notificar.
+  }
+  return result;
+};
 
 const request = async (path, { method = 'GET', data, authenticated = true } = {}) => {
   const headers = {};
@@ -16,6 +57,10 @@ const request = async (path, { method = 'GET', data, authenticated = true } = {}
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401 && authenticated) {
+      authData = null;
+      persistAuth();
+    }
     throw new Error(result.error || `La solicitud a ${path} falló.`);
   }
   return result;
@@ -82,19 +127,26 @@ export const apiService = {
       authenticated: false
     });
     authData = result;
+    persistAuth();
     return result;
   },
 
   logout: async () => {
     authData = null;
+    persistAuth();
   },
 
   getCurrentUser: () => getAuthData(),
 
-  changePassword: (currentPassword, newPassword) => request('/auth/change-password', {
+  changePassword: async (currentPassword, newPassword, confirmPassword) => applyAuthResult(await request('/auth/change-password', {
     method: 'PUT',
-    data: { currentPassword, newPassword }
-  }),
+    data: { currentPassword, newPassword, confirmPassword }
+  })),
+
+  updateCredentials: async (data) => applyAuthResult(await request('/auth/credentials', {
+    method: 'PUT',
+    data
+  })),
 
   getAuditLogs: () => request('/audit-logs'),
 

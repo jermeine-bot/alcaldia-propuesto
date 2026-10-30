@@ -35,7 +35,7 @@ const ProyectosAdmin = () => {
   const saveMutation = useMutation({
     mutationFn: apiService.saveProyecto,
     onSuccess: () => {
-      queryClient.invalidateQueries(['proyectos']);
+      queryClient.invalidateQueries({ queryKey: ['proyectos'] });
       setShowModal(false);
       resetForm();
       Swal.fire({
@@ -52,7 +52,7 @@ const ProyectosAdmin = () => {
   const deleteMutation = useMutation({
     mutationFn: apiService.deleteProyecto,
     onSuccess: () => {
-      queryClient.invalidateQueries(['proyectos']);
+      queryClient.invalidateQueries({ queryKey: ['proyectos'] });
       Swal.fire({
         icon: 'success',
         title: 'Proyecto Eliminado',

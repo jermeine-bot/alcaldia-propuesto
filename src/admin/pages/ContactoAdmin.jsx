@@ -37,7 +37,7 @@ const ContactoAdmin = () => {
   const mutation = useMutation({
     mutationFn: apiService.updateContacto,
     onSuccess: () => {
-      queryClient.invalidateQueries(['contacto']);
+      queryClient.invalidateQueries({ queryKey: ['contacto'] });
       Swal.fire({
         icon: 'success',
         title: 'Información Actualizada',

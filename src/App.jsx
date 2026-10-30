@@ -42,6 +42,7 @@ import CentrosAtencionAdmin from './admin/pages/CentrosAtencionAdmin';
 import RedesSocialesAdmin from './admin/pages/RedesSocialesAdmin';
 import AnuncioAdmin from './admin/pages/AnuncioAdmin';
 import GaleriaAdmin from './admin/pages/GaleriaAdmin';
+import SecurityAdmin from './admin/pages/SecurityAdmin';
 
 function PublicLanding() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -238,6 +239,7 @@ export default function App() {
           <Route path="anuncios" element={<AnuncioAdmin />} />
           <Route path="anuncio" element={<AnuncioAdmin />} />
           <Route path="galeria" element={<GaleriaAdmin />} />
+          <Route path="seguridad" element={<SecurityAdmin />} />
         </Route>
 
         {/* Catch-all */}

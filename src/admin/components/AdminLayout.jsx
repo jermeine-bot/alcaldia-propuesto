@@ -16,6 +16,7 @@ const titleMap = {
   '/admin/centros-atencion': 'Gestión de Centros de Atención',
   '/admin/redes-sociales': 'Gestión de Redes Sociales',
   '/admin/contacto': 'Información Institucional y Contacto',
+  '/admin/seguridad': 'Seguridad y Credenciales',
 };
 
 const AdminLayout = () => {

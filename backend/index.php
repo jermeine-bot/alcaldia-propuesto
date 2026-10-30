@@ -123,7 +123,10 @@ if ($path === '/' && $method === 'GET') {
             'galeria' => '/api/galeria',
             'galeria_public' => '/api/galeria/public',
             'anuncio_portal' => '/api/cms/anuncio-portal',
-            'auth' => '/api/auth/login'
+            'auth' => '/api/auth/login',
+            'auth_me' => '/api/auth/me',
+            'auth_credentials' => '/api/auth/credentials',
+            'auth_change_password' => '/api/auth/change-password'
         ]
     ]);
     exit;
@@ -159,6 +162,12 @@ if ($path === '/api/auth/me' && $method === 'GET') {
 if ($path === '/api/auth/change-password' && $method === 'PUT') {
     $user = AuthMiddleware::handle();
     AuthController::changePassword($user, $body);
+    exit;
+}
+
+if ($path === '/api/auth/credentials' && $method === 'PUT') {
+    $user = AuthMiddleware::handle();
+    AuthController::updateCredentials($user, $body);
     exit;
 }
 
@@ -466,6 +475,8 @@ if ($path === '/api/cms/anuncio-portal') {
         AnuncioController::get();
         exit;
     } elseif ($method === 'PUT' || $method === 'POST') {
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         AnuncioController::save();
         exit;
     }

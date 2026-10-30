@@ -19,6 +19,7 @@ class InitDb {
                     password TEXT NOT NULL,
                     role TEXT DEFAULT 'admin',
                     avatar TEXT,
+                    token_version INTEGER DEFAULT 0,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
@@ -55,6 +56,7 @@ class InitDb {
                     badge_text TEXT DEFAULT 'Alcaldía Municipal de León',
                     bg_type TEXT DEFAULT 'video',
                     bg_image_url TEXT DEFAULT '',
+                    carousel_images TEXT DEFAULT '[]',
                     overlay_color TEXT DEFAULT '#1a1816',
                     overlay_opacity REAL DEFAULT 0.35,
                     is_active INTEGER DEFAULT 1,
@@ -382,6 +384,9 @@ class InitDb {
 
             if ($isSqlite) {
                 $tables = [
+                    'users' => [
+                        'token_version' => "ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0"
+                    ],
                     'noticias' => [
                         'linkUrl' => "ALTER TABLE noticias ADD COLUMN linkUrl TEXT DEFAULT ''",
                         'date' => "ALTER TABLE noticias ADD COLUMN date TEXT DEFAULT ''",
@@ -404,7 +409,8 @@ class InitDb {
                     'hero' => [
                         'badge_text' => "ALTER TABLE hero ADD COLUMN badge_text TEXT DEFAULT 'Alcaldía Municipal de León'",
                         'bg_type' => "ALTER TABLE hero ADD COLUMN bg_type TEXT DEFAULT 'video'",
-                        'bg_image_url' => "ALTER TABLE hero ADD COLUMN bg_image_url TEXT DEFAULT ''"
+                        'bg_image_url' => "ALTER TABLE hero ADD COLUMN bg_image_url TEXT DEFAULT ''",
+                        'carousel_images' => "ALTER TABLE hero ADD COLUMN carousel_images TEXT DEFAULT '[]'"
                     ]
                 ];
 
@@ -426,6 +432,9 @@ class InitDb {
                 }
             } else {
                 $tables = [
+                    'users' => [
+                        'token_version' => "ALTER TABLE users ADD COLUMN token_version INT DEFAULT 0"
+                    ],
                     'noticias' => [
                         'linkUrl' => "ALTER TABLE noticias ADD COLUMN linkUrl TEXT",
                         'date' => "ALTER TABLE noticias ADD COLUMN `date` VARCHAR(120) DEFAULT ''",
@@ -448,7 +457,8 @@ class InitDb {
                     'hero' => [
                         'badge_text' => "ALTER TABLE hero ADD COLUMN badge_text VARCHAR(150) DEFAULT 'Alcaldía Municipal de León'",
                         'bg_type' => "ALTER TABLE hero ADD COLUMN bg_type VARCHAR(20) DEFAULT 'video'",
-                        'bg_image_url' => "ALTER TABLE hero ADD COLUMN bg_image_url LONGTEXT NULL"
+                        'bg_image_url' => "ALTER TABLE hero ADD COLUMN bg_image_url LONGTEXT NULL",
+                        'carousel_images' => "ALTER TABLE hero ADD COLUMN carousel_images LONGTEXT NULL"
                     ]
                 ];
 

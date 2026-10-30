@@ -29,7 +29,7 @@ const TurismoAdmin = () => {
   const saveMutation = useMutation({
     mutationFn: apiService.saveTurismo,
     onSuccess: () => {
-      queryClient.invalidateQueries(['turismo']);
+      queryClient.invalidateQueries({ queryKey: ['turismo'] });
       setShowModal(false);
       resetForm();
       Swal.fire({
@@ -54,7 +54,7 @@ const TurismoAdmin = () => {
   const deleteMutation = useMutation({
     mutationFn: apiService.deleteTurismo,
     onSuccess: () => {
-      queryClient.invalidateQueries(['turismo']);
+      queryClient.invalidateQueries({ queryKey: ['turismo'] });
       Swal.fire({
         icon: 'success',
         title: 'Destino Eliminado',

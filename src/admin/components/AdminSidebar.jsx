@@ -12,7 +12,7 @@ import {
   Briefcase,
   Menu,
   MapPin,
-  Share2, Megaphone, Images } from 'lucide-react';
+  Share2, Megaphone, Images, ShieldCheck } from 'lucide-react';
 
 const AdminSidebar = () => {
   const [isOpen, setIsOpen] = useState(false); // Por defecto cerrado en móvil/tablet
@@ -39,6 +39,7 @@ const AdminSidebar = () => {
     { path: '/admin/centros-atencion', label: 'Centros de Atención', icon: MapPin },
     { path: '/admin/redes-sociales', label: 'Redes Sociales', icon: Share2 },
     { path: '/admin/contacto', label: 'Información de Contacto', icon: PhoneCall },
+    { path: '/admin/seguridad', label: 'Seguridad', icon: ShieldCheck },
   ];
 
   return (

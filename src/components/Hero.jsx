@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 
@@ -92,6 +92,7 @@ const searchSuggestionsList = [
 const Hero = () => {
   const [offsetY, setOffsetY] = useState(0);
   const [videoFailed, setVideoFailed] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const searchRef = useRef(null);
@@ -141,6 +142,28 @@ const Hero = () => {
   const overlayRgb = /^#[0-9a-f]{6}$/i.test(overlayColor)
     ? `${parseInt(overlayColor.slice(1, 3), 16)}, ${parseInt(overlayColor.slice(3, 5), 16)}, ${parseInt(overlayColor.slice(5, 7), 16)}`
     : '26, 24, 22';
+
+  // Imágenes del carrusel configuradas en el CMS (solo las que tengan contenido).
+  const carouselImages = useMemo(() => {
+    const raw = hero?.carouselImages || hero?.carousel_images;
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((img) => (typeof img === 'string' ? img.trim() : ''))
+      .filter(Boolean);
+  }, [hero]);
+
+  useEffect(() => {
+    setCarouselIndex(0);
+  }, [bgType, carouselImages.length]);
+
+  useEffect(() => {
+    if (bgType !== 'carousel' || carouselImages.length < 2) return undefined;
+    const interval = setInterval(() => {
+      setCarouselIndex((current) => (current + 1) % carouselImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [bgType, carouselImages.length]);
+
   useEffect(() => { setVideoFailed(false); }, [videoUrl, bgType]);
   const primaryBtnText = hero?.primaryBtnText || 'Conoce León';
   const primaryBtnLink = hero?.primaryBtnLink || '#turismo';
@@ -172,6 +195,47 @@ const Hero = () => {
             e.target.src = fallbackImg || '/img/hero-bg.jpg';
           }}
         />
+      );
+    }
+
+    if (bgType === 'carousel') {
+      if (carouselImages.length === 0) {
+        // Sin imágenes configuradas: usar la imagen de respaldo.
+        return (
+          <img
+            src={bgImageUrl || fallbackImg || '/img/hero-bg.jpg'}
+            alt="Fondo de portada"
+            className="position-absolute w-100 h-100 top-0 start-0"
+            style={{ objectFit: 'cover' }}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = fallbackImg || '/img/hero-bg.jpg';
+            }}
+          />
+        );
+      }
+
+      const activeIndex = carouselIndex % carouselImages.length;
+      return (
+        <>
+          {carouselImages.map((src, index) => (
+            <img
+              key={`${src.slice(0, 40)}-${index}`}
+              src={src}
+              alt={`Fondo de portada ${index + 1}`}
+              className="position-absolute w-100 h-100 top-0 start-0"
+              style={{
+                objectFit: 'cover',
+                opacity: index === activeIndex ? 1 : 0,
+                transition: 'opacity 1.2s ease-in-out'
+              }}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = fallbackImg || '/img/hero-bg.jpg';
+              }}
+            />
+          ))}
+        </>
       );
     }
 

@@ -32,7 +32,7 @@ const EstadisticasAdmin = () => {
   const saveMutation = useMutation({
     mutationFn: apiService.saveStat,
     onSuccess: () => {
-      queryClient.invalidateQueries(['stats']);
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
       setShowModal(false);
       resetForm();
       Swal.fire({
@@ -49,7 +49,7 @@ const EstadisticasAdmin = () => {
   const deleteMutation = useMutation({
     mutationFn: apiService.deleteStat,
     onSuccess: () => {
-      queryClient.invalidateQueries(['stats']);
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
       Swal.fire({
         icon: 'success',
         title: 'Indicador Eliminado',

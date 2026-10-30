@@ -1,14 +1,31 @@
-import React, { useState } from 'react';
-import { ExternalLink, LogOut, User, Menu, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ExternalLink, LogOut, User, Menu, X, ShieldCheck } from 'lucide-react';
 import { apiService } from '../../services/apiService';
+
+const defaultUser = {
+  name: 'Administrador General',
+  email: 'admin@alcaldaleon.gob.ni',
+  role: 'superadmin'
+};
 
 const AdminHeader = ({ title, toggleSidebar, isSidebarOpen }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [user, setUser] = useState(() => apiService.getCurrentUser()?.user || defaultUser);
 
-  const user = apiService.getCurrentUser()?.user || {
-    name: 'Administrador General',
-    email: 'admin@alcaldaleon.gob.ni'
-  };
+  useEffect(() => {
+    const syncUser = () => {
+      setUser(apiService.getCurrentUser()?.user || defaultUser);
+    };
+    window.addEventListener('alcaldia-auth-updated', syncUser);
+    return () => window.removeEventListener('alcaldia-auth-updated', syncUser);
+  }, []);
+
+  const roleLabel = user.role === 'superadmin'
+    ? 'SuperAdministrador'
+    : user.role === 'editor'
+      ? 'Editor'
+      : 'Usuario';
 
   const handleLogout = async () => {
     await apiService.logout();
@@ -55,7 +72,7 @@ const AdminHeader = ({ title, toggleSidebar, isSidebarOpen }) => {
             </div>
             <div className="text-start d-none d-md-block" style={{ lineHeight: 1.2 }}>
               <div className="fw-bold" style={{ fontSize: '0.85rem' }}>{user.name}</div>
-              <small className="text-muted" style={{ fontSize: '0.72rem' }}>SuperAdmin</small>
+              <small className="text-muted" style={{ fontSize: '0.72rem' }}>{roleLabel}</small>
             </div>
           </button>
           
@@ -75,6 +92,16 @@ const AdminHeader = ({ title, toggleSidebar, isSidebarOpen }) => {
               <li className="px-3 py-2 border-bottom">
                 <div className="fw-bold text-truncate" style={{ fontSize: '0.85rem' }}>{user.name}</div>
                 <div className="text-muted text-truncate" style={{ fontSize: '0.75rem' }}>{user.email}</div>
+              </li>
+              <li>
+                <Link
+                  to="/admin/seguridad"
+                  className="dropdown-item d-flex align-items-center gap-2 py-2"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  <ShieldCheck size={16} />
+                  <span>Mi seguridad</span>
+                </Link>
               </li>
               <li>
                 <button

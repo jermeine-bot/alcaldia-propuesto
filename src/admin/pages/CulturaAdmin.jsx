@@ -29,7 +29,7 @@ const CulturaAdmin = () => {
   const saveMutation = useMutation({
     mutationFn: apiService.saveCultura,
     onSuccess: () => {
-      queryClient.invalidateQueries(['cultura']);
+      queryClient.invalidateQueries({ queryKey: ['cultura'] });
       setShowModal(false);
       resetForm();
       Swal.fire({
@@ -46,7 +46,7 @@ const CulturaAdmin = () => {
   const deleteMutation = useMutation({
     mutationFn: apiService.deleteCultura,
     onSuccess: () => {
-      queryClient.invalidateQueries(['cultura']);
+      queryClient.invalidateQueries({ queryKey: ['cultura'] });
       Swal.fire({
         icon: 'success',
         title: 'Evento Eliminado',

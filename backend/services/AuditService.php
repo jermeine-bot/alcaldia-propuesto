@@ -50,4 +50,25 @@ class AuditService {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Cuenta los intentos de login fallidos recientes para un correo e IP.
+     * Se usa para bloquear temporalmente la fuerza bruta.
+     */
+    public static function countRecentFailedLogins(string $email, string $ip, int $minutes = 15): int {
+        $pdo = Database::getConnection();
+        $since = date('Y-m-d H:i:s', time() - ($minutes * 60));
+
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM activity_logs
+            WHERE action = 'LOGIN_FALLIDO'
+              AND LOWER(userEmail) = ?
+              AND ip = ?
+              AND timestamp >= ?
+        ");
+        $stmt->execute([strtolower($email), $ip, $since]);
+
+        return (int)$stmt->fetchColumn();
+    }
 }

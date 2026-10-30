@@ -70,6 +70,7 @@ class UsersController {
 
         $updates = [];
         $params = [];
+        $invalidateTokens = false;
 
         if (isset($body['name'])) {
             $updates[] = "name = ?";
@@ -78,10 +79,12 @@ class UsersController {
         if (isset($body['role'])) {
             $updates[] = "role = ?";
             $params[] = $body['role'];
+            $invalidateTokens = true;
         }
         if (!empty($body['password'])) {
             $updates[] = "password = ?";
             $params[] = password_hash($body['password'], PASSWORD_BCRYPT);
+            $invalidateTokens = true;
         }
 
         if (empty($updates)) {
@@ -90,6 +93,9 @@ class UsersController {
             return;
         }
 
+        if ($invalidateTokens) {
+            $updates[] = "token_version = token_version + 1";
+        }
         $updates[] = "updated_at = CURRENT_TIMESTAMP";
         $params[] = $id;
 
