@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -18,16 +18,32 @@ const formatUrl = (url) => {
 
 const Noticias = () => {
   const [selectedNoticia, setSelectedNoticia] = useState(null);
-  const { data: noticias = [] } = useQuery({
+  
+  const { data: noticias = [], isLoading } = useQuery({
     queryKey: ['noticias'],
     queryFn: apiService.getNoticias
   });
 
-  const publishedNoticias = noticias.filter((n) => n.status !== 'draft');
+  // Procesar, filtrar y ordenar las noticias para asegurar que las más recientes queden arriba
+  const recentNoticias = useMemo(() => {
+    return noticias
+      .filter((n) => n.status !== 'draft')
+      .sort((a, b) => {
+        // Extraer marca de tiempo probando campos comunes de fecha del CMS
+        const dateA = new Date(a.published_at || a.date || a.createdAt || a.fecha || 0).getTime();
+        const dateB = new Date(b.published_at || b.date || b.createdAt || b.fecha || 0).getTime();
+        
+        // Si no hay fechas válidas, mantener el orden por ID decreciente (asumiendo IDs numéricos auto-incrementables)
+        if (isNaN(dateA) || isNaN(dateB) || dateA === dateB) {
+          return (b.id || 0) - (a.id || 0);
+        }
+        
+        return dateB - dateA; // Orden descendente (más reciente primero)
+      })
+      .slice(0, 8); // Tomamos únicamente las 8 más recientes
+  }, [noticias]);
 
-  // Tomamos un máximo de 8 noticias recientes para dejar espacio a la 9ª tarjeta de "Ver más"
-  const recentNoticias = publishedNoticias.slice(0, 8);
-  const hasMoreNews = publishedNoticias.length > 0;
+  const hasMoreNews = noticias.filter((n) => n.status !== 'draft').length > 0;
 
   return (
     <section id="noticias" className="noticias-section py-5">
@@ -38,7 +54,12 @@ const Noticias = () => {
           <p className="section-description">Mantente informado sobre los acontecimientos de nuestra ciudad</p>
         </div>
 
-        {publishedNoticias.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-danger" role="status"></div>
+            <p className="text-muted small mt-2">Cargando últimas noticias...</p>
+          </div>
+        ) : recentNoticias.length === 0 ? (
           <div className="text-center text-muted py-4">No hay noticias publicadas en este momento.</div>
         ) : (
           <Swiper
@@ -53,7 +74,7 @@ const Noticias = () => {
             }}
             className="noticias-swiper pb-5"
           >
-            {/* Renderizamos las noticias recientes (máximo 8) */}
+            {/* Renderizamos las 8 noticias más recientes ordenadas */}
             {recentNoticias.map((item) => {
               const rawLink = item.linkUrl || item.url || item.url_externa;
               const hasLink = typeof rawLink === 'string' && rawLink.trim() !== '';
@@ -66,19 +87,18 @@ const Noticias = () => {
 
               return (
                 <SwiperSlide key={item.id} className="h-auto">
-                  {/* Tarjeta con altura 100% y estructura flexible para uniformidad */}
                   <div className="noticia-card h-100 d-flex flex-column shadow-sm border-0 rounded-4 overflow-hidden bg-white">
                     <a
                       href={targetUrl}
                       target={isExternal ? '_blank' : '_self'}
                       rel={isExternal ? 'noopener noreferrer' : undefined}
                       className="d-block overflow-hidden text-decoration-none"
-                      title={item.title}
+                      title={item.title || item.titulo}
                       onClick={hasLink ? undefined : openDetail}
                     >
                       <img
-                        src={item.image || item.img}
-                        alt={item.title}
+                        src={item.image || item.img || item.image_url}
+                        alt={item.title || item.titulo}
                         className="noticia-img w-100"
                         style={{ objectFit: 'cover', height: '210px' }}
                         onError={(e) => {
@@ -90,7 +110,7 @@ const Noticias = () => {
 
                     <div className="noticia-body d-flex flex-column flex-grow-1 p-4">
                       <span className="noticia-date text-danger small fw-semibold mb-2 d-block">
-                        <i className="far fa-calendar-alt me-1"></i> {item.date || 'Reciente'}
+                        <i className="far fa-calendar-alt me-1"></i> {item.date || item.published_at || item.fecha || 'Reciente'}
                       </span>
                       
                       <h5 className="mt-1 mb-2">
@@ -109,11 +129,10 @@ const Noticias = () => {
                             lineHeight: '1.4'
                           }}
                         >
-                          {item.title}
+                          {item.title || item.titulo}
                         </a>
                       </h5>
 
-                      {/* Extracto con límite visual de líneas para que todas midan igual */}
                       <p 
                         className="text-muted small mb-4 flex-grow-1"
                         style={{
@@ -123,7 +142,7 @@ const Noticias = () => {
                           overflow: 'hidden'
                         }}
                       >
-                        {item.summary || item.desc}
+                        {item.summary || item.desc || item.resumen}
                       </p>
 
                       <div className="mt-auto pt-2 border-top">
@@ -168,13 +187,13 @@ const Noticias = () => {
         <ContentModal
           open={!!selectedNoticia}
           onClose={() => setSelectedNoticia(null)}
-          image={selectedNoticia ? (selectedNoticia.image || selectedNoticia.img) : ''}
+          image={selectedNoticia ? (selectedNoticia.image || selectedNoticia.img || selectedNoticia.image_url) : ''}
           fallbackImage="/img/noticias/noticia1.jpg"
-          eyebrow={selectedNoticia?.category}
-          meta={selectedNoticia?.date}
-          title={selectedNoticia?.title}
-          description={selectedNoticia?.summary || selectedNoticia?.desc}
-          content={selectedNoticia?.content}
+          eyebrow={selectedNoticia?.category || selectedNoticia?.categoria}
+          meta={selectedNoticia?.date || selectedNoticia?.published_at || selectedNoticia?.fecha}
+          title={selectedNoticia?.title || selectedNoticia?.titulo}
+          description={selectedNoticia?.summary || selectedNoticia?.desc || selectedNoticia?.resumen}
+          content={selectedNoticia?.content || selectedNoticia?.contenido}
           link={selectedNoticia?.linkUrl || selectedNoticia?.url || selectedNoticia?.url_externa}
           linkText="Abrir enlace original"
         />
