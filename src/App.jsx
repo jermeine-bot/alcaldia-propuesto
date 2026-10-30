@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async'; // 1. Importamos Helmet
 import { ThemeProvider } from './context/ThemeContext';
 import Preloader from './components/Preloader';
 import Header from './components/Header';
@@ -159,6 +160,20 @@ function PublicLanding() {
 
   return (
     <div className="app-container">
+      {/* 2. Agregamos Helmet para la página de inicio (Landing) */}
+      <Helmet>
+        <title>Alcaldía Municipal de León | Sitio Oficial</title>
+        <meta
+          name="description"
+          content="Portal oficial de la Alcaldía Municipal de León, Nicaragua. Consulta trámites, servicios, proyectos, turismo, noticias y atención ciudadana."
+        />
+        <meta property="og:title" content="Alcaldía Municipal de León | Sitio Oficial" />
+        <meta
+          property="og:description"
+          content="Portal oficial del Gobierno Municipal de León, Nicaragua. Trámites, servicios y desarrollo para la Ciudad Universitaria."
+        />
+      </Helmet>
+
       {showPreloader && <Preloader />}
       <AnuncioModal />
       <Header onOpenSearch={() => setIsSearchOpen(true)} />

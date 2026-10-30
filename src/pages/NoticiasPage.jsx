@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async'; // 1. Importamos Helmet
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SearchModal from '../components/SearchModal';
@@ -26,13 +27,9 @@ const NoticiasPage = () => {
     queryFn: apiService.getNoticias || apiService.getNews
   });
 
+  // 2. Mantendremos el scroll al inicio y dejamos que Helmet gestione los metadatos de la página
   useEffect(() => {
-    const previousTitle = document.title;
-    document.title = 'Noticias y Actualidad | Alcaldía de León';
     window.scrollTo({ top: 0, behavior: 'auto' });
-    return () => {
-      document.title = previousTitle;
-    };
   }, []);
 
   // Extraer categorías dinámicamente desde los items del CMS
@@ -90,7 +87,7 @@ const NoticiasPage = () => {
         const titleB = b.title || b.titulo || '';
         return titleA.localeCompare(titleB, 'es', { sensitivity: 'base' });
       }
-      // Orden por defecto: Más recientes (se asume orden predeterminado del CMS o por fecha si existe)
+      // Orden por defecto: Más recientes
       const dateA = new Date(a.published_at || a.date || a.createdAt || 0);
       const dateB = new Date(b.published_at || b.date || b.createdAt || 0);
       return dateB - dateA;
@@ -105,6 +102,20 @@ const NoticiasPage = () => {
 
   return (
     <div className="app-container noticias-page">
+      {/* 3. Agregamos las etiquetas de Helmet para el SEO de la sección de noticias */}
+      <Helmet>
+        <title>Noticias y Novedades | Alcaldía Municipal de León</title>
+        <meta
+          name="description"
+          content="Mantente informado sobre la gestión municipal, obras, comunicados oficiales y noticias relevantes de la Alcaldía de León, Nicaragua."
+        />
+        <meta property="og:title" content="Noticias y Novedades | Alcaldía Municipal de León" />
+        <meta
+          property="og:description"
+          content="Boletín oficial de la Alcaldía de León, Nicaragua. Obras, proyectos y comunicados para el pueblo leonés."
+        />
+      </Helmet>
+
       <Header onOpenSearch={() => setIsSearchOpen(true)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
@@ -134,7 +145,6 @@ const NoticiasPage = () => {
                     Ver noticias
                     <i className="fas fa-arrow-down small"></i>
                   </a>
-                 
                 </div>
               </div>
               <div className="col-lg-4">

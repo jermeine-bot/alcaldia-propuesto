@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async'; // 1. Importamos Helmet
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SearchModal from '../components/SearchModal';
@@ -31,13 +32,9 @@ const GaleriaPage = () => {
     queryFn: apiService.getGaleria || apiService.getGallery
   });
 
+  // 2. Simplificamos el useEffect (manejamos el scroll y dejamos que Helmet controle el SEO)
   useEffect(() => {
-    const previousTitle = document.title;
-    document.title = 'Galería Fotográfica | Alcaldía de León';
     window.scrollTo({ top: 0, behavior: 'auto' });
-    return () => {
-      document.title = previousTitle;
-    };
   }, []);
 
   // Normalizar categorías del CMS para que coincidan con las estándar si aplican
@@ -98,6 +95,20 @@ const GaleriaPage = () => {
 
   return (
     <div className="app-container galeria-page">
+      {/* 3. Agregamos Helmet con el título y meta descripciones oficiales */}
+      <Helmet>
+        <title>Galería Fotográfica | Alcaldía de León</title>
+        <meta
+          name="description"
+          content="Explora el archivo visual y fotográfico oficial de la Alcaldía Municipal de León, Nicaragua. Parques, playas, patrimonio histórico, cultura y obras."
+        />
+        <meta property="og:title" content="Galería Fotográfica | Alcaldía de León" />
+        <meta
+          property="og:description"
+          content="Descubre la riqueza paisajística, histórica y cultural de León a través de nuestro álbum fotográfico oficial."
+        />
+      </Helmet>
+
       <Header onOpenSearch={() => setIsSearchOpen(true)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 

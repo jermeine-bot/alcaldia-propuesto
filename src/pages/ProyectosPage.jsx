@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async'; // 1. Importamos Helmet
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SearchModal from '../components/SearchModal';
@@ -36,13 +37,9 @@ const ProyectosPage = () => {
     queryFn: apiService.getProyectos
   });
 
+  // 2. Simplificamos el useEffect (mantenemos el scroll y dejamos que Helmet maneje el SEO)
   useEffect(() => {
-    const previousTitle = document.title;
-    document.title = 'Proyectos y Obras Municipales | Alcaldía de León';
     window.scrollTo({ top: 0, behavior: 'auto' });
-    return () => {
-      document.title = previousTitle;
-    };
   }, []);
 
   const publishedProjects = useMemo(
@@ -126,6 +123,20 @@ const ProyectosPage = () => {
 
   return (
     <div className="app-container proyectos-page">
+      {/* 3. Agregamos Helmet con el título y meta descripciones oficiales */}
+      <Helmet>
+        <title>Proyectos y Obras Municipales | Alcaldía de León</title>
+        <meta
+          name="description"
+          content="Consulta el detalle de todas las obras e inversión impulsadas por la Alcaldía Municipal de León: ubicación, inversión, avance físico y estado de ejecución."
+        />
+        <meta property="og:title" content="Proyectos y Obras Municipales | Alcaldía de León" />
+        <meta
+          property="og:description"
+          content="Transparencia y obras que transforman la Ciudad Universitaria. Conoce el avance de los proyectos municipales en León, Nicaragua."
+        />
+      </Helmet>
+
       <Header onOpenSearch={() => setIsSearchOpen(true)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 

@@ -4,17 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiService } from '../services/apiService';
 
-const fallbackImages = [
-  '/img/galeria/1.jpg',
-  '/img/galeria/2.jpg',
-  '/img/galeria/3.jpg',
-  '/img/galeria/4.jpg',
-  '/img/galeria/5.jpg',
-  '/img/galeria/6.jpg',
-  '/img/galeria/7.jpg'
-].map((image, index) => ({
+const fallbackImages = Array.from({ length: 12 }, (_, index) => ({
   id: `galeria-local-${index + 1}`,
-  image,
+  image: `/img/galeria/${(index % 7) + 1}.jpg`,
   title: `Galería León ${index + 1}`,
   description: ''
 }));
@@ -28,36 +20,38 @@ const Galeria = () => {
     staleTime: 60_000
   });
 
-  // Mientras la API responde (o si falla) se muestran las imágenes locales.
   const rawImages = data === undefined ? fallbackImages : data;
   
-  // Limitamos las fotos a mostrar en el inicio a un máximo de 7
-  const recentImages = rawImages.slice(0, 7);
+  // Tomamos hasta 9 imágenes para móviles (dejando espacio para la card 8) 
+  // o hasta 11 para desktop (dejando espacio para la card 10).
+  // Usamos clases CSS de Bootstrap para alternar cuántas se muestran en pantalla.
+  const maxImagesNeeded = 9; // Máximo base a renderizar antes de la card
+  const displayImages = rawImages.slice(0, maxImagesNeeded);
   const hasMoreGallery = rawImages.length > 0;
 
-  const selectedImg = selectedIndex === null ? null : recentImages[selectedIndex];
+  const selectedImg = selectedIndex === null ? null : displayImages[selectedIndex];
 
   useEffect(() => {
-    if (selectedIndex !== null && selectedIndex >= recentImages.length) {
+    if (selectedIndex !== null && selectedIndex >= displayImages.length) {
       setSelectedIndex(null);
     }
-  }, [selectedIndex, recentImages.length]);
+  }, [selectedIndex, displayImages.length]);
 
   useEffect(() => {
     if (selectedIndex === null) return undefined;
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') setSelectedIndex(null);
-      if (event.key === 'ArrowRight') setSelectedIndex((index) => (index + 1) % recentImages.length);
-      if (event.key === 'ArrowLeft') setSelectedIndex((index) => (index - 1 + recentImages.length) % recentImages.length);
+      if (event.key === 'ArrowRight') setSelectedIndex((index) => (index + 1) % displayImages.length);
+      if (event.key === 'ArrowLeft') setSelectedIndex((index) => (index - 1 + displayImages.length) % displayImages.length);
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIndex, recentImages.length]);
+  }, [selectedIndex, displayImages.length]);
 
   const navigate = (direction) => {
-    setSelectedIndex((index) => (index + direction + recentImages.length) % recentImages.length);
+    setSelectedIndex((index) => (index + direction + displayImages.length) % displayImages.length);
   };
 
   return (
@@ -73,24 +67,33 @@ const Galeria = () => {
           <p className="text-center text-muted mb-0">Muy pronto compartiremos nuevas imágenes de nuestra ciudad.</p>
         ) : (
           <div className="gallery-grid">
-            {/* Renderizamos hasta 7 fotos recientes */}
-            {recentImages.map((item, index) => (
-              <div key={item.id || index} className="gallery-item" onClick={() => setSelectedIndex(index)}>
-                <img
-                  src={item.image}
-                  alt={item.title || `Galería León ${index + 1}`}
-                  loading="lazy"
-                  onError={(event) => {
-                    event.target.src = `https://via.placeholder.com/400?text=Galeria+${index + 1}`;
-                  }}
-                />
-                <div className="gallery-overlay">
-                  <i className="fas fa-search-plus"></i>
-                </div>
-              </div>
-            ))}
+            {displayImages.map((item, index) => {
+              // Definimos si esta imagen en específico debe ocultarse en móvil para cumplir con el límite de 8 elementos totales (7 fotos + 1 card)
+              // Es decir, las fotos desde el índice 7 en adelante (la 8 y 9) solo se muestran en computadoras (md en adelante).
+              const isDesktopOnly = index >= 7;
 
-            {/* TARJETA NÚMERO 8: CARD ESPECIAL "VER MÁS FOTOS" */}
+              return (
+                <div 
+                  key={item.id || index} 
+                  className={`gallery-item ${isDesktopOnly ? 'd-none d-md-block' : ''}`} 
+                  onClick={() => setSelectedIndex(index)}
+                >
+                  <img
+                    src={item.image}
+                    alt={item.title || `Galería León ${index + 1}`}
+                    loading="lazy"
+                    onError={(event) => {
+                      event.target.src = `https://via.placeholder.com/400?text=Galeria+${index + 1}`;
+                    }}
+                  />
+                  <div className="gallery-overlay">
+                    <i className="fas fa-search-plus"></i>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* TARJETA ESPECIAL "VER MÁS FOTOS" */}
             {hasMoreGallery && (
               <div className="gallery-item gallery-card-more d-flex flex-column justify-content-center align-items-center text-center p-4 bg-danger text-white rounded-4 shadow-sm">
                 <div className="mb-2">
@@ -124,7 +127,7 @@ const Galeria = () => {
                 {selectedImg.description && <p className="mb-0 small text-white-50">{selectedImg.description}</p>}
               </div>
             )}
-            {recentImages.length > 1 && (
+            {displayImages.length > 1 && (
               <>
                 <button type="button" className="lightbox-nav lightbox-nav-prev" onClick={() => navigate(-1)} aria-label="Imagen anterior">
                   <ChevronLeft size={26} />

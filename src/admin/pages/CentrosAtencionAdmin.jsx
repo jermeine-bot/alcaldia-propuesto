@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 import { MapPin, Plus, Save, Trash2 } from 'lucide-react';
 import { apiService } from '../../services/apiService';
+import ImageUploader from '../components/ImageUploader';
 
 const createCenter = () => ({
   id: `centro-${Date.now()}`,
@@ -10,7 +11,8 @@ const createCenter = () => ({
   description: '',
   image: '',
   mapsUrl: '',
-  coordinates: ''
+  coordinates: '',
+  serviceLabel: ''
 });
 
 const CentrosAtencionAdmin = () => {
@@ -82,14 +84,21 @@ const CentrosAtencionAdmin = () => {
               <label className="form-label small fw-semibold">Nombre del centro</label>
               <input className="form-control" value={center.title} onChange={(event) => updateCenter(center.id, 'title', event.target.value)} required />
             </div>
+            
             <div className="col-12 col-md-6">
-              <label className="form-label small fw-semibold">URL de la fotografía</label>
-              <input className="form-control" type="text" value={center.image} onChange={(event) => updateCenter(center.id, 'image', event.target.value)} placeholder="https://... o ruta /img/..." />
-            </div>
-            <div className="col-12 col-md-4">
               <label className="form-label small fw-semibold">Etiqueta</label>
               <input className="form-control" value={center.serviceLabel || ''} onChange={(event) => updateCenter(center.id, 'serviceLabel', event.target.value)} placeholder="Atención tributaria" />
             </div>
+
+            {/* Selector e input de imagen compatible con archivo local y URL */}
+            <div className="col-12">
+              <ImageUploader
+                label="Fotografía del Centro de Atención"
+                value={center.image}
+                onChange={(img) => updateCenter(center.id, 'image', img)}
+              />
+            </div>
+
             <div className="col-12">
               <label className="form-label small fw-semibold">Descripción</label>
               <textarea className="form-control" rows={2} value={center.description} onChange={(event) => updateCenter(center.id, 'description', event.target.value)} required />
@@ -108,5 +117,7 @@ const CentrosAtencionAdmin = () => {
     </form>
   );
 };
+
+CentrosAtencionAdmin.displayName = 'CentrosAtencionAdmin';
 
 export default CentrosAtencionAdmin;

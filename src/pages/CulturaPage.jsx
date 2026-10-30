@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async'; // 1. Importamos Helmet
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SearchModal from '../components/SearchModal';
@@ -25,13 +26,9 @@ const CulturaPage = () => {
     queryFn: apiService.getCultura
   });
 
+  // 2. Simplificamos el useEffect (Helmet se encarga del título)
   useEffect(() => {
-    const previousTitle = document.title;
-    document.title = 'Efemérides, Cultura y Tradiciones | Alcaldía de León';
     window.scrollTo({ top: 0, behavior: 'auto' });
-    return () => {
-      document.title = previousTitle;
-    };
   }, []);
 
   const categories = useMemo(() => {
@@ -80,7 +77,7 @@ const CulturaPage = () => {
       if (sortBy === 'nombre') {
         return (a.title || '').localeCompare(b.title || '', 'es', { sensitivity: 'base' });
       }
-      return 0; // Orden por defecto / recientes según llegada del CMS
+      return 0;
     });
   }, [cultura, searchTerm, categoryFilter, sortBy]);
 
@@ -92,6 +89,20 @@ const CulturaPage = () => {
 
   return (
     <div className="app-container cultura-page">
+      {/* 3. Agregamos Helmet con los metadatos específicos de Cultura */}
+      <Helmet>
+        <title>Efemérides, Cultura y Tradiciones | Alcaldía de León</title>
+        <meta
+          name="description"
+          content="Conoce las efemérides históricas, festividades patronales, tradiciones y eventos culturales de la ciudad de León, Nicaragua."
+        />
+        <meta property="og:title" content="Efemérides, Cultura y Tradiciones | Alcaldía de León" />
+        <meta
+          property="og:description"
+          content="Revive la memoria histórica y celebraciones de León, Nicaragua. Información oficial de la Alcaldía de León."
+        />
+      </Helmet>
+
       <Header onOpenSearch={() => setIsSearchOpen(true)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
