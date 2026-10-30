@@ -8,6 +8,32 @@ use Throwable;
 
 class GaleriaController {
 
+    public static function seedDefaults(PDO $pdo): void {
+        try {
+            $defaults = [
+                ['galeria-1', 'Catedral Basílica de la Asunción de León', 'Patrimonio de la Humanidad por la UNESCO y símbolo de nuestra ciudad.', 'Patrimonio e historia', '/img/galeria/1.jpg', 1],
+                ['galeria-2', 'Murales y Tradición Cultural Leonesa', 'Coloridas expresiones artísticas que conmemoran la historia viva de León.', 'Cultura y tradición', '/img/galeria/2.jpg', 2],
+                ['galeria-3', 'Parque Central Juan José Quezada', 'Punto de encuentro, convivencia y descanso en el corazón de León.', 'Parques y plazas', '/img/galeria/3.jpg', 3],
+                ['galeria-4', 'Costas y Balneario de Poneloya', 'Atardeceres inolvidables y belleza natural en las costas del Pacífico leonés.', 'Playas y naturaleza', '/img/galeria/4.jpg', 4],
+                ['galeria-5', 'Iglesia El Calvario y Arquitectura Colonial', 'Colorido templo representativo de la arquitectura colonial de León.', 'Patrimonio e historia', '/img/galeria/5.jpg', 5],
+                ['galeria-6', 'Gigantonas y Folclor Popular Leonés', 'Tradiciones centenarias que llenan de alegría y música las calles leonesas.', 'Cultura y tradición', '/img/galeria/6.jpg', 6],
+                ['galeria-7', 'Modernización y Espacios Públicos', 'Obras de infraestructura para el desarrollo urbano y bienestar ciudadano.', 'Proyectos u obras', '/img/galeria/7.jpg', 7],
+            ];
+
+            $verb = Database::getDriver() === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+            $stmt = $pdo->prepare("
+                {$verb} INTO galeria (id, title, description, category, image, display_order, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+            ");
+
+            foreach ($defaults as $d) {
+                $stmt->execute($d);
+            }
+        } catch (Throwable $e) {
+            error_log("Error in GaleriaController::seedDefaults: " . $e->getMessage());
+        }
+    }
+
     public static function ensureTable(PDO $pdo): void {
         try {
             $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
@@ -40,6 +66,12 @@ class GaleriaController {
                     );
                 ");
             }
+
+            // Si la tabla está vacía, sembrar automáticamente las 7 fotos iniciales
+            $countStmt = $pdo->query("SELECT COUNT(*) FROM galeria");
+            if ($countStmt && (int)$countStmt->fetchColumn() === 0) {
+                self::seedDefaults($pdo);
+            }
         } catch (Throwable $e) {
             error_log("Error in GaleriaController::ensureTable: " . $e->getMessage());
         }
@@ -62,9 +94,16 @@ class GaleriaController {
         $row['display_order'] = (int)($row['display_order'] ?? 0);
         $row['image'] = $row['image'] ?? '';
         $row['img'] = $row['image'];
+        $row['image_url'] = $row['image'];
+        $row['url'] = $row['image'];
+        $row['foto'] = $row['image'];
         $row['title'] = $row['title'] ?? '';
+        $row['titulo'] = $row['title'];
         $row['description'] = $row['description'] ?? '';
-        $row['category'] = $row['category'] ?? 'General';
+        $row['descripcion'] = $row['description'];
+        $row['category'] = $row['category'] ?? 'Patrimonio e historia';
+        $row['categoria'] = $row['category'];
+        $row['tag'] = $row['category'];
         return $row;
     }
 

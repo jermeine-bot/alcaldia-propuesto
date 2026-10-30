@@ -55,7 +55,10 @@ class Database {
         $pass = self::env('MYSQL_PASSWORD', 'root');
 
         if ($configuredDriver === 'mysql') {
-            try {
+            $socket = @fsockopen($host, (int)$port, $errno, $errstr, 0.4);
+            if ($socket) {
+                fclose($socket);
+                try {
                 // Conectar inicialmente para asegurar que la base de datos exista
                 $dsnWithoutDb = "mysql:host={$host};port={$port};charset=utf8mb4";
                 $initPdo = new PDO($dsnWithoutDb, $user, $pass, [
@@ -76,6 +79,7 @@ class Database {
                 error_log("Aviso: MySQL no disponible (" . $e->getMessage() . "). Activando fallback transparente a SQLite.");
             }
         }
+    }
 
         // Fallback a SQLite
         $sqlitePath = dirname(__DIR__) . '/database.sqlite';

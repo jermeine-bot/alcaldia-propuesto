@@ -258,8 +258,31 @@ if ($path === '/api/galeria/upload-image' && $method === 'POST') {
 }
 if ($path === '/api/galeria') {
     if ($method === 'GET') {
-        AuthMiddleware::handle();
-        GaleriaController::getAll();
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $authHeader = null;
+        foreach ($headers as $k => $v) {
+            if (strtolower($k) === 'authorization') {
+                $authHeader = $v;
+                break;
+            }
+        }
+        if (!$authHeader) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
+        }
+
+        // Si el cliente envía token Bearer válido, devolver todo (para el panel CMS)
+        if ($authHeader && str_starts_with($authHeader, 'Bearer ')) {
+            $token = trim(substr($authHeader, 7));
+            $secret = \Config\Database::env('JWT_SECRET', 'alcaldia_leon_secret_jwt_key_2026_super_secure');
+            $payload = \Config\Jwt::verify($token, $secret);
+            if ($payload) {
+                GaleriaController::getAll();
+                exit;
+            }
+        }
+
+        // Si no está autenticado (visitante público), retornar galería pública activa
+        GaleriaController::getPublic();
         exit;
     } elseif ($method === 'POST') {
         $user = AuthMiddleware::handle();

@@ -4,12 +4,15 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiService } from '../services/apiService';
 
-const fallbackImages = Array.from({ length: 12 }, (_, index) => ({
-  id: `galeria-local-${index + 1}`,
-  image: `/img/galeria/${(index % 7) + 1}.jpg`,
-  title: `Galería León ${index + 1}`,
-  description: ''
-}));
+const fallbackImages = [
+  { id: 'galeria-local-1', image: '/img/galeria/1.jpg', title: 'Catedral Basílica de la Asunción de León', description: 'Patrimonio de la Humanidad por la UNESCO y símbolo de nuestra ciudad.' },
+  { id: 'galeria-local-2', image: '/img/galeria/2.jpg', title: 'Murales y Tradición Cultural Leonesa', description: 'Coloridas expresiones artísticas que conmemoran la historia viva de León.' },
+  { id: 'galeria-local-3', image: '/img/galeria/3.jpg', title: 'Parque Central Juan José Quezada', description: 'Punto de encuentro, convivencia y descanso en el corazón de León.' },
+  { id: 'galeria-local-4', image: '/img/galeria/4.jpg', title: 'Costas y Balneario de Poneloya', description: 'Atardeceres inolvidables y belleza natural en las costas del Pacífico leonés.' },
+  { id: 'galeria-local-5', image: '/img/galeria/5.jpg', title: 'Iglesia El Calvario y Arquitectura Colonial', description: 'Colorido templo representativo de la arquitectura colonial de León.' },
+  { id: 'galeria-local-6', image: '/img/galeria/6.jpg', title: 'Gigantonas y Folclor Popular Leonés', description: 'Tradiciones centenarias que llenan de alegría y música las calles leonesas.' },
+  { id: 'galeria-local-7', image: '/img/galeria/7.jpg', title: 'Modernización y Espacios Públicos', description: 'Obras de infraestructura para el desarrollo urbano y bienestar ciudadano.' }
+];
 
 const Galeria = () => {
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -20,7 +23,7 @@ const Galeria = () => {
     staleTime: 60_000
   });
 
-  const rawImages = data === undefined ? fallbackImages : data;
+  const rawImages = (Array.isArray(data) && data.length > 0) ? data : fallbackImages;
   
   // Tomamos hasta 9 imágenes para móviles (dejando espacio para la card 8) 
   // o hasta 11 para desktop (dejando espacio para la card 10).
@@ -79,11 +82,12 @@ const Galeria = () => {
                   onClick={() => setSelectedIndex(index)}
                 >
                   <img
-                    src={item.image}
-                    alt={item.title || `Galería León ${index + 1}`}
+                    src={item.image || item.image_url || item.url || item.img}
+                    alt={item.title || item.titulo || `Galería León ${index + 1}`}
                     loading="lazy"
                     onError={(event) => {
-                      event.target.src = `https://via.placeholder.com/400?text=Galeria+${index + 1}`;
+                      event.target.onerror = null;
+                      event.target.src = `/img/galeria/${(index % 7) + 1}.jpg`;
                     }}
                   />
                   <div className="gallery-overlay">
@@ -120,11 +124,11 @@ const Galeria = () => {
         <div className="lightbox-modal" onClick={() => setSelectedIndex(null)}>
           <div className="lightbox-content" onClick={(event) => event.stopPropagation()}>
             <span className="lightbox-close" onClick={() => setSelectedIndex(null)}>&times;</span>
-            <img src={selectedImg.image} alt={selectedImg.title || 'Vista ampliada'} />
-            {(selectedImg.title || selectedImg.description) && (
+            <img src={selectedImg.image || selectedImg.image_url || selectedImg.url || selectedImg.img} alt={selectedImg.title || selectedImg.titulo || 'Vista ampliada'} />
+            {(selectedImg.title || selectedImg.titulo || selectedImg.description || selectedImg.descripcion) && (
               <div className="text-center text-white mt-3">
-                {selectedImg.title && <h5 className="mb-1">{selectedImg.title}</h5>}
-                {selectedImg.description && <p className="mb-0 small text-white-50">{selectedImg.description}</p>}
+                {(selectedImg.title || selectedImg.titulo) && <h5 className="mb-1">{selectedImg.title || selectedImg.titulo}</h5>}
+                {(selectedImg.description || selectedImg.descripcion) && <p className="mb-0 small text-white-50">{selectedImg.description || selectedImg.descripcion}</p>}
               </div>
             )}
             {displayImages.length > 1 && (

@@ -1,6 +1,14 @@
-$phpPath = "C:\Users\yacel\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe"
-if (Test-Path "$phpPath\php.exe") {
-    $env:PATH = "$phpPath;$env:PATH"
+$phpCandidates = @(
+    "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe",
+    "C:\tools\php",
+    "C:\xampp\php",
+    "C:\laragon\bin\php"
+)
+foreach ($p in $phpCandidates) {
+    if (Test-Path "$p\php.exe") {
+        $env:PATH = "$p;$env:PATH"
+        break
+    }
 }
 Write-Host "Iniciando Backend PHP Puro en http://localhost:5505 ..." -ForegroundColor Cyan
 Set-Location -Path $PSScriptRoot

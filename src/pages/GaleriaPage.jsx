@@ -7,7 +7,59 @@ import Footer from '../components/Footer';
 import SearchModal from '../components/SearchModal';
 import { apiService } from '../services/apiService';
 
-const FALLBACK_IMAGE = '/img/galeria/default-gallery.jpg';
+const FALLBACK_IMAGE = '/img/galeria/1.jpg';
+
+const DEFAULT_GALERIA_ITEMS = [
+  {
+    id: 'galeria-default-1',
+    title: 'Catedral Basílica de la Asunción de León',
+    description: 'Patrimonio de la Humanidad por la UNESCO y símbolo representativo de nuestra ciudad.',
+    category: 'Patrimonio e historia',
+    image: '/img/galeria/1.jpg'
+  },
+  {
+    id: 'galeria-default-2',
+    title: 'Murales y Tradición Cultural Leonesa',
+    description: 'Coloridas expresiones artísticas que conmemoran la historia viva de nuestro municipio.',
+    category: 'Cultura y tradición',
+    image: '/img/galeria/2.jpg'
+  },
+  {
+    id: 'galeria-default-3',
+    title: 'Parque Central Juan José Quezada',
+    description: 'Punto de encuentro, convivencia familiar y descanso en el corazón de León.',
+    category: 'Parques y plazas',
+    image: '/img/galeria/3.jpg'
+  },
+  {
+    id: 'galeria-default-4',
+    title: 'Costas y Balneario de Poneloya',
+    description: 'Atardeceres inolvidables y belleza natural en el litoral del Pacífico leonés.',
+    category: 'Playas y naturaleza',
+    image: '/img/galeria/4.jpg'
+  },
+  {
+    id: 'galeria-default-5',
+    title: 'Iglesia El Calvario y Arquitectura Colonial',
+    description: 'Colorido templo representativo de la arquitectura religiosa colonial de León.',
+    category: 'Patrimonio e historia',
+    image: '/img/galeria/5.jpg'
+  },
+  {
+    id: 'galeria-default-6',
+    title: 'Gigantonas y Folclor Popular Leonés',
+    description: 'Tradiciones centenarias que llenan de alegría y música las calles leonesas.',
+    category: 'Cultura y tradición',
+    image: '/img/galeria/6.jpg'
+  },
+  {
+    id: 'galeria-default-7',
+    title: 'Modernización y Espacios Públicos',
+    description: 'Obras de infraestructura para el desarrollo urbano y bienestar comunitario.',
+    category: 'Proyectos u obras',
+    image: '/img/galeria/7.jpg'
+  }
+];
 
 // Categorías predefinidas comunes con íconos sugeridos
 const CATEGORIAS_GALERIA = [
@@ -26,11 +78,16 @@ const GaleriaPage = () => {
   const [activeCategory, setActiveCategory] = useState('Todas');
   const [selectedPhoto, setSelectedPhoto] = useState(null);
 
-  // Consulta al CMS a través del apiService para traer la galería de imágenes
-  const { data: galeria = [], isLoading, isError, error } = useQuery({
-    queryKey: ['galeria'],
-    queryFn: apiService.getGaleria || apiService.getGallery
+  // Consulta al CMS / backend público para traer la galería de imágenes
+  const { data: rawGaleria = [], isLoading } = useQuery({
+    queryKey: ['galeria', 'public'],
+    queryFn: apiService.getPublicGaleria,
+    staleTime: 60_000
   });
+
+  const galeria = (Array.isArray(rawGaleria) && rawGaleria.length > 0)
+    ? rawGaleria
+    : (!isLoading ? DEFAULT_GALERIA_ITEMS : []);
 
   // 2. Simplificamos el useEffect (manejamos el scroll y dejamos que Helmet controle el SEO)
   useEffect(() => {
@@ -220,16 +277,10 @@ const GaleriaPage = () => {
             </div>
 
             {/* ESTADOS DE CARGA Y RESULTADOS */}
-            {isLoading ? (
+            {isLoading && galeria.length === 0 ? (
               <div className="proyectos-page-empty">
                 <div className="spinner-border text-danger mb-3" role="status"></div>
-                <p className="text-muted mb-0">Cargando fotos del CMS...</p>
-              </div>
-            ) : isError ? (
-              <div className="proyectos-page-empty">
-                <i className="fas fa-triangle-exclamation text-danger"></i>
-                <h3>No se pudieron cargar las fotografías</h3>
-                <p className="text-muted">{error?.message || 'Intenta recargar la página más tarde.'}</p>
+                <p className="text-muted mb-0">Cargando fotografías de León...</p>
               </div>
             ) : filteredPhotos.length === 0 ? (
               <div className="proyectos-page-empty">
