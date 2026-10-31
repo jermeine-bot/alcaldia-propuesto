@@ -270,18 +270,14 @@ if ($path === '/api/galeria') {
             $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
         }
 
-        // Si el cliente envía token Bearer válido, devolver todo (para el panel CMS)
+        // Si el cliente envía token Bearer, validarlo (panel CMS); si es inválido responde 401.
         if ($authHeader && str_starts_with($authHeader, 'Bearer ')) {
-            $token = trim(substr($authHeader, 7));
-            $secret = \Config\Database::env('JWT_SECRET', 'alcaldia_leon_secret_jwt_key_2026_super_secure');
-            $payload = \Config\Jwt::verify($token, $secret);
-            if ($payload) {
-                GaleriaController::getAll();
-                exit;
-            }
+            AuthMiddleware::handle();
+            GaleriaController::getAll();
+            exit;
         }
 
-        // Si no está autenticado (visitante público), retornar galería pública activa
+        // Sin token (visitante público): solo la galería activa.
         GaleriaController::getPublic();
         exit;
     } elseif ($method === 'POST') {

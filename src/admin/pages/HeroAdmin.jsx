@@ -5,12 +5,21 @@ import { Save, Image, Video, Link as LinkIcon, Eye, EyeOff, Monitor, Palette, La
 import { apiService } from '../../services/apiService';
 import ImageUploader from '../components/ImageUploader';
 
+const CAROUSEL_SLOTS = 6;
+
 const BG_TYPES = [
   { value: 'video', label: 'Video de Fondo', icon: Video, desc: 'Reproduce un video MP4 o WebM como fondo animado de la portada.' },
   { value: 'image', label: 'Imagen de Fondo', icon: Image, desc: 'Muestra una imagen estática de alta resolución como fondo de la portada.' },
-  { value: 'carousel', label: 'Carrusel de Fotos', icon: Layers, desc: 'Muestra una secuencia rotativa de 4 imágenes como fondo de la portada.' },
+  { value: 'carousel', label: 'Carrusel de Fotos', icon: Layers, desc: 'Muestra una secuencia rotativa de 6 imágenes como fondo de la portada.' },
   { value: 'none', label: 'Sin Fondo Visual', icon: EyeOff, desc: 'Muestra un color sólido elegido, sin video ni imagen.' }
 ];
+
+const emptyCarousel = () => Array.from({ length: CAROUSEL_SLOTS }, () => '');
+
+const normalizeCarousel = (value) => Array.from({ length: CAROUSEL_SLOTS }, (_, index) => {
+  const item = Array.isArray(value) ? value[index] : '';
+  return typeof item === 'string' ? item : '';
+});
 
 const HeroAdmin = () => {
   const queryClient = useQueryClient();
@@ -28,7 +37,7 @@ const HeroAdmin = () => {
     fallbackImg: '/img/hero-bg.jpg',
     bgType: 'video',
     bgImageUrl: '',
-    carouselImages: ['', '', '', ''],
+    carouselImages: emptyCarousel(),
     overlayColor: '#1a1816',
     overlayOpacity: 0.35,
     primaryBtnText: 'Conoce León',
@@ -45,7 +54,7 @@ const HeroAdmin = () => {
         ...heroData,
         bgType: heroData.bgType || heroData.bg_type || 'video',
         bgImageUrl: heroData.bgImageUrl || heroData.bg_image_url || '',
-        carouselImages: heroData.carouselImages || heroData.carousel_images || ['', '', '', ''],
+        carouselImages: normalizeCarousel(heroData.carouselImages || heroData.carousel_images),
         overlayColor: heroData.overlayColor || heroData.overlay_color || '#1a1816',
         overlayOpacity: Number(heroData.overlayOpacity ?? heroData.overlay_opacity ?? 0.35)
       }));
@@ -80,7 +89,7 @@ const HeroAdmin = () => {
 
   const handleCarouselChange = (index, value) => {
     setFormData((prev) => {
-      const newCarousel = [...(prev.carouselImages || ['', '', '', ''])];
+      const newCarousel = normalizeCarousel(prev.carouselImages);
       newCarousel[index] = value;
       return { ...prev, carouselImages: newCarousel };
     });
@@ -342,13 +351,13 @@ const HeroAdmin = () => {
                   <div className="border rounded-3 p-3 bg-light">
                     <label className="form-label fw-semibold small d-flex align-items-center gap-2 mb-2">
                       <Layers size={18} className="text-danger" />
-                      Ingrese fotos para carrusel (4 imágenes)
+                      Ingrese fotos para carrusel ({CAROUSEL_SLOTS} imágenes)
                     </label>
                     <p className="text-muted small mb-3">
-                      Sube o ingresa la URL de exactamente 4 imágenes que rotarán como fondo animado en la portada principal.
+                      Sube o ingresa la URL de hasta {CAROUSEL_SLOTS} imágenes que rotarán como fondo animado en la portada principal.
                     </p>
                     <div className="row g-3">
-                      {[0, 1, 2, 3].map((index) => (
+                      {Array.from({ length: CAROUSEL_SLOTS }, (_, index) => (
                         <div className="col-12 col-md-6" key={index}>
                           <div className="border rounded p-2 bg-white">
                             <ImageUploader

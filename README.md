@@ -61,10 +61,10 @@ La pantalla `/admin/hero` administra la sección principal del portal público: 
 
 ### Carrusel de imágenes
 
-El Hero admite un carrusel de **exactamente 4 imágenes** que se muestra en el portal público:
+El Hero admite un carrusel de **hasta 6 imágenes** que se muestra en el portal público:
 
-- En el panel se seleccionan las 4 imágenes en orden; cada una puede reemplazarse o quitarse.
-- El backend guarda el arreglo como JSON en la columna `hero.carousel_images` (`LONGTEXT` en MySQL, `TEXT` en SQLite).
+- En el panel se seleccionan las 6 imágenes en orden; cada una puede reemplazarse o quitarse.
+- El backend guarda el arreglo como JSON en la columna `hero.carousel_images` (`LONGTEXT` en MySQL, `TEXT` en SQLite) y lo normaliza a 6 posiciones.
 - El endpoint `GET /api/hero` devuelve el campo `carouselImages` ya decodificado; el guardado se hace con `PUT /api/hero` y requiere autenticación.
 - El componente `src/components/Hero.jsx` renderiza el carrusel solo si hay imágenes configuradas; si no, muestra el fondo individual (`bgType` / `bgImageUrl`).
 - El tipo de fondo (`bgType`) permite alternar entre imagen y video, y `bgImageUrl` conserva la imagen de respaldo.

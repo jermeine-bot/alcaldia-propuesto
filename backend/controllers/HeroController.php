@@ -8,6 +8,7 @@ use Throwable;
 
 class HeroController {
     const HERO_ID = 'hero-1';
+    const CAROUSEL_SLOTS = 6;
 
     private static function getRawInput(): array {
         $raw = file_get_contents('php://input');
@@ -100,7 +101,7 @@ class HeroController {
             $row['bgType']           = $row['bg_type'] ?? 'video';
             $row['bgImageUrl']       = $row['bg_image_url'] ?? '';
 
-            // Carrusel: la base de datos guarda un JSON con las 4 rutas de imagen.
+            // Carrusel: la base de datos guarda un JSON con las rutas de imagen.
             $carousel = $row['carousel_images'] ?? '';
             if (is_string($carousel)) {
                 $decoded = json_decode($carousel, true);
@@ -110,7 +111,7 @@ class HeroController {
                 $carousel = [];
             }
             $carousel = array_values(array_map(static fn($img) => is_string($img) ? trim($img) : '', $carousel));
-            $carousel = array_slice(array_pad($carousel, 4, ''), 0, 4);
+            $carousel = array_slice(array_pad($carousel, self::CAROUSEL_SLOTS, ''), 0, self::CAROUSEL_SLOTS);
             $row['carousel_images']  = $carousel;
             $row['carouselImages']   = $carousel;
 
@@ -145,7 +146,7 @@ class HeroController {
             $bgType          = $data['bgType'] ?? $data['bg_type'] ?? 'video';
             $bgImageUrl      = $data['bgImageUrl'] ?? $data['bg_image_url'] ?? '';
 
-            // Carrusel: se reciben las 4 imágenes y se guardan como JSON.
+            // Carrusel: se reciben hasta 6 imágenes y se guardan como JSON.
             $carouselImages  = $data['carouselImages'] ?? $data['carousel_images'] ?? [];
             if (is_string($carouselImages)) {
                 $decodedCarousel = json_decode($carouselImages, true);
@@ -158,7 +159,7 @@ class HeroController {
                 static fn($img) => is_string($img) ? trim($img) : '',
                 $carouselImages
             ));
-            $carouselImages = array_slice(array_pad($carouselImages, 4, ''), 0, 4);
+            $carouselImages = array_slice(array_pad($carouselImages, self::CAROUSEL_SLOTS, ''), 0, self::CAROUSEL_SLOTS);
             $carouselJson    = json_encode($carouselImages, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
             $overlayColor    = $data['overlayColor'] ?? $data['overlay_color'] ?? '#1a1816';
