@@ -74,6 +74,25 @@ class AnunciosController {
         return $row;
     }
 
+    private static function validateDateRange(?string $startDate, ?string $endDate): ?string {
+        foreach (['Desde' => $startDate, 'Hasta' => $endDate] as $label => $date) {
+            if ($date === null || $date === '') {
+                continue;
+            }
+
+            $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+            if (!$parsed || $parsed->format('Y-m-d') !== $date) {
+                return "La fecha “{$label}” no es válida.";
+            }
+        }
+
+        if ($startDate && $endDate && $endDate < $startDate) {
+            return 'La fecha “Hasta” debe ser igual o posterior a la fecha “Desde”.';
+        }
+
+        return null;
+    }
+
     public static function getAll(): void {
         try {
             $pdo = Database::getConnection();
@@ -171,6 +190,12 @@ class AnunciosController {
             $displayOrder = isset($data['display_order']) ? (int)$data['display_order'] : (isset($data['displayOrder']) ? (int)$data['displayOrder'] : 0);
             $startDate = !empty($data['start_date']) ? $data['start_date'] : null;
             $endDate = !empty($data['end_date']) ? $data['end_date'] : null;
+            $dateError = self::validateDateRange($startDate, $endDate);
+            if ($dateError) {
+                http_response_code(400);
+                echo json_encode(['error' => $dateError]);
+                return;
+            }
 
             $pdo = Database::getConnection();
             self::ensureTable($pdo);
@@ -229,6 +254,12 @@ class AnunciosController {
             $displayOrder = isset($data['display_order']) ? (int)$data['display_order'] : (isset($data['displayOrder']) ? (int)$data['displayOrder'] : 0);
             $startDate = !empty($data['start_date']) ? $data['start_date'] : null;
             $endDate = !empty($data['end_date']) ? $data['end_date'] : null;
+            $dateError = self::validateDateRange($startDate, $endDate);
+            if ($dateError) {
+                http_response_code(400);
+                echo json_encode(['error' => $dateError]);
+                return;
+            }
 
             $pdo = Database::getConnection();
             self::ensureTable($pdo);
