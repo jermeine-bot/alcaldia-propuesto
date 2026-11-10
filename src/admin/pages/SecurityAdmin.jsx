@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import {
   ShieldCheck,
@@ -41,6 +41,28 @@ const SecurityAdmin = () => {
   const [showProfilePassword, setShowProfilePassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    apiService.getMe()
+      .then((user) => {
+        if (!isActive || !user) return;
+        setAccount((prev) => ({ ...prev, ...user }));
+        setProfile((prev) => ({
+          ...prev,
+          name: user.name ?? prev.name,
+          email: user.email ?? prev.email
+        }));
+      })
+      .catch(() => {
+        // Si el token ya no es válido, apiService limpia la sesión y redirige al login.
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const roleLabel = account.role === 'superadmin'
     ? 'SuperAdministrador'
@@ -190,6 +212,7 @@ const SecurityAdmin = () => {
       });
 
       setPasswordForm({ ...emptyPasswordForm });
+      setProfile((prev) => ({ ...prev, currentPassword: '' }));
 
       Swal.fire({
         icon: 'success',

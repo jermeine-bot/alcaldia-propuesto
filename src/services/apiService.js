@@ -60,8 +60,18 @@ const request = async (path, { method = 'GET', data, authenticated = true } = {}
     if (response.status === 401 && authenticated) {
       authData = null;
       persistAuth();
+      try {
+        window.dispatchEvent(new Event('alcaldia-auth-updated'));
+      } catch {
+        // Sin window (por ejemplo, en pruebas) no hay nada que notificar.
+      }
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/admin/login')) {
+        window.location.assign('/admin/login');
+      }
     }
-    throw new Error(result.error || `La solicitud a ${path} falló.`);
+    const error = new Error(result.error || `La solicitud a ${path} falló.`);
+    error.status = response.status;
+    throw error;
   }
   return result;
 };
@@ -137,6 +147,8 @@ export const apiService = {
   },
 
   getCurrentUser: () => getAuthData(),
+
+  getMe: () => request('/auth/me'),
 
   changePassword: async (currentPassword, newPassword, confirmPassword) => applyAuthResult(await request('/auth/change-password', {
     method: 'PUT',

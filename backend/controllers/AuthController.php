@@ -129,7 +129,7 @@ class AuthController {
                 'Seguridad',
                 'Intento de cambio de credenciales con contraseña actual incorrecta.'
             );
-            http_response_code(401);
+            http_response_code(403);
             echo json_encode(['error' => 'La contraseña actual no es correcta.']);
             return;
         }

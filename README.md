@@ -412,7 +412,7 @@ Respuesta exitosa:
 | Regla | Comportamiento |
 |---|---|
 | Contraseña actual obligatoria | Sin ella responde `400` |
-| Contraseña actual incorrecta | Responde `401` y registra el intento en la bitácora |
+| Contraseña actual incorrecta | Responde `403` y registra el intento en la bitácora |
 | Correo inválido | Responde `400` |
 | Correo ya registrado por otro usuario | Responde `409` |
 | Nueva contraseña igual a la actual | Responde `400` |
