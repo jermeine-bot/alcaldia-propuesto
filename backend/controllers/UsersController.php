@@ -7,6 +7,24 @@ use Services\AuditService;
 use PDO;
 
 class UsersController {
+    private const PASSWORD_HASH_OPTIONS = ['cost' => 12];
+    private const ALLOWED_ROLES = ['superadmin', 'editor', 'visor'];
+    private const PASSWORD_MIN_LENGTH = 8;
+    private const PASSWORD_MAX_LENGTH = 72;
+
+    private static function validatePassword(string $password): ?string {
+        if (strlen($password) < self::PASSWORD_MIN_LENGTH) {
+            return 'La contraseña debe tener al menos ' . self::PASSWORD_MIN_LENGTH . ' caracteres.';
+        }
+        if (strlen($password) > self::PASSWORD_MAX_LENGTH) {
+            return 'La contraseña no puede superar los ' . self::PASSWORD_MAX_LENGTH . ' caracteres.';
+        }
+        if (!preg_match('/[A-Za-z]/', $password) || !preg_match('/\d/', $password)) {
+            return 'La contraseña debe incluir al menos una letra y un número.';
+        }
+        return null;
+    }
+
     private static function fetchAll(): array {
         $pdo = Database::getConnection();
         $stmt = $pdo->query("SELECT id, name, email, role, avatar, created_at, updated_at FROM users ORDER BY created_at ASC");
@@ -21,11 +39,30 @@ class UsersController {
         $name = trim((string)($body['name'] ?? ''));
         $email = trim(strtolower((string)($body['email'] ?? '')));
         $password = (string)($body['password'] ?? '');
-        $role = $body['role'] ?? 'editor';
+        $role = (string)($body['role'] ?? 'editor');
 
         if ($name === '' || $email === '' || $password === '') {
             http_response_code(400);
             echo json_encode(['error' => 'Nombre, correo y contraseña son obligatorios.']);
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Ingresa un correo electrónico válido.']);
+            return;
+        }
+
+        if (!in_array($role, self::ALLOWED_ROLES, true)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Rol no válido. Usa superadmin, editor o visor.']);
+            return;
+        }
+
+        $policyError = self::validatePassword($password);
+        if ($policyError !== null) {
+            http_response_code(400);
+            echo json_encode(['error' => $policyError]);
             return;
         }
 
@@ -39,7 +76,7 @@ class UsersController {
         }
 
         $id = bin2hex(random_bytes(16));
-        $hashed = password_hash($password, PASSWORD_BCRYPT);
+        $hashed = password_hash($password, PASSWORD_BCRYPT, self::PASSWORD_HASH_OPTIONS);
 
         $stmt = $pdo->prepare("
             INSERT INTO users (id, name, email, password, role, avatar)
@@ -77,13 +114,25 @@ class UsersController {
             $params[] = trim((string)$body['name']);
         }
         if (isset($body['role'])) {
+            $role = (string)$body['role'];
+            if (!in_array($role, self::ALLOWED_ROLES, true)) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Rol no válido. Usa superadmin, editor o visor.']);
+                return;
+            }
             $updates[] = "role = ?";
-            $params[] = $body['role'];
+            $params[] = $role;
             $invalidateTokens = true;
         }
         if (!empty($body['password'])) {
+            $policyError = self::validatePassword((string)$body['password']);
+            if ($policyError !== null) {
+                http_response_code(400);
+                echo json_encode(['error' => $policyError]);
+                return;
+            }
             $updates[] = "password = ?";
-            $params[] = password_hash($body['password'], PASSWORD_BCRYPT);
+            $params[] = password_hash((string)$body['password'], PASSWORD_BCRYPT, self::PASSWORD_HASH_OPTIONS);
             $invalidateTokens = true;
         }
 

@@ -182,7 +182,8 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   module VARCHAR(100),
   details TEXT,
   ip VARCHAR(100),
-  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_activity_logs_login (action, userEmail, ip, timestamp)
 );
 
 CREATE TABLE IF NOT EXISTS cms_content (

@@ -14,10 +14,7 @@ class AuditService {
         $userName = $user['name'] ?? $userEmail ?? 'Sistema';
         $role = $user['role'] ?? 'admin';
 
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-        if (str_contains($ip, ',')) {
-            $ip = trim(explode(',', $ip)[0]);
-        }
+        $ip = RequestService::clientIp();
 
         $id = 'log-' . bin2hex(random_bytes(16));
         $now = date('Y-m-d H:i:s');

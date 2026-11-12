@@ -6,20 +6,39 @@ import { apiService } from '../../services/apiService';
 import ImageUploader from '../components/ImageUploader';
 
 const CAROUSEL_SLOTS = 6;
+const MAX_VIDEO_MB = 500;
 
 const BG_TYPES = [
   { value: 'video', label: 'Video de Fondo', icon: Video, desc: 'Reproduce un video MP4 o WebM como fondo animado de la portada.' },
   { value: 'image', label: 'Imagen de Fondo', icon: Image, desc: 'Muestra una imagen estática de alta resolución como fondo de la portada.' },
-  { value: 'carousel', label: 'Carrusel de Fotos', icon: Layers, desc: 'Muestra una secuencia rotativa de 6 imágenes como fondo de la portada.' },
+  { value: 'carousel', label: 'Carrusel de Fotos y Videos', icon: Layers, desc: 'Muestra una secuencia rotativa de hasta 6 diapositivas; cada una puede ser imagen o video.' },
   { value: 'none', label: 'Sin Fondo Visual', icon: EyeOff, desc: 'Muestra un color sólido elegido, sin video ni imagen.' }
 ];
 
-const emptyCarousel = () => Array.from({ length: CAROUSEL_SLOTS }, () => '');
+const emptyCarouselItem = () => ({ type: 'image', src: '', poster: '' });
 
-const normalizeCarousel = (value) => Array.from({ length: CAROUSEL_SLOTS }, (_, index) => {
-  const item = Array.isArray(value) ? value[index] : '';
-  return typeof item === 'string' ? item : '';
-});
+const emptyCarousel = () => Array.from({ length: CAROUSEL_SLOTS }, emptyCarouselItem);
+
+const normalizeCarouselItem = (item) => {
+  if (typeof item === 'string') {
+    return { type: 'image', src: item, poster: '' };
+  }
+  if (item && typeof item === 'object') {
+    return {
+      type: item.type === 'video' ? 'video' : 'image',
+      src: typeof item.src === 'string' ? item.src : '',
+      poster: typeof item.poster === 'string' ? item.poster : ''
+    };
+  }
+  return emptyCarouselItem();
+};
+
+const normalizeCarousel = (value) => Array.from({ length: CAROUSEL_SLOTS }, (_, index) =>
+  normalizeCarouselItem(Array.isArray(value) ? value[index] : null)
+);
+
+const isVideoSource = (value) => /\.(mp4|webm)(\?|$)/i.test(value) || value.startsWith('/video/');
+const isImageSource = (value) => value.startsWith('data:image') || /\.(jpg|jpeg|png|webp|gif|avif)(\?|$)/i.test(value);
 
 const HeroAdmin = () => {
   const queryClient = useQueryClient();
@@ -46,6 +65,7 @@ const HeroAdmin = () => {
     secondaryBtnLink: '#servicios'
   });
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingCarousel, setUploadingCarousel] = useState(null);
 
   useEffect(() => {
     if (heroData) {
@@ -87,10 +107,25 @@ const HeroAdmin = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCarouselChange = (index, value) => {
+  const handleCarouselChange = (index, patch) => {
     setFormData((prev) => {
       const newCarousel = normalizeCarousel(prev.carouselImages);
-      newCarousel[index] = value;
+      newCarousel[index] = { ...newCarousel[index], ...patch };
+      return { ...prev, carouselImages: newCarousel };
+    });
+  };
+
+  const handleCarouselTypeChange = (index, type) => {
+    setFormData((prev) => {
+      const newCarousel = normalizeCarousel(prev.carouselImages);
+      const current = newCarousel[index];
+      const shouldClear = (type === 'image' && isVideoSource(current.src))
+        || (type === 'video' && isImageSource(current.src));
+      newCarousel[index] = {
+        ...current,
+        type,
+        ...(shouldClear ? { src: '', poster: '' } : {})
+      };
       return { ...prev, carouselImages: newCarousel };
     });
   };
@@ -106,13 +141,46 @@ const HeroAdmin = () => {
       Swal.fire({ icon: 'warning', title: 'Formato no permitido', text: 'Selecciona un archivo MP4 o WebM.' });
       return;
     }
+    if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Video demasiado grande',
+        text: `El video no puede superar ${MAX_VIDEO_MB} MB.`
+      });
+      return;
+    }
     setUploadingVideo(true);
     try {
       const result = await apiService.uploadHeroVideo(file);
-      setFormData(prev => ({ ...prev, videoUrl: result.url }));
+      setFormData(prev => ({ ...prev, videoUrl: result.path || result.url }));
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Error al subir video', text: err.message });
     } finally { setUploadingVideo(false); }
+  };
+
+  const handleCarouselVideoUpload = async (index, file) => {
+    if (!file) return;
+    if (!['video/mp4', 'video/webm'].includes(file.type)) {
+      Swal.fire({ icon: 'warning', title: 'Formato no permitido', text: 'Selecciona un archivo MP4 o WebM.' });
+      return;
+    }
+    if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Video demasiado grande',
+        text: `El video no puede superar ${MAX_VIDEO_MB} MB.`
+      });
+      return;
+    }
+    setUploadingCarousel(index);
+    try {
+      const result = await apiService.uploadHeroVideo(file);
+      handleCarouselChange(index, { type: 'video', src: result.path || result.url });
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Error al subir video', text: err.message });
+    } finally {
+      setUploadingCarousel(null);
+    }
   };
 
   if (isLoading) {
@@ -294,7 +362,10 @@ const HeroAdmin = () => {
                       onChange={e => handleVideoUpload(e.target.files?.[0])}
                     />
                     <small className="text-muted">
-                      Pega una URL o sube MP4/WebM (máximo 100 MB). {uploadingVideo && 'Subiendo…'}
+                      Pega una URL o sube MP4/WebM (máximo {MAX_VIDEO_MB} MB). {uploadingVideo && 'Subiendo…'}
+                    </small>
+                    <small className="text-muted d-block">
+                      Para que la portada cargue rápido se recomienda un clip de 6–12 s y menos de 10 MB.
                     </small>
                     {formData.videoUrl && (
                       <video
@@ -351,23 +422,95 @@ const HeroAdmin = () => {
                   <div className="border rounded-3 p-3 bg-light">
                     <label className="form-label fw-semibold small d-flex align-items-center gap-2 mb-2">
                       <Layers size={18} className="text-danger" />
-                      Ingrese fotos para carrusel ({CAROUSEL_SLOTS} imágenes)
+                      Diapositivas del carrusel ({CAROUSEL_SLOTS})
                     </label>
                     <p className="text-muted small mb-3">
-                      Sube o ingresa la URL de hasta {CAROUSEL_SLOTS} imágenes que rotarán como fondo animado en la portada principal.
+                      Cada diapositiva puede ser una imagen o un video. Los videos se reproducen mudos y la diapositiva avanza cuando terminan.
                     </p>
                     <div className="row g-3">
-                      {Array.from({ length: CAROUSEL_SLOTS }, (_, index) => (
-                        <div className="col-12 col-md-6" key={index}>
-                          <div className="border rounded p-2 bg-white">
-                            <ImageUploader
-                              label={`Foto del Carrusel #${index + 1}`}
-                              value={formData.carouselImages?.[index] || ''}
-                              onChange={(imgUrl) => handleCarouselChange(index, imgUrl)}
-                            />
+                      {Array.from({ length: CAROUSEL_SLOTS }, (_, index) => {
+                        const item = normalizeCarouselItem(formData.carouselImages?.[index]);
+                        const isVideo = item.type === 'video';
+                        return (
+                          <div className="col-12 col-md-6" key={index}>
+                            <div className="border rounded p-2 bg-white h-100">
+                              <div className="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                <span className="fw-semibold small">Diapositiva #{index + 1}</span>
+                                <div className="btn-group btn-group-sm" role="group" aria-label={`Tipo de la diapositiva ${index + 1}`}>
+                                  <button
+                                    type="button"
+                                    className={`btn ${isVideo ? 'btn-outline-secondary' : 'btn-danger'}`}
+                                    onClick={() => handleCarouselTypeChange(index, 'image')}
+                                  >
+                                    Imagen
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`btn ${isVideo ? 'btn-danger' : 'btn-outline-secondary'}`}
+                                    onClick={() => handleCarouselTypeChange(index, 'video')}
+                                  >
+                                    Video
+                                  </button>
+                                </div>
+                              </div>
+
+                              {isVideo ? (
+                                <>
+                                  <label className="form-label small mb-1" htmlFor={`carousel-video-url-${index}`}>
+                                    URL del video (MP4/WebM)
+                                  </label>
+                                  <input
+                                    id={`carousel-video-url-${index}`}
+                                    type="text"
+                                    className="form-control form-control-sm"
+                                    value={item.src}
+                                    onChange={(e) => handleCarouselChange(index, { src: e.target.value })}
+                                    placeholder="/uploads/video.mp4 o https://..."
+                                  />
+                                  <input
+                                    type="file"
+                                    className="form-control form-control-sm mt-2"
+                                    accept="video/mp4,video/webm"
+                                    disabled={uploadingCarousel === index}
+                                    onChange={(e) => {
+                                      handleCarouselVideoUpload(index, e.target.files?.[0]);
+                                      e.target.value = '';
+                                    }}
+                                  />
+                                  <small className="text-muted d-block mt-1">
+                                    {uploadingCarousel === index
+                                      ? 'Subiendo…'
+                                      : `Sube un MP4/WebM (máximo ${MAX_VIDEO_MB} MB).`}
+                                  </small>
+                                  {item.src && (
+                                    <video
+                                      key={item.src}
+                                      controls
+                                      muted
+                                      className="w-100 rounded mt-2"
+                                      style={{ maxHeight: 160, background: '#111' }}
+                                      src={item.src}
+                                    />
+                                  )}
+                                  <div className="mt-2">
+                                    <ImageUploader
+                                      label="Imagen de respaldo (poster)"
+                                      value={item.poster}
+                                      onChange={(img) => handleCarouselChange(index, { poster: img })}
+                                    />
+                                  </div>
+                                </>
+                              ) : (
+                                <ImageUploader
+                                  label={`Foto de la diapositiva #${index + 1}`}
+                                  value={item.src}
+                                  onChange={(img) => handleCarouselChange(index, { src: img })}
+                                />
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

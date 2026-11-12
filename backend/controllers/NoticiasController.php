@@ -337,27 +337,56 @@ class NoticiasController {
     }
 
     public static function uploadImage(): void {
-        if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+        $file = $_FILES['image'] ?? null;
+        if (!$file) {
             http_response_code(400);
-            echo json_encode(['error' => 'No se seleccionó ninguna imagen o ocurrió un error al subir.']);
+            echo json_encode(['error' => 'No se seleccionó ninguna imagen.']);
             return;
         }
 
-        $file = $_FILES['image'];
-        $mime = mime_content_type($file['tmp_name']);
-        if (!str_starts_with($mime, 'image/')) {
+        $error = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($error !== UPLOAD_ERR_OK) {
+            $tooLarge = in_array($error, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
+            http_response_code($tooLarge ? 413 : 400);
+            echo json_encode(['error' => $tooLarge
+                ? 'El servidor rechazó la imagen por tamaño. El máximo permitido es 15 MB.'
+                : 'No se pudo recibir la imagen.']);
+            return;
+        }
+
+        if (($file['size'] ?? 0) > 15 * 1024 * 1024) {
+            http_response_code(413);
+            echo json_encode(['error' => 'La imagen no puede superar 15 MB.']);
+            return;
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = $finfo ? finfo_file($finfo, $file['tmp_name']) : false;
+        if ($finfo) {
+            finfo_close($finfo);
+        }
+
+        $allowed = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+        ];
+
+        if (!is_string($mime) || !isset($allowed[$mime])) {
             http_response_code(400);
-            echo json_encode(['error' => 'Solo se permiten archivos de imagen (.jpg, .png, .webp).']);
+            echo json_encode(['error' => 'Formato no permitido. Solo se aceptan JPEG, PNG, WEBP y GIF.']);
             return;
         }
 
         $uploadsDir = dirname(__DIR__) . '/uploads';
-        if (!is_dir($uploadsDir)) {
-            mkdir($uploadsDir, 0777, true);
+        if (!is_dir($uploadsDir) && !mkdir($uploadsDir, 0755, true) && !is_dir($uploadsDir)) {
+            http_response_code(500);
+            echo json_encode(['error' => 'No se pudo preparar el almacenamiento de imágenes.']);
+            return;
         }
 
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
-        $filename = 'img-' . round(microtime(true) * 1000) . '-' . mt_rand(100000, 999999) . '.' . $ext;
+        $filename = 'img-' . bin2hex(random_bytes(8)) . '.' . $allowed[$mime];
         $dest = $uploadsDir . '/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $dest)) {

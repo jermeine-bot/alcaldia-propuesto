@@ -43,6 +43,8 @@ class MediaService {
             CURLOPT_MAXREDIRS => 3,
             CURLOPT_TIMEOUT => 15,
             CURLOPT_CONNECTTIMEOUT => 7,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
         ]);
 
@@ -71,7 +73,7 @@ class MediaService {
 
         $uploadsDir = dirname(__DIR__) . '/uploads';
         if (!is_dir($uploadsDir)) {
-            mkdir($uploadsDir, 0777, true);
+            mkdir($uploadsDir, 0755, true);
         }
 
         $filename = 'remote-' . round(microtime(true) * 1000) . '-' . bin2hex(random_bytes(4)) . '.' . $ext;

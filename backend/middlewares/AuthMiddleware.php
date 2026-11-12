@@ -5,6 +5,7 @@ namespace Middlewares;
 use Config\Database;
 use Config\Jwt;
 use PDO;
+use Services\RequestService;
 
 class AuthMiddleware {
     public static function handle(): array {
@@ -36,9 +37,15 @@ class AuthMiddleware {
         }
 
         $secret = Database::env('JWT_SECRET', 'alcaldia_leon_dev_only_secret');
+        if (Database::isProduction() && ($secret === '' || $secret === null)) {
+            error_log('Authentication failure: JWT_SECRET missing in production');
+            http_response_code(500);
+            echo json_encode(['error' => 'Configuración interna del servidor.']);
+            exit;
+        }
         $payload = Jwt::verify($token, $secret);
-
         if (!$payload) {
+            error_log('Authentication failure: Invalid token from IP ' . RequestService::clientIp());
             http_response_code(401);
             echo json_encode(['error' => 'El token de acceso no es válido o ha expirado.']);
             exit;

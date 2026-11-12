@@ -1,0 +1,10 @@
+# Nunca ejecutar scripts dentro de uploads.
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(php|phtml|php[0-9]|phar|pl|py|cgi|sh|htaccess)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>

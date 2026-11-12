@@ -43,12 +43,45 @@ use Controllers\AnuncioController;
 use Controllers\AnunciosController;
 use Controllers\GaleriaController;
 
+// Errores: nunca mostrar detalles internos al cliente; siempre registrarlos.
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+header_remove('X-Powered-By');
+
+set_exception_handler(static function (\Throwable $e): void {
+    error_log('Excepción no controlada: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    echo json_encode(['error' => 'Error interno del servidor.']);
+});
+
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+if (Database::isProduction()) {
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    if (!$isHttps) {
+        $httpsUrl = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        header('Location: ' . $httpsUrl, true, 301);
+        exit;
+    }
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+}
 // 1. Manejo de CORS
 CorsMiddleware::handle();
 
 // 2. Inicialización de Base de Datos y Datos Semilla
-static $dbInitialized = false;
-if (!$dbInitialized) {
+$skipDbInit = in_array(
+    strtolower((string)Database::env('SKIP_DB_INIT', '0')),
+    ['1', 'true', 'yes', 'on'],
+    true
+);
+$dbInitialized = false;
+if (!$dbInitialized && !$skipDbInit) {
     try {
         $pdo = Database::getConnection();
         InitDb::run($pdo);
@@ -78,14 +111,24 @@ if (!empty($_POST)) {
 
 // Servir archivos estáticos de /uploads si se llama directamente a index.php
 if (str_starts_with($path, '/uploads/')) {
-    $filename = basename($path);
-    $filepath = __DIR__ . '/uploads/' . $filename;
-    if (file_exists($filepath)) {
+    $uploadsDir = realpath(__DIR__ . '/uploads');
+    $filepath = realpath(__DIR__ . $path);
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'mp4', 'webm'];
+
+    if (
+        $uploadsDir !== false
+        && $filepath !== false
+        && str_starts_with($filepath, $uploadsDir . DIRECTORY_SEPARATOR)
+        && is_file($filepath)
+        && in_array(strtolower(pathinfo($filepath, PATHINFO_EXTENSION)), $allowedExtensions, true)
+    ) {
         $mime = mime_content_type($filepath) ?: 'application/octet-stream';
         header("Content-Type: {$mime}");
+        header('X-Content-Type-Options: nosniff');
         readfile($filepath);
         exit;
     }
+
     http_response_code(404);
     header('Content-Type: application/json');
     echo json_encode(['error' => 'Archivo no encontrado.']);
@@ -173,7 +216,8 @@ if ($path === '/api/auth/credentials' && $method === 'PUT') {
 
 // Rutas de Noticias
 if ($path === '/api/noticias/upload-image' && $method === 'POST') {
-    AuthMiddleware::handle();
+    $user = AuthMiddleware::handle();
+    RoleMiddleware::check($user, ['superadmin', 'editor']);
     NoticiasController::uploadImage();
     exit;
 }
@@ -184,6 +228,7 @@ if ($path === '/api/noticias') {
         exit;
     } elseif ($method === 'POST') {
         $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         NoticiasController::create($user, $body);
         exit;
     }
@@ -196,10 +241,12 @@ if (preg_match('~^/api/noticias/([^/]+)$~', $path, $matches)) {
         exit;
     } elseif ($method === 'PUT') {
         $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         NoticiasController::update($user, $id, $body);
         exit;
     } elseif ($method === 'DELETE') {
         $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         NoticiasController::delete($user, $id);
         exit;
     }
@@ -207,7 +254,8 @@ if (preg_match('~^/api/noticias/([^/]+)$~', $path, $matches)) {
 
 // Portada Hero
 if ($path === '/api/hero/upload-video' && $method === 'POST') {
-    AuthMiddleware::handle();
+    $user = AuthMiddleware::handle();
+    RoleMiddleware::check($user, ['superadmin', 'editor']);
     HeroController::uploadVideo();
     exit;
 }
@@ -217,7 +265,8 @@ if ($path === '/api/hero') {
         HeroController::getHero();
         exit;
     } elseif ($method === 'PUT') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         HeroController::updateHero($body);
         exit;
     }
@@ -229,21 +278,22 @@ if ($path === '/api/anuncios/public' && $method === 'GET') {
     exit;
 }
 if ($path === '/api/anuncios/upload-image' && $method === 'POST') {
-    AuthMiddleware::handle();
+    $user = AuthMiddleware::handle();
+    RoleMiddleware::check($user, ['superadmin', 'editor']);
     AnunciosController::uploadImage();
     exit;
 }
 if ($path === '/api/anuncios') {
-    if ($method === 'GET') { AuthMiddleware::handle(); AnunciosController::getAll(); exit; }
-    if ($method === 'POST') { $user = AuthMiddleware::handle(); AnunciosController::create($user, $body); exit; }
+    if ($method === 'GET') { $user = AuthMiddleware::handle(); RoleMiddleware::check($user, ['superadmin', 'editor']); AnunciosController::getAll(); exit; }
+    if ($method === 'POST') { $user = AuthMiddleware::handle(); RoleMiddleware::check($user, ['superadmin', 'editor']); AnunciosController::create($user, $body); exit; }
 }
 if (preg_match('~^/api/anuncios/([^/]+)/toggle$~', $path, $matches) && $method === 'PATCH') {
-    $user = AuthMiddleware::handle(); AnunciosController::toggleActive(urldecode($matches[1]), $user); exit;
+    $user = AuthMiddleware::handle(); RoleMiddleware::check($user, ['superadmin', 'editor']); AnunciosController::toggleActive(urldecode($matches[1]), $user); exit;
 }
 if (preg_match('~^/api/anuncios/([^/]+)$~', $path, $matches)) {
     $id = urldecode($matches[1]);
-    if ($method === 'PUT') { $user = AuthMiddleware::handle(); AnunciosController::update($id, $user, $body); exit; }
-    if ($method === 'DELETE') { $user = AuthMiddleware::handle(); AnunciosController::delete($id, $user); exit; }
+    if ($method === 'PUT') { $user = AuthMiddleware::handle(); RoleMiddleware::check($user, ['superadmin', 'editor']); AnunciosController::update($id, $user, $body); exit; }
+    if ($method === 'DELETE') { $user = AuthMiddleware::handle(); RoleMiddleware::check($user, ['superadmin', 'editor']); AnunciosController::delete($id, $user); exit; }
 }
 
 // Galería (imágenes administrables desde el CMS)
@@ -252,7 +302,8 @@ if ($path === '/api/galeria/public' && $method === 'GET') {
     exit;
 }
 if ($path === '/api/galeria/upload-image' && $method === 'POST') {
-    AuthMiddleware::handle();
+    $user = AuthMiddleware::handle();
+    RoleMiddleware::check($user, ['superadmin', 'editor']);
     GaleriaController::uploadImage();
     exit;
 }
@@ -314,7 +365,8 @@ if ($path === '/api/proyectos') {
         ProyectosController::getAll();
         exit;
     } elseif ($method === 'POST') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         ProyectosController::create($body);
         exit;
     }
@@ -323,11 +375,13 @@ if ($path === '/api/proyectos') {
 if (preg_match('~^/api/proyectos/([^/]+)$~', $path, $matches)) {
     $id = urldecode($matches[1]);
     if ($method === 'PUT') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         ProyectosController::update($id, $body);
         exit;
     } elseif ($method === 'DELETE') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         ProyectosController::delete($id);
         exit;
     }
@@ -339,7 +393,8 @@ if ($path === '/api/turismo') {
         TurismoController::getAll();
         exit;
     } elseif ($method === 'POST') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         TurismoController::create($body);
         exit;
     }
@@ -348,11 +403,13 @@ if ($path === '/api/turismo') {
 if (preg_match('~^/api/turismo/([^/]+)$~', $path, $matches)) {
     $id = urldecode($matches[1]);
     if ($method === 'PUT') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         TurismoController::update($id, $body);
         exit;
     } elseif ($method === 'DELETE') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         TurismoController::delete($id);
         exit;
     }
@@ -364,7 +421,8 @@ if ($path === '/api/cultura') {
         CulturaController::getAll();
         exit;
     } elseif ($method === 'POST') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         CulturaController::create($body);
         exit;
     }
@@ -373,11 +431,13 @@ if ($path === '/api/cultura') {
 if (preg_match('~^/api/cultura/([^/]+)$~', $path, $matches)) {
     $id = urldecode($matches[1]);
     if ($method === 'PUT') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         CulturaController::update($id, $body);
         exit;
     } elseif ($method === 'DELETE') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         CulturaController::delete($id);
         exit;
     }
@@ -389,7 +449,8 @@ if ($path === '/api/stats') {
         StatsController::getAll();
         exit;
     } elseif ($method === 'POST') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         StatsController::create($body);
         exit;
     }
@@ -398,11 +459,13 @@ if ($path === '/api/stats') {
 if (preg_match('~^/api/stats/([^/]+)$~', $path, $matches)) {
     $id = urldecode($matches[1]);
     if ($method === 'PUT') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         StatsController::update($id, $body);
         exit;
     } elseif ($method === 'DELETE') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         StatsController::delete($id);
         exit;
     }
@@ -414,7 +477,8 @@ if ($path === '/api/contacto') {
         ContactoController::getContacto();
         exit;
     } elseif ($method === 'PUT') {
-        AuthMiddleware::handle();
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
         ContactoController::updateContacto($body);
         exit;
     }
@@ -558,7 +622,8 @@ if ($path === '/api/facebook/status' && $method === 'GET') {
 }
 
 if ($path === '/api/facebook/sync' && $method === 'POST') {
-    AuthMiddleware::handle();
+    $user = AuthMiddleware::handle();
+    RoleMiddleware::check($user, ['superadmin', 'editor']);
     FacebookController::syncNow();
     exit;
 }

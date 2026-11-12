@@ -5,6 +5,7 @@ namespace Controllers;
 use Config\Database;
 use Config\Jwt;
 use Services\AuditService;
+use Services\RequestService;
 use PDO;
 use Throwable;
 
@@ -13,6 +14,7 @@ class AuthController {
     private const LOGIN_WINDOW_MINUTES = 15;
     private const PASSWORD_MIN_LENGTH = 8;
     private const PASSWORD_MAX_LENGTH = 72;
+    private const PASSWORD_HASH_OPTIONS = ['cost' => 12];
 
     public static function redirectLogin(): void {
         $frontendUrl = rtrim((string)Database::env('FRONTEND_URL', 'http://localhost:5173'), '/');
@@ -63,9 +65,9 @@ class AuthController {
         }
 
         // Actualiza el hash si el algoritmo/costo cambió.
-        if (password_needs_rehash($user['password'], PASSWORD_BCRYPT)) {
+        if (password_needs_rehash($user['password'], PASSWORD_BCRYPT, self::PASSWORD_HASH_OPTIONS)) {
             $rehash = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-            $rehash->execute([password_hash($password, PASSWORD_BCRYPT), $user['id']]);
+            $rehash->execute([password_hash($password, PASSWORD_BCRYPT, self::PASSWORD_HASH_OPTIONS), $user['id']]);
         }
 
         $token = self::issueToken($user);
@@ -199,7 +201,7 @@ class AuthController {
                 return;
             }
             $updates[] = "password = ?";
-            $params[] = password_hash($newPassword, PASSWORD_BCRYPT);
+            $params[] = password_hash($newPassword, PASSWORD_BCRYPT, self::PASSWORD_HASH_OPTIONS);
             $changed[] = 'contraseña';
         }
 
@@ -275,7 +277,9 @@ class AuthController {
         ];
 
         $secret = Database::env('JWT_SECRET', 'alcaldia_leon_dev_only_secret');
-        return Jwt::sign($payload, $secret, 7 * 86400);
+        $ttlHours = (int)Database::env('JWT_TTL_HOURS', Database::isProduction() ? '12' : '168');
+        $ttlHours = max(1, min($ttlHours, 720));
+        return Jwt::sign($payload, $secret, $ttlHours * 3600);
     }
 
     private static function publicUser(array $row): array {
@@ -289,10 +293,6 @@ class AuthController {
     }
 
     private static function clientIp(): string {
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-        if (str_contains($ip, ',')) {
-            $ip = trim(explode(',', $ip)[0]);
-        }
-        return $ip;
+        return RequestService::clientIp();
     }
 }

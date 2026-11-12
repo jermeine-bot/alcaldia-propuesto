@@ -318,7 +318,7 @@ class GaleriaController {
 
             $uploadsDir = dirname(__DIR__) . '/uploads';
             if (!is_dir($uploadsDir)) {
-                mkdir($uploadsDir, 0777, true);
+                mkdir($uploadsDir, 0755, true);
             }
 
             $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'][$mime];

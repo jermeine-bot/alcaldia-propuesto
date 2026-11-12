@@ -10,7 +10,8 @@ import {
   EyeOff,
   LockKeyhole,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Circle
 } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 
@@ -31,13 +32,11 @@ const SecurityAdmin = () => {
 
   const [profile, setProfile] = useState({
     name: storedUser.name || '',
-    email: storedUser.email || '',
-    currentPassword: ''
+    email: storedUser.email || ''
   });
 
   const [passwordForm, setPasswordForm] = useState({ ...emptyPasswordForm });
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [showProfilePassword, setShowProfilePassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -93,11 +92,12 @@ const SecurityAdmin = () => {
     setPasswordForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleProfileSubmit = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const name = profile.name.trim();
     const email = profile.email.trim().toLowerCase();
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
 
     if (!name || !email) {
       Swal.fire({
@@ -109,127 +109,119 @@ const SecurityAdmin = () => {
       return;
     }
 
-    if (!profile.currentPassword) {
+    if (!currentPassword) {
       Swal.fire({
         icon: 'warning',
         title: 'Confirma tu contraseña',
-        text: 'Ingresa tu contraseña actual para guardar los cambios de la cuenta.',
+        text: 'Ingresa tu contraseña actual para guardar los cambios.',
         confirmButtonColor: '#B22222'
       });
       return;
     }
 
-    if (name === account.name && email === account.email.toLowerCase()) {
+    const wantsPasswordChange = newPassword !== '' || confirmPassword !== '';
+
+    if (wantsPasswordChange) {
+      if (!newPassword || !confirmPassword) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Campos requeridos',
+          text: 'Completa la nueva contraseña y su confirmación.',
+          confirmButtonColor: '#B22222'
+        });
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Contraseña muy corta',
+          text: 'La nueva contraseña debe tener al menos 8 caracteres.',
+          confirmButtonColor: '#B22222'
+        });
+        return;
+      }
+
+      if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Contraseña poco segura',
+          text: 'La nueva contraseña debe incluir al menos una letra y un número.',
+          confirmButtonColor: '#B22222'
+        });
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Las contraseñas no coinciden',
+          text: 'Verifica la nueva contraseña y su confirmación.',
+          confirmButtonColor: '#B22222'
+        });
+        return;
+      }
+
+      if (newPassword === currentPassword) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Contraseña repetida',
+          text: 'La nueva contraseña debe ser diferente a la actual.',
+          confirmButtonColor: '#B22222'
+        });
+        return;
+      }
+    }
+
+    const hasProfileChanges = name !== account.name || email !== account.email.toLowerCase();
+
+    if (!hasProfileChanges && !wantsPasswordChange) {
       Swal.fire({
         icon: 'info',
         title: 'Sin cambios',
-        text: 'No modificaste el nombre ni el correo electrónico.',
+        text: 'No modificaste tus datos ni tu contraseña.',
         confirmButtonColor: '#B22222'
       });
       return;
     }
 
     try {
-      setSavingProfile(true);
-      const result = await apiService.updateCredentials({
-        name,
-        email,
-        currentPassword: profile.currentPassword
-      });
+      setSaving(true);
+      const payload = { name, email, currentPassword };
+      if (wantsPasswordChange) {
+        payload.newPassword = newPassword;
+        payload.confirmPassword = confirmPassword;
+      }
+
+      const result = await apiService.updateCredentials(payload);
 
       setAccount((prev) => ({ ...prev, ...(result.user || {}) }));
-      setProfile((prev) => ({ ...prev, name, email, currentPassword: '' }));
+      setProfile({ name, email });
+      setPasswordForm({ ...emptyPasswordForm });
 
       Swal.fire({
         icon: 'success',
-        title: 'Datos actualizados',
-        text: result.message || 'Tus datos de acceso se guardaron correctamente.',
+        title: wantsPasswordChange ? 'Datos y contraseña actualizados' : 'Datos actualizados',
+        text: wantsPasswordChange
+          ? 'Tus datos y tu contraseña se guardaron correctamente.'
+          : (result.message || 'Tus datos de acceso se guardaron correctamente.'),
         confirmButtonColor: '#B22222'
       });
     } catch (error) {
       Swal.fire({
         icon: 'error',
-        title: 'No se pudieron guardar los datos',
+        title: 'No se pudieron guardar los cambios',
         text: error.message || 'Verifica tu contraseña actual e intenta de nuevo.',
         confirmButtonColor: '#B22222'
       });
     } finally {
-      setSavingProfile(false);
+      setSaving(false);
     }
   };
 
-  const handlePasswordSubmit = async (event) => {
-    event.preventDefault();
-
-    const { currentPassword, newPassword, confirmPassword } = passwordForm;
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Campos requeridos',
-        text: 'Completa la contraseña actual, la nueva y su confirmación.',
-        confirmButtonColor: '#B22222'
-      });
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Contraseña muy corta',
-        text: 'La nueva contraseña debe tener al menos 8 caracteres.',
-        confirmButtonColor: '#B22222'
-      });
-      return;
-    }
-
-    if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Contraseña poco segura',
-        text: 'La nueva contraseña debe incluir al menos una letra y un número.',
-        confirmButtonColor: '#B22222'
-      });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Las contraseñas no coinciden',
-        text: 'Verifica la nueva contraseña y su confirmación.',
-        confirmButtonColor: '#B22222'
-      });
-      return;
-    }
-
-    try {
-      setSavingPassword(true);
-      const result = await apiService.updateCredentials({
-        currentPassword,
-        newPassword,
-        confirmPassword
-      });
-
-      setPasswordForm({ ...emptyPasswordForm });
-      setProfile((prev) => ({ ...prev, currentPassword: '' }));
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Contraseña actualizada',
-        text: result.message || 'Tu contraseña se cambió correctamente.',
-        confirmButtonColor: '#B22222'
-      });
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'No se pudo cambiar la contraseña',
-        text: error.message || 'Verifica tu contraseña actual e intenta de nuevo.',
-        confirmButtonColor: '#B22222'
-      });
-    } finally {
-      setSavingPassword(false);
-    }
+  const handleReset = () => {
+    setProfile({ name: account.name, email: account.email });
+    setPasswordForm({ ...emptyPasswordForm });
   };
 
   return (
@@ -267,8 +259,8 @@ const SecurityAdmin = () => {
         </div>
 
         <div className="row g-4">
-          <div className="col-12 col-lg-6">
-            <div className="admin-card h-100">
+          <div className="col-12">
+            <div className="admin-card">
               <div className="admin-card-header">
                 <h5 className="admin-card-title d-flex align-items-center gap-2">
                   <User size={20} className="text-danger" />
@@ -276,48 +268,55 @@ const SecurityAdmin = () => {
                 </h5>
               </div>
 
-              <form onSubmit={handleProfileSubmit} autoComplete="off">
-                <div className="mb-3">
-                  <label className="form-label fw-semibold small">Nombre completo</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-white"><User size={16} /></span>
-                    <input
-                      type="text"
-                      name="name"
-                      className="form-control"
-                      value={profile.name}
-                      onChange={handleProfileChange}
-                      maxLength={150}
-                      required
-                    />
+              <form onSubmit={handleSubmit}>
+                <div className="row g-3">
+                  <div className="col-12 col-md-6">
+                    <label className="form-label fw-semibold small" htmlFor="account-name">Nombre completo</label>
+                    <div className="input-group">
+                      <span className="input-group-text bg-white"><User size={16} /></span>
+                      <input
+                        id="account-name"
+                        type="text"
+                        name="name"
+                        className="form-control"
+                        value={profile.name}
+                        onChange={handleProfileChange}
+                        maxLength={150}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-md-6">
+                    <label className="form-label fw-semibold small" htmlFor="account-email">Correo electrónico</label>
+                    <div className="input-group">
+                      <span className="input-group-text bg-white"><Mail size={16} /></span>
+                      <input
+                        id="account-email"
+                        type="email"
+                        name="email"
+                        className="form-control"
+                        value={profile.email}
+                        onChange={handleProfileChange}
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="mb-3">
-                  <label className="form-label fw-semibold small">Correo electrónico</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-white"><Mail size={16} /></span>
-                    <input
-                      type="email"
-                      name="email"
-                      className="form-control"
-                      value={profile.email}
-                      onChange={handleProfileChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label fw-semibold small">Contraseña actual (para confirmar)</label>
+                <div className="mt-3">
+                  <label className="form-label fw-semibold small" htmlFor="account-current-password">
+                    Contraseña actual
+                  </label>
                   <div className="input-group">
                     <span className="input-group-text bg-white"><KeyRound size={16} /></span>
                     <input
+                      id="account-current-password"
                       type={showProfilePassword ? 'text' : 'password'}
                       name="currentPassword"
                       className="form-control"
-                      value={profile.currentPassword}
-                      onChange={handleProfileChange}
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordChange}
                       autoComplete="current-password"
                       required
                     />
@@ -330,66 +329,78 @@ const SecurityAdmin = () => {
                       {showProfilePassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
+                  <div className="form-text">
+                    Necesaria para confirmar cualquier cambio en tu cuenta.
+                  </div>
                 </div>
 
-                <button type="submit" className="btn btn-danger d-flex align-items-center gap-2" disabled={savingProfile}>
-                  <Save size={16} />
-                  {savingProfile ? 'Guardando...' : 'Guardar datos'}
-                </button>
-              </form>
-            </div>
-          </div>
+                <hr className="my-4" />
 
-          <div className="col-12 col-lg-6">
-            <div className="admin-card h-100">
-              <div className="admin-card-header">
-                <h5 className="admin-card-title d-flex align-items-center gap-2">
-                  <KeyRound size={20} className="text-danger" />
-                  Cambiar contraseña
-                </h5>
-              </div>
-
-              <form onSubmit={handlePasswordSubmit} autoComplete="off">
-                <div className="mb-3">
-                  <label className="form-label fw-semibold small">Contraseña actual</label>
-                  <input
-                    type="password"
-                    name="currentPassword"
-                    className="form-control"
-                    value={passwordForm.currentPassword}
-                    onChange={handlePasswordChange}
-                    autoComplete="current-password"
-                    required
-                  />
+                <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                  <h6 className="mb-0 d-flex align-items-center gap-2 fw-semibold">
+                    <KeyRound size={18} className="text-danger" />
+                    Cambiar contraseña
+                  </h6>
+                  <span className="badge bg-light text-muted">Opcional</span>
                 </div>
+                <p className="small text-muted mb-3">
+                  Déjalo en blanco si solo quieres actualizar tu nombre o correo.
+                </p>
 
-                <div className="mb-2">
-                  <label className="form-label fw-semibold small">Nueva contraseña</label>
-                  <div className="input-group">
-                    <input
-                      type={showNewPassword ? 'text' : 'password'}
-                      name="newPassword"
-                      className="form-control"
-                      value={passwordForm.newPassword}
-                      onChange={handlePasswordChange}
-                      autoComplete="new-password"
-                      minLength={8}
-                      maxLength={72}
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={() => setShowNewPassword((value) => !value)}
-                      aria-label={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    >
-                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                <div className="row g-3">
+                  <div className="col-12 col-md-6">
+                    <label className="form-label fw-semibold small" htmlFor="account-new-password">Nueva contraseña</label>
+                    <div className="input-group">
+                      <input
+                        id="account-new-password"
+                        type={showNewPassword ? 'text' : 'password'}
+                        name="newPassword"
+                        className="form-control"
+                        value={passwordForm.newPassword}
+                        onChange={handlePasswordChange}
+                        autoComplete="new-password"
+                        minLength={8}
+                        maxLength={72}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setShowNewPassword((value) => !value)}
+                        aria-label={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      >
+                        {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-md-6">
+                    <label className="form-label fw-semibold small" htmlFor="account-confirm-password">Confirmar nueva contraseña</label>
+                    <div className="input-group">
+                      <input
+                        id="account-confirm-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        name="confirmPassword"
+                        className="form-control"
+                        value={passwordForm.confirmPassword}
+                        onChange={handlePasswordChange}
+                        autoComplete="new-password"
+                        minLength={8}
+                        maxLength={72}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setShowConfirmPassword((value) => !value)}
+                        aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      >
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {passwordForm.newPassword && (
-                  <div className="mb-3">
+                  <div className="mt-3">
                     <div className="d-flex justify-content-between align-items-center mb-1">
                       <small className="text-muted">Seguridad de la contraseña</small>
                       <small className="fw-semibold" style={{ color: strengthColors[passwordStrength] }}>
@@ -409,44 +420,37 @@ const SecurityAdmin = () => {
                   </div>
                 )}
 
-                <div className="mb-3">
-                  <label className="form-label fw-semibold small">Confirmar nueva contraseña</label>
-                  <div className="input-group">
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      name="confirmPassword"
-                      className="form-control"
-                      value={passwordForm.confirmPassword}
-                      onChange={handlePasswordChange}
-                      autoComplete="new-password"
-                      minLength={8}
-                      maxLength={72}
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={() => setShowConfirmPassword((value) => !value)}
-                      aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                <div className="d-flex flex-wrap gap-2 mt-3">
+                  {[
+                    { label: '8+ caracteres', met: passwordForm.newPassword.length >= 8 },
+                    { label: 'Letras y números', met: /[A-Za-z]/.test(passwordForm.newPassword) && /\d/.test(passwordForm.newPassword) }
+                  ].map(({ label, met }) => (
+                    <span
+                      key={label}
+                      className={`badge d-inline-flex align-items-center ${met ? 'bg-success-subtle text-success' : 'bg-light text-muted'}`}
                     >
-                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
+                      {met
+                        ? <CheckCircle2 size={12} className="me-1" />
+                        : <Circle size={12} className="me-1" />}
+                      {label}
+                    </span>
+                  ))}
                 </div>
 
-                <div className="d-flex flex-wrap gap-2 mb-3">
-                  <span className={`badge ${passwordForm.newPassword.length >= 8 ? 'bg-success-subtle text-success' : 'bg-light text-muted'}`}>
-                    <CheckCircle2 size={12} className="me-1" /> 8+ caracteres
-                  </span>
-                  <span className={`badge ${/[A-Za-z]/.test(passwordForm.newPassword) && /\d/.test(passwordForm.newPassword) ? 'bg-success-subtle text-success' : 'bg-light text-muted'}`}>
-                    <CheckCircle2 size={12} className="me-1" /> Letras y números
-                  </span>
+                <div className="d-flex flex-wrap gap-2 mt-4">
+                  <button type="submit" className="btn btn-danger d-flex align-items-center gap-2" disabled={saving}>
+                    <Save size={16} />
+                    {saving ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={handleReset}
+                    disabled={saving}
+                  >
+                    Descartar cambios
+                  </button>
                 </div>
-
-                <button type="submit" className="btn btn-danger d-flex align-items-center gap-2" disabled={savingPassword}>
-                  <KeyRound size={16} />
-                  {savingPassword ? 'Actualizando...' : 'Actualizar contraseña'}
-                </button>
               </form>
             </div>
           </div>

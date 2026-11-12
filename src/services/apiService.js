@@ -125,7 +125,14 @@ const uploadFile = async (path, field, file) => {
   const response = await fetch(`${API_BASE_URL}${path}`, { method: 'POST', headers, body: form });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || 'No se pudo subir el archivo.');
-  if (result.url?.startsWith('/')) result.url = new URL(result.url, API_BASE_URL).toString();
+  if (typeof result.url === 'string' && result.url) {
+    try {
+      result.path = new URL(result.url, API_BASE_URL).pathname;
+    } catch {
+      result.path = result.url;
+    }
+    if (result.url.startsWith('/')) result.url = new URL(result.url, API_BASE_URL).toString();
+  }
   return result;
 };
 

@@ -259,10 +259,27 @@ class InitDb {
         }
 
         self::migrateSchema($pdo);
+        self::ensureIndexes($pdo);
         self::applyProductionSeed($pdo);
         self::migrateLegacyAnnouncement($pdo);
         self::seedData($pdo);
         self::seedGallery($pdo);
+    }
+
+    private static function ensureIndexes(PDO $pdo): void {
+        try {
+            if (Database::getDriver() === 'sqlite') {
+                $pdo->exec("CREATE INDEX IF NOT EXISTS idx_activity_logs_login ON activity_logs (action, userEmail, ip, timestamp)");
+                return;
+            }
+
+            $stmt = $pdo->query("SHOW INDEX FROM activity_logs WHERE Key_name = 'idx_activity_logs_login'");
+            if (!$stmt->fetch()) {
+                $pdo->exec("CREATE INDEX idx_activity_logs_login ON activity_logs (action, userEmail, ip, timestamp)");
+            }
+        } catch (\Throwable $e) {
+            error_log('No se pudo crear el índice de activity_logs: ' . $e->getMessage());
+        }
     }
 
     private static function seedGallery(PDO $pdo): void {
@@ -314,6 +331,16 @@ class InitDb {
         $check = $pdo->prepare('SELECT id FROM app_migrations WHERE id = ?');
         $check->execute([$migrationId]);
         if ($check->fetchColumn()) return;
+
+        // En producción el respaldo solo se importa si se autoriza explícitamente.
+        $applySeed = !Database::isProduction() || in_array(
+            strtolower((string)Database::env('APPLY_PRODUCTION_SEED', '0')),
+            ['1', 'true', 'yes', 'on'],
+            true
+        );
+        if (!$applySeed) {
+            return;
+        }
 
         $seedFile = dirname(__DIR__) . '/data/production_seed.php';
         if (!is_file($seedFile)) return;
@@ -429,7 +456,9 @@ class InitDb {
                         if (!in_array(strtolower($colName), $existing, true)) {
                             try {
                                 $pdo->exec($alterSql);
-                            } catch (\Throwable $e) {}
+                            } catch (\Throwable $e) {
+                                error_log('Migración de esquema: ' . $e->getMessage());
+                            }
                         }
                     }
                 }
@@ -472,7 +501,9 @@ class InitDb {
                         if (!in_array(strtolower($colName), $existing, true)) {
                             try {
                                 $pdo->exec($alterSql);
-                            } catch (\Throwable $e) {}
+                            } catch (\Throwable $e) {
+                                error_log('Migración de esquema: ' . $e->getMessage());
+                            }
                         }
                     }
                 }
@@ -487,19 +518,27 @@ class InitDb {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->execute(['admin@alcaldaleon.gob.ni']);
         if (!$stmt->fetch()) {
-            $hashedPassword = password_hash('admin123', PASSWORD_BCRYPT);
-            $insert = $pdo->prepare("
-                INSERT INTO users (id, name, email, password, role, avatar)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ");
-            $insert->execute([
-                'u-1',
-                'Administrador General',
-                'admin@alcaldaleon.gob.ni',
-                $hashedPassword,
-                'superadmin',
-                '/img/nav_logo/logo nav2.png'
-            ]);
+            $isProduction = Database::isProduction();
+            $seedPassword = (string)Database::env('SEED_ADMIN_PASSWORD', '');
+
+            if ($isProduction && $seedPassword === '') {
+                error_log('No se creó el administrador inicial: define SEED_ADMIN_PASSWORD antes del primer arranque.');
+            } else {
+                $initialPassword = $isProduction ? $seedPassword : 'admin123';
+                $hashedPassword = password_hash($initialPassword, PASSWORD_BCRYPT, ['cost' => 12]);
+                $insert = $pdo->prepare("
+                    INSERT INTO users (id, name, email, password, role, avatar)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ");
+                $insert->execute([
+                    'u-1',
+                    'Administrador General',
+                    'admin@alcaldaleon.gob.ni',
+                    $hashedPassword,
+                    'superadmin',
+                    '/img/nav_logo/logo nav2.png'
+                ]);
+            }
         }
 
         // 2. Hero

@@ -59,15 +59,16 @@ Este proyecto se compone de una aplicación web fullstack:
 
 La pantalla `/admin/hero` administra la sección principal del portal público: título, subtítulo, botones, video o imagen de fondo y la capa de superposición (*overlay*). Todos los cambios se guardan en la tabla `hero` y se reflejan en la landing al recargar.
 
-### Carrusel de imágenes
+### Carrusel de imágenes y videos
 
-El Hero admite un carrusel de **hasta 6 imágenes** que se muestra en el portal público:
+El Hero admite un carrusel de **hasta 6 diapositivas** que se muestra en el portal público. Cada diapositiva puede ser una **imagen** o un **video**, así que se pueden mezclar libremente o dejar un carrusel solo de videos:
 
-- En el panel se seleccionan las 6 imágenes en orden; cada una puede reemplazarse o quitarse.
-- El backend guarda el arreglo como JSON en la columna `hero.carousel_images` (`LONGTEXT` en MySQL, `TEXT` en SQLite) y lo normaliza a 6 posiciones.
+- En el panel, cada casilla tiene un selector **Imagen | Video**. Las imágenes se suben o se indican por URL como antes; los videos aceptan una URL o un archivo MP4/WebM de hasta **500 MB**.
+- Cada diapositiva de video puede llevar una **imagen de respaldo (poster)** que se muestra mientras carga o si el video falla.
+- El backend guarda el arreglo como JSON en la columna `hero.carousel_images` (`LONGTEXT` en MySQL, `TEXT` en SQLite) y lo normaliza a 6 posiciones. Cada elemento tiene la forma `{ "type": "image" | "video", "src": "...", "poster": "..." }`; los strings del formato anterior se leen como imágenes, sin migración.
 - El endpoint `GET /api/hero` devuelve el campo `carouselImages` ya decodificado; el guardado se hace con `PUT /api/hero` y requiere autenticación.
-- El componente `src/components/Hero.jsx` renderiza el carrusel solo si hay imágenes configuradas; si no, muestra el fondo individual (`bgType` / `bgImageUrl`).
-- El tipo de fondo (`bgType`) permite alternar entre imagen y video, y `bgImageUrl` conserva la imagen de respaldo.
+- El componente `src/components/Hero.jsx` muestra las imágenes durante 5 s y los videos mudos, que avanzan al terminar (con un tope de 15 s). Si no hay diapositivas configuradas, usa `bgImageUrl` o la imagen de respaldo. Con `prefers-reduced-motion` no rota y se queda en la primera.
+- El tipo de fondo (`bgType`) sigue permitiendo alternar entre video, imagen, carrusel o sin fondo.
 
 > El carrusel se guarda como JSON, no como filas independientes, por lo que siempre se actualiza el mismo registro del Hero.
 
@@ -371,8 +372,8 @@ La pantalla `/admin/seguridad` (también accesible desde **Mi seguridad** en el 
 
 ### Funcionalidades
 
-- **Datos de la cuenta**: cambio de nombre y correo electrónico.
-- **Cambio de contraseña**: contraseña actual, nueva contraseña y confirmación.
+- **Formulario unificado**: nombre, correo, contraseña actual obligatoria y nueva contraseña opcional con su confirmación, todo con un único botón **Guardar cambios**.
+- **Contraseña actual única**: un solo campo confirma tanto los cambios de datos como el cambio de contraseña.
 - **Indicador de seguridad**: barra visual que evalúa longitud, letras, números y símbolos.
 - **Recomendaciones**: buenas prácticas de contraseña y sesión.
 - El nombre y el rol mostrados en el encabezado del panel se actualizan sin recargar la página.
@@ -757,7 +758,7 @@ El esquema esperado está en `backend/mysql/db.sql`. Si `anuncios` no existe, ej
 ### Diagnóstico cuando no sube o no se ve la imagen
 
 1. `GET /api/health` debe indicar `"database":"mysql"` en producción. Si indica `sqlite`, el backend no conectó al MySQL configurado; corrige la conexión antes de guardar, porque los datos podrían estar yendo al archivo SQLite del servidor.
-2. En las herramientas de desarrollador del navegador, revisa la solicitud de carga y su respuesta. Flyers JPEG, PNG, WEBP y GIF aceptan hasta 15 MiB; videos Hero hasta 100 MiB. Los scripts locales de Windows pasan a PHP `upload_max_filesize=100M` y `post_max_size=105M`; para otros servidores configura esos límites y el límite del proxy/webserver por encima del tamaño máximo.
+2. En las herramientas de desarrollador del navegador, revisa la solicitud de carga y su respuesta. Flyers JPEG, PNG, WEBP y GIF aceptan hasta 15 MiB; videos Hero hasta 500 MiB. Los scripts locales de Windows (`start.ps1`, `start.bat`) y Linux (`start.sh`) pasan a PHP `upload_max_filesize=500M`, `post_max_size=512M` y `memory_limit=256M`; para otros servidores configura esos límites y el límite del proxy/webserver por encima del tamaño máximo.
 3. Si la carga devuelve error 500 al mover el archivo, verifica que el usuario de PHP pueda escribir en `api/uploads/`. Esa carpeta debe persistir entre despliegues y no debe permitir ejecutar scripts subidos.
 4. Si la carga responde correctamente pero la imagen no abre, visita la URL que devolvió la API. Debe responder con la imagen (HTTP 200). En Apache, la regla indicada en la sección de publicación debe exponer `/uploads/...` desde `api/uploads/...`; en otros servidores configura la ruta equivalente.
 5. Guarda en la fila `anuncios.image` la URL devuelta o una URL pública válida. Para que una imagen subida siga disponible después de un despliegue, respalda y conserva el contenido de `api/uploads/`; restaurar solo la base de datos no restaura esos archivos.

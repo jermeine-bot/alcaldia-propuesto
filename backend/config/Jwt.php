@@ -8,7 +8,11 @@ class Jwt {
     }
 
     private static function base64UrlDecode(string $data): string {
-        return base64_decode(strtr($data, '-_', '+/') . str_repeat('=', 3 - (3 + strlen($data)) % 4));
+        $remainder = strlen($data) % 4;
+        if ($remainder) {
+            $data .= str_repeat('=', 4 - $remainder);
+        }
+        return base64_decode(strtr($data, '-_', '+/'));
     }
 
     public static function sign(array $payload, string $secret, int $expiresInSeconds = 604800): string {

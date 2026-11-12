@@ -9,6 +9,7 @@ use Throwable;
 class HeroController {
     const HERO_ID = 'hero-1';
     const CAROUSEL_SLOTS = 6;
+    const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
 
     private static function getRawInput(): array {
         $raw = file_get_contents('php://input');
@@ -19,6 +20,23 @@ class HeroController {
             }
         }
         return $_POST ?: [];
+    }
+
+    private static function normalizeCarouselItem($item): array {
+        if (is_string($item)) {
+            return ['type' => 'image', 'src' => trim($item), 'poster' => ''];
+        }
+        if (!is_array($item)) {
+            return ['type' => 'image', 'src' => '', 'poster' => ''];
+        }
+        $type = (($item['type'] ?? 'image') === 'video') ? 'video' : 'image';
+        $src = is_string($item['src'] ?? null) ? trim($item['src']) : '';
+        $poster = is_string($item['poster'] ?? null) ? trim($item['poster']) : '';
+        // Los videos no se guardan en base64: deben ser una ruta o URL.
+        if ($type === 'video' && str_starts_with(strtolower($src), 'data:')) {
+            $src = '';
+        }
+        return ['type' => $type, 'src' => $src, 'poster' => $poster];
     }
 
     private static function ensureSchema(PDO $pdo): void {
@@ -110,8 +128,8 @@ class HeroController {
             if (!is_array($carousel)) {
                 $carousel = [];
             }
-            $carousel = array_values(array_map(static fn($img) => is_string($img) ? trim($img) : '', $carousel));
-            $carousel = array_slice(array_pad($carousel, self::CAROUSEL_SLOTS, ''), 0, self::CAROUSEL_SLOTS);
+            $carousel = array_values(array_map(static fn($item) => self::normalizeCarouselItem($item), $carousel));
+            $carousel = array_slice(array_pad($carousel, self::CAROUSEL_SLOTS, ['type' => 'image', 'src' => '', 'poster' => '']), 0, self::CAROUSEL_SLOTS);
             $row['carousel_images']  = $carousel;
             $row['carouselImages']   = $carousel;
 
@@ -155,11 +173,8 @@ class HeroController {
             if (!is_array($carouselImages)) {
                 $carouselImages = [];
             }
-            $carouselImages = array_values(array_map(
-                static fn($img) => is_string($img) ? trim($img) : '',
-                $carouselImages
-            ));
-            $carouselImages = array_slice(array_pad($carouselImages, self::CAROUSEL_SLOTS, ''), 0, self::CAROUSEL_SLOTS);
+            $carouselImages = array_values(array_map(static fn($item) => self::normalizeCarouselItem($item), $carouselImages));
+            $carouselImages = array_slice(array_pad($carouselImages, self::CAROUSEL_SLOTS, ['type' => 'image', 'src' => '', 'poster' => '']), 0, self::CAROUSEL_SLOTS);
             $carouselJson    = json_encode($carouselImages, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
             $overlayColor    = $data['overlayColor'] ?? $data['overlay_color'] ?? '#1a1816';
@@ -236,14 +251,35 @@ class HeroController {
     public static function uploadVideo(): void {
         try {
             $file = $_FILES['video'] ?? $_FILES['file'] ?? null;
-            if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Selecciona un video para subir.']);
+            if (!$file) {
+                $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+                http_response_code($contentLength > 0 ? 413 : 400);
+                $postMax = ini_get('post_max_size') ?: 'el límite del servidor';
+                echo json_encode([
+                    'error' => $contentLength > 0
+                        ? "El archivo supera el límite de la petición del servidor ({$postMax})."
+                        : 'Selecciona un video para subir.'
+                ]);
                 return;
             }
-            if (($file['size'] ?? 0) > 100 * 1024 * 1024) {
+
+            $error = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
                 http_response_code(413);
-                echo json_encode(['error' => 'El video no puede superar 100 MB.']);
+                $uploadMax = ini_get('upload_max_filesize') ?: 'el límite del servidor';
+                echo json_encode(['error' => "El video supera el límite configurado en el servidor ({$uploadMax})."]);
+                return;
+            }
+            if ($error !== UPLOAD_ERR_OK) {
+                http_response_code(400);
+                echo json_encode(['error' => 'No se pudo recibir el video. Código de error: ' . $error]);
+                return;
+            }
+
+            if (($file['size'] ?? 0) > self::MAX_VIDEO_BYTES) {
+                http_response_code(413);
+                $maxMb = (int)(self::MAX_VIDEO_BYTES / (1024 * 1024));
+                echo json_encode(['error' => "El video no puede superar {$maxMb} MB."]);
                 return;
             }
             $extension = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));

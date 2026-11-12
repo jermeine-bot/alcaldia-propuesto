@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/apiService';
 
@@ -143,26 +143,63 @@ const Hero = () => {
     ? `${parseInt(overlayColor.slice(1, 3), 16)}, ${parseInt(overlayColor.slice(3, 5), 16)}, ${parseInt(overlayColor.slice(5, 7), 16)}`
     : '26, 24, 22';
 
-  // Imágenes del carrusel configuradas en el CMS (solo las que tengan contenido).
-  const carouselImages = useMemo(() => {
+  // Diapositivas del carrusel configuradas en el CMS (imágenes o videos).
+  const carouselSlides = useMemo(() => {
     const raw = hero?.carouselImages || hero?.carousel_images;
     if (!Array.isArray(raw)) return [];
     return raw
-      .map((img) => (typeof img === 'string' ? img.trim() : ''))
+      .map((item) => {
+        if (typeof item === 'string') {
+          const src = item.trim();
+          return src ? { type: 'image', src, poster: '' } : null;
+        }
+        if (!item || typeof item !== 'object') return null;
+        const src = typeof item.src === 'string' ? item.src.trim() : '';
+        if (!src) return null;
+        return {
+          type: item.type === 'video' ? 'video' : 'image',
+          src,
+          poster: typeof item.poster === 'string' ? item.poster.trim() : ''
+        };
+      })
       .filter(Boolean);
   }, [hero]);
 
-  useEffect(() => {
-    setCarouselIndex(0);
-  }, [bgType, carouselImages.length]);
+  const prefersReducedMotion = useMemo(
+    () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches),
+    []
+  );
+
+  const goToNextSlide = useCallback(() => {
+    setCarouselIndex((current) => (carouselSlides.length ? (current + 1) % carouselSlides.length : 0));
+  }, [carouselSlides.length]);
+
+  const carouselPrevIndexRef = useRef(0);
+  const [carouselPrevIndex, setCarouselPrevIndex] = useState(null);
 
   useEffect(() => {
-    if (bgType !== 'carousel' || carouselImages.length < 2) return undefined;
-    const interval = setInterval(() => {
-      setCarouselIndex((current) => (current + 1) % carouselImages.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [bgType, carouselImages.length]);
+    setCarouselIndex(0);
+    setCarouselPrevIndex(null);
+    carouselPrevIndexRef.current = 0;
+  }, [bgType, carouselSlides.length]);
+
+  useEffect(() => {
+    if (carouselPrevIndexRef.current === carouselIndex) return undefined;
+    const previous = carouselPrevIndexRef.current;
+    carouselPrevIndexRef.current = carouselIndex;
+    setCarouselPrevIndex(previous);
+    const timer = setTimeout(() => setCarouselPrevIndex(null), 1200);
+    return () => clearTimeout(timer);
+  }, [carouselIndex]);
+
+  useEffect(() => {
+    if (bgType !== 'carousel' || carouselSlides.length < 2 || prefersReducedMotion) return undefined;
+    const current = carouselSlides[carouselIndex % carouselSlides.length];
+    // Los videos avanzan al terminar; el temporizador es solo un tope de seguridad.
+    const delay = current?.type === 'video' ? 15000 : 5000;
+    const timer = setTimeout(goToNextSlide, delay);
+    return () => clearTimeout(timer);
+  }, [bgType, carouselIndex, carouselSlides, prefersReducedMotion, goToNextSlide]);
 
   useEffect(() => { setVideoFailed(false); }, [videoUrl, bgType]);
   const primaryBtnText = hero?.primaryBtnText || 'Conoce León';
@@ -199,8 +236,8 @@ const Hero = () => {
     }
 
     if (bgType === 'carousel') {
-      if (carouselImages.length === 0) {
-        // Sin imágenes configuradas: usar la imagen de respaldo.
+      if (carouselSlides.length === 0) {
+        // Sin diapositivas configuradas: usar la imagen de respaldo.
         return (
           <img
             src={bgImageUrl || fallbackImg || '/img/hero-bg.jpg'}
@@ -215,26 +252,53 @@ const Hero = () => {
         );
       }
 
-      const activeIndex = carouselIndex % carouselImages.length;
+      const activeIndex = carouselIndex % carouselSlides.length;
+      const layerClass = 'position-absolute w-100 h-100 top-0 start-0';
+
       return (
         <>
-          {carouselImages.map((src, index) => (
-            <img
-              key={`${src.slice(0, 40)}-${index}`}
-              src={src}
-              alt={`Fondo de portada ${index + 1}`}
-              className="position-absolute w-100 h-100 top-0 start-0"
-              style={{
-                objectFit: 'cover',
-                opacity: index === activeIndex ? 1 : 0,
-                transition: 'opacity 1.2s ease-in-out'
-              }}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = fallbackImg || '/img/hero-bg.jpg';
-              }}
-            />
-          ))}
+          {carouselSlides.map((slide, index) => {
+            const isActive = index === activeIndex;
+            const isPrevious = index === carouselPrevIndex;
+            const style = {
+              objectFit: 'cover',
+              opacity: isActive ? 1 : 0,
+              transition: 'opacity 1.2s ease-in-out'
+            };
+
+            if (slide.type === 'video') {
+              // Solo se monta el video activo y el saliente durante el fundido.
+              if (!isActive && !isPrevious) return null;
+              return (
+                <video
+                  key={`video-${index}-${slide.src}`}
+                  src={slide.src}
+                  poster={slide.poster || fallbackImg}
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="auto"
+                  className={layerClass}
+                  style={style}
+                  onEnded={isActive ? goToNextSlide : undefined}
+                />
+              );
+            }
+
+            return (
+              <img
+                key={`image-${index}-${slide.src.slice(0, 40)}`}
+                src={slide.src}
+                alt={`Fondo de portada ${index + 1}`}
+                className={layerClass}
+                style={style}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = slide.poster || fallbackImg || '/img/hero-bg.jpg';
+                }}
+              />
+            );
+          })}
         </>
       );
     }
