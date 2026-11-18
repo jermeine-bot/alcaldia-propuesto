@@ -235,6 +235,23 @@ class InitDb {
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
+
+                CREATE TABLE IF NOT EXISTS autoridades (
+                    id TEXT PRIMARY KEY,
+                    nombre TEXT NOT NULL,
+                    cargo TEXT NOT NULL,
+                    badge TEXT DEFAULT 'Autoridad',
+                    imagen TEXT,
+                    frase TEXT,
+                    biografia TEXT,
+                    responsabilidades TEXT,
+                    contacto TEXT,
+                    telefono TEXT,
+                    display_order INTEGER DEFAULT 0,
+                    is_active INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
             ");
         } else {
             // MySQL Schema con soporte para anuncio_portal
@@ -264,6 +281,88 @@ class InitDb {
         self::migrateLegacyAnnouncement($pdo);
         self::seedData($pdo);
         self::seedGallery($pdo);
+        self::seedAutoridades($pdo);
+    }
+
+    private static function seedAutoridades(PDO $pdo): void {
+        try {
+            $countStmt = $pdo->query("SELECT COUNT(*) FROM autoridades");
+            if ($countStmt && (int)$countStmt->fetchColumn() > 0) {
+                return;
+            }
+
+            $defaults = [
+                [
+                    'autoridad-1',
+                    'Msc. Guissela Lacayo Medrano',
+                    'Alcaldesa Municipal de León',
+                    'Alcaldesa',
+                    '/img/autoridades/alcaldesa.jpg',
+                    '"Construyendo juntos una ciudad próspera, limpia y llena de cultura para todas las familias leonesas."',
+                    'Magíster y servidora pública con amplia trayectoria dedicada a la gestión comunitaria, modernización de servicios públicos y preservación del patrimonio histórico de la ciudad universitaria de León.',
+                    json_encode([
+                        'Dirección ejecutiva y estratégica del Gobierno Municipal.',
+                        'Promoción e impulso de megaproyectos de infraestructura y parques.',
+                        'Fomento del turismo sostenible, la cultura y la memoria histórica.',
+                        'Gestión de alianzas internacionales y cooperación para el municipio.'
+                    ], JSON_UNESCAPED_UNICODE),
+                    'despachoalcaldeleon@gmail.com',
+                    '23113780',
+                    1,
+                    1
+                ],
+                [
+                    'autoridad-2',
+                    'Cro. Ariel Delgado Rojas',
+                    'Vicealcalde Municipal',
+                    'Vicealcalde',
+                    '/img/autoridades/vicealcalde.jpg',
+                    '"Comprometidos en el territorio, escuchando a nuestra gente y supervisando cada obra con transparencia."',
+                    'Servidor público y líder comunitario con vasta experiencia en el seguimiento de obras viales, proyectos de desarrollo socio-productivo y fortalecimiento de las comarcas del municipio de León.',
+                    json_encode([
+                        'Supervisión directa de proyectos de infraestructura y vialidad.',
+                        'Coordinación con gabinetes de la comunidad y líderes de barrios.',
+                        'Gestión de emergencias y prevención ante desastres naturales.',
+                        'Atención personalizada a ciudadanas y ciudadanos leoneses.'
+                    ], JSON_UNESCAPED_UNICODE),
+                    'despachoalcaldeleon@gmail.com',
+                    '23113780',
+                    2,
+                    1
+                ],
+                [
+                    'autoridad-3',
+                    'Cra. Benita Vicenta Castillo',
+                    'Secretaria del Consejo Municipal',
+                    'Secretaría del Consejo',
+                    '/img/autoridades/secretaria.jpg',
+                    '"Transparencia y legalidad al servicio del desarrollo normativo de nuestro municipio."',
+                    'Servidora pública y líder comunitaria encargada de la articulación legislativa municipal, registro de ordenanzas y facilitación democrática en las sesiones del Consejo Municipal.',
+                    json_encode([
+                        'Custodia y redacción de ordenanzas, resoluciones y acuerdos municipales.',
+                        'Coordinación de las sesiones ordinarias y extraordinarias del Consejo.',
+                        'Recepción y canalización de iniciativas comunitarias y ciudadanas.',
+                        'Publicación y divulgación de informes de transparencia municipal.'
+                    ], JSON_UNESCAPED_UNICODE),
+                    'despachoalcaldeleon@gmail.com',
+                    '23113780',
+                    3,
+                    1
+                ]
+            ];
+
+            $verb = Database::getDriver() === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+            $stmt = $pdo->prepare("
+                {$verb} INTO autoridades (id, nombre, cargo, badge, imagen, frase, biografia, responsabilidades, contacto, telefono, display_order, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+
+            foreach ($defaults as $d) {
+                $stmt->execute($d);
+            }
+        } catch (\Throwable $e) {
+            error_log('Error sembrando autoridades iniciales: ' . $e->getMessage());
+        }
     }
 
     private static function ensureIndexes(PDO $pdo): void {

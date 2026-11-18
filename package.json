@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "backend": "bash ./backend/start.sh",
     "backend:php": "powershell -ExecutionPolicy Bypass -File ./backend/start.ps1",
     "build": "vite build",
     "lint": "oxlint src",

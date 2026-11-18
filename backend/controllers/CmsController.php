@@ -34,6 +34,8 @@ class CmsController {
             }
         } elseif ($contentId === 'redes-sociales' && is_array($body) && isset($body['title'], $body['platforms']) && is_array($body['platforms'])) {
             $isValid = true;
+        } elseif (is_array($body)) {
+            $isValid = true;
         }
 
         if (!$isValid) {

@@ -249,5 +249,11 @@ export const apiService = {
   saveGaleriaItem: data => saveItem('galeria', data),
   deleteGaleriaItem: id => deleteItem('galeria', id),
   toggleGaleriaStatus: id => request(`/galeria/${encodeURIComponent(id)}/toggle`, { method: 'PATCH' }),
-  uploadGaleriaImage: file => uploadFile('/galeria/upload-image', 'image', file)
+  uploadGaleriaImage: file => uploadFile('/galeria/upload-image', 'image', file),
+
+  getAutoridades: () => request('/autoridades', { authenticated: false }),
+  saveAutoridad: data => saveItem('autoridades', data),
+  deleteAutoridad: id => deleteItem('autoridades', id),
+  uploadAutoridadImage: file => uploadFile('/autoridades/upload-image', 'image', file)
 };
+

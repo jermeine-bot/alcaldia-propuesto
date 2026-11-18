@@ -42,6 +42,7 @@ use Controllers\FacebookController;
 use Controllers\AnuncioController;
 use Controllers\AnunciosController;
 use Controllers\GaleriaController;
+use Controllers\AutoridadesController;
 
 // Errores: nunca mostrar detalles internos al cliente; siempre registrarlos.
 error_reporting(E_ALL);
@@ -163,6 +164,7 @@ if ($path === '/' && $method === 'GET') {
             'stats' => '/api/stats',
             'contacto' => '/api/contacto',
             'cms' => '/api/cms',
+            'autoridades' => '/api/autoridades',
             'galeria' => '/api/galeria',
             'galeria_public' => '/api/galeria/public',
             'anuncio_portal' => '/api/cms/anuncio-portal',
@@ -355,6 +357,42 @@ if (preg_match('~^/api/galeria/([^/]+)$~', $path, $matches)) {
         $user = AuthMiddleware::handle();
         RoleMiddleware::check($user, ['superadmin', 'editor']);
         GaleriaController::delete($id);
+        exit;
+    }
+}
+
+// Autoridades Municipales (Alcaldesa, Vicealcalde, Secretaria y Directores)
+if ($path === '/api/autoridades/upload-image' && $method === 'POST') {
+    $user = AuthMiddleware::handle();
+    RoleMiddleware::check($user, ['superadmin', 'editor']);
+    AutoridadesController::uploadImage();
+    exit;
+}
+if ($path === '/api/autoridades') {
+    if ($method === 'GET') {
+        AutoridadesController::getAll();
+        exit;
+    } elseif ($method === 'POST') {
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
+        AutoridadesController::create($user, $body);
+        exit;
+    }
+}
+if (preg_match('~^/api/autoridades/([^/]+)$~', $path, $matches)) {
+    $id = urldecode($matches[1]);
+    if ($method === 'GET') {
+        AutoridadesController::getById($id);
+        exit;
+    } elseif ($method === 'PUT') {
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
+        AutoridadesController::update($id, $user, $body);
+        exit;
+    } elseif ($method === 'DELETE') {
+        $user = AuthMiddleware::handle();
+        RoleMiddleware::check($user, ['superadmin', 'editor']);
+        AutoridadesController::delete($id, $user);
         exit;
     }
 }

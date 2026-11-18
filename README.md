@@ -14,19 +14,20 @@ Este proyecto se compone de una aplicación web fullstack:
 1. [Ficha Técnica y Tecnologías](#-ficha-técnica-y-tecnologías)
 2. [CMS de Portada / Hero y Carrusel](#-cms-de-portada--hero-y-carrusel)
 3. [Módulo CMS de Trámites y Servicios](#-módulo-cms-de-trámites-y-servicios)
-4. [CMS de Centros de Atención](#-cms-de-centros-de-atención)
-5. [CMS de Redes Sociales](#-cms-de-redes-sociales)
-6. [Persistencia y configuración](#-persistencia-y-configuración-del-cms)
-7. [Estructura Completa del Proyecto](#-estructura-completa-del-proyecto)
-8. [Arquitectura del Backend](#-arquitectura-del-backend)
-9. [Diagrama de la base de datos](#-diagrama-de-la-base-de-datos)
-10. [Integración con Facebook Graph API](#integración-con-facebook-graph-api)
-11. [Seguridad, roles y bitácora](#-seguridad-roles-y-bitácora)
-12. [Módulo de Seguridad y Credenciales del CMS](#-módulo-de-seguridad-y-credenciales-del-cms)
-13. [Autenticación y credenciales de desarrollo](#-autenticación-y-credenciales-de-desarrollo)
-14. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
-15. [Anuncios y carga de imágenes en producción](#anuncios-y-carga-de-imágenes-en-producción)
-16. [Flujo de trabajo con Git](#-flujo-de-trabajo-con-git)
+4. [CMS de Nuestras Autoridades](#-cms-de-nuestras-autoridades)
+5. [CMS de Centros de Atención](#-cms-de-centros-de-atención)
+6. [CMS de Redes Sociales](#-cms-de-redes-sociales)
+7. [Persistencia y configuración](#-persistencia-y-configuración-del-cms)
+8. [Estructura Completa del Proyecto](#-estructura-completa-del-proyecto)
+9. [Arquitectura del Backend](#-arquitectura-del-backend)
+10. [Diagrama de la base de datos](#-diagrama-de-la-base-de-datos)
+11. [Integración con Facebook Graph API](#integración-con-facebook-graph-api)
+12. [Seguridad, roles y bitácora](#-seguridad-roles-y-bitácora)
+13. [Módulo de Seguridad y Gestión de Usuarios (RBAC)](#-módulo-de-seguridad-y-gestión-de-usuarios-rbac)
+14. [Autenticación y credenciales de desarrollo](#-autenticación-y-credenciales-de-desarrollo)
+15. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
+16. [Anuncios y carga de imágenes en producción](#anuncios-y-carga-de-imágenes-en-producción)
+17. [Flujo de trabajo con Git](#-flujo-de-trabajo-con-git)
 
 ---
 
@@ -74,22 +75,49 @@ El Hero admite un carrusel de **hasta 6 diapositivas** que se muestra en el port
 
 ##  Módulo CMS de Trámites y Servicios
 
-Se implementó una reestructuración de la sección **Trámites y Servicios** para mejorar la experiencia de usuario (*UX*) y simplificar la navegación:
+Se implementó una reestructuración completa de la sección **Trámites y Servicios** para optimizar la experiencia ciudadana (*UX*) y la administración digital:
 
-1. **4 Categorías Principales**:
+1. **4 Categorías Principales Iniciales**:
    - **Trámites Municipales**: Permisos de construcción, licencias de funcionamiento y constancias.
-   -  **Impuestos y Pagos**: Pago de IBI, impuesto sobre ingresos/matrícula y solvencias.
-   -  **Propiedades y Comercio**: Consultas catastrales, mercados municipales y registro de negocios.
-   -  **Servicios y Atención**: Recolección de basura, cementerios, denuncias y reserva de citas.
-2. **Visor Modal Interactivo**:
-   - Desenfoque de fondo (*Glassmorphism*), selector rápido entre categorías y tarjetas de sub-servicios con soporte para enlaces externos o redirección interna a `#contacto`.
+   - **Impuestos y Pagos**: Pago de IBI, impuesto sobre ingresos/matrícula y solvencias.
+   - **Propiedades y Comercio**: Consultas catastrales, mercados municipales y registro de negocios.
+   - **Servicios y Atención**: Recolección de basura, cementerios, denuncias y reserva de citas.
+2. **Campos Completos del Trámite / Sub-servicio**:
+   - `title`: Nombre oficial del trámite.
+   - `desc`: Descripción explicativa del procedimiento.
+   - `departamento`: Área o dirección responsable (ej. "Dirección de Urbanismo", "Administración Tributaria").
+   - `requisitos`: Lista estructurada de requisitos en formato JSON array (ej. cédula, solvencia, plano).
+   - `icon`: Icono visual representativo de Bootstrap Icons.
+   - `linkText` y `linkUrl`: Texto de acción ("Iniciar Trámite en Línea", "Descargar Formulario", etc.) y enlace web o ancla interna (`#contacto`).
 3. **Módulo CMS Administrativo (`/admin/servicios`)**:
-   - Gestión integral de categorías (crear, editar, eliminar).
-   - CRUD de trámites y sub-servicios con configuración de **texto de botón** y **URL/link de destino** personalizado.
-   - Edición de los textos introductorios de la sección pública y del teléfono de orientación.
-   - El portal público y el CMS consultan el mismo contenido mediante React Query.
+   - **Gestión integral de categorías**: Crear, editar (título, subtítulo, ícono, color, orden) y eliminar con confirmación modal.
+   - **CRUD completo de trámites y sub-servicios**: Agregar nuevos trámites a cualquier categoría, modificar campos existentes, editar requisitos dinámicamente y eliminar con actualización automática del contador (`count`).
+   - **Configuración de encabezado institucional**: Edición del título (`title`), antetítulo (`eyebrow`), párrafo introductorio (`description`) y teléfono de contacto directo (`phone`).
+   - Sincronización en tiempo real entre el panel y el portal público mediante TanStack React Query.
 
-La API expone `GET /api/servicios`, `GET/PUT /api/servicios/settings`, operaciones de categorías en `/api/servicios` y operaciones de trámites en `/api/servicios/:id/subservicios`. Los registros se guardan en la base configurada; al iniciar una instalación vacía se cargan datos iniciales.
+La API expone `GET /api/servicios`, `GET/PUT /api/servicios/settings`, `POST /api/servicios` (crear categoría), `PUT /api/servicios/{id}`, `DELETE /api/servicios/{id}`, `POST /api/servicios/{id}/subservicios`, `PUT /api/servicios/{id}/subservicios/{subId}` y `DELETE /api/servicios/{id}/subservicios/{subId}`.
+
+---
+
+## 🏛️ CMS de Nuestras Autoridades
+
+La sección pública `#autoridades` y el panel administrativo `/admin/autoridades` gestionan la nómina del gobierno local:
+
+1. **Gestión Integral (CRUD Persistente)**:
+   - **Crear**: Registro de nuevas autoridades con nombre completo, cargo/título institucional, biografía resumida, orden de aparición y enlaces a redes sociales (Facebook, Twitter/X, Instagram, LinkedIn).
+   - **Editar**: Modificación de cualquier campo informativo o actualización del orden de visualización.
+   - **Eliminar**: Baja lógica o física del registro con confirmación SweetAlert2 y bitácora de auditoría.
+   - **Subida de fotografía**: Endpoint dedicado `/api/autoridades/upload-image` para subir retratos oficiales en formato JPG, PNG o WebP a `backend/uploads/autoridades/`.
+   - **Estado activo/inactivo**: Posibilidad de activar o suspender la visibilidad pública de cualquier autoridad sin eliminar su ficha.
+2. **Portal Público Dinámico (`src/components/Autoridades.jsx`)**:
+   - Consume directamente `GET /api/autoridades` mediante React Query con ordenamiento ascendente por `display_order`.
+   - Mantiene fallback elegante con las autoridades titulares en caso de desconexión momentánea de la API.
+   - Modal interactivo con biografía completa y enlaces directos a redes oficiales de cada autoridad.
+3. **Permisos y Seguridad**:
+   - Consulta pública sin autenticación (`GET /api/autoridades`).
+   - Escritura, edición y eliminación restringidas a roles autenticados (`superadmin`, `editor`) con registro en `activity_logs`.
+
+---
 
 ##  CMS de Centros de Atención
 
@@ -103,7 +131,7 @@ Los enlaces, contadores y galerías de la landing se leen desde esta configuraci
 
 ##  Persistencia y configuración del CMS
 
-- **Trámites y Servicios**, **Centros de Atención**, **Redes Sociales** y **Portada / Hero**: se leen y guardan mediante los endpoints REST del backend.
+- **Nuestras Autoridades**, **Trámites y Servicios**, **Centros de Atención**, **Redes Sociales** y **Portada / Hero**: se leen y guardan mediante los endpoints REST del backend.
 - **Esquema y datos iniciales**: `backend/config/InitDb.php` crea las tablas compatibles con el driver activo y agrega datos iniciales al iniciar el backend.
 - La conexión se configura en `backend/.env` con `DB_DRIVER` y, para MySQL, `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` y `MYSQL_DATABASE`. Si MySQL no está disponible, la configuración actual permite usar SQLite como alternativa.
 - La API del frontend se configura con `VITE_API_BASE_URL`; por defecto usa `http://localhost:5505/api`.
@@ -124,6 +152,13 @@ alcaldia-propuesto/
 │   │   ├── InitDb.php             ← Creación de tablas y datos iniciales
 │   │   └── Jwt.php                ← Firma y validación de JWT
 │   ├── controllers/               ← Controladores de endpoints REST
+│   │   ├── AuthController.php
+│   │   ├── AutoridadesController.php
+│   │   ├── NoticiasController.php
+│   │   ├── ProyectosController.php
+│   │   ├── ServiciosController.php
+│   │   ├── UsersController.php
+│   │   └── ...
 │   ├── middlewares/               ← CORS, autenticación y permisos por rol
 │   ├── services/                  ← Integraciones y auditoría
 │   ├── database.sqlite            ← Base de datos local cuando se usa SQLite
@@ -138,10 +173,10 @@ alcaldia-propuesto/
     ├── services/
     │   ├── apiService.js          ← Cliente de API REST del backend
     │   └── initialData.js         ← Datos iniciales del CMS
-    ├── components/                ← Portal público
+    ├── components/                ← Portal público (Hero, Autoridades, Servicios...)
     └── admin/                     ← Panel CMS Administrativo (/admin)
-        ├── components/            ← Componentes del panel administrativo
-        └── pages/                 ← Pantallas CMS
+        ├── components/            ← Sidebar, Navbar, modales y tablas
+        └── pages/                 ← Pantallas CMS (AutoridadesAdmin, ServiciosAdmin, SecurityAdmin...)
 ```
 
 ##  Arquitectura del Backend
@@ -162,7 +197,7 @@ flowchart LR
         router["router.php<br/>Servidor integrado de PHP"]
         index["index.php<br/>Rutas /api/* + inicialización"]
         middleware["Middlewares<br/>CORS · JWT · roles"]
-        controllers["Controladores<br/>auth · noticias · hero · proyectos<br/>turismo · cultura · stats · contacto<br/>servicios · CMS · usuarios · auditoría"]
+        controllers["Controladores<br/>auth · autoridades · noticias · hero<br/>proyectos · turismo · cultura · stats<br/>contacto · servicios · CMS · usuarios · auditoría"]
         services["Servicios<br/>Facebook · auditoría"]
         db["config/Database.php + InitDb.php<br/>PDO + esquema + datos iniciales"]
     end
@@ -187,18 +222,19 @@ flowchart LR
 | Prefijo | Responsabilidad principal |
 |---|---|
 | `/api/auth` | Inicio de sesión, usuario autenticado, cambio de contraseña y actualización de credenciales (`PUT /api/auth/credentials`) |
+| `/api/autoridades` | Consulta pública y administración CRUD completa de autoridades municipales, orden y fotos |
 | `/api/noticias` | Consulta y administración de noticias |
-| `/api/hero` | Contenido principal del portal |
-| `/api/proyectos` | Proyectos municipales |
+| `/api/hero` | Contenido principal del portal y carrusel multimedia |
+| `/api/proyectos` | Proyectos municipales y avance de obras |
 | `/api/turismo` | Destinos y contenido turístico |
 | `/api/cultura` | Agenda y contenido cultural |
-| `/api/stats` | Estadísticas publicadas |
-| `/api/contacto` | Información institucional y redes |
-| `/api/servicios` | Categorías de servicios, trámites y configuración |
-| `/api/cms` | Contenido del CMS, incluidos centros de atención y redes sociales |
-| `/api/users` | Gestión de cuentas y roles |
-| `/api/audit-logs` | Consulta de la bitácora |
-| `/api/facebook` | Sincronización manual con Facebook |
+| `/api/stats` | Estadísticas e indicadores públicos |
+| `/api/contacto` | Información institucional y canales de contacto |
+| `/api/servicios` | Categorías de servicios, trámites con requisitos/departamento y configuración |
+| `/api/cms` | Contenido dinámico del CMS (centros de atención, redes sociales, anuncios) |
+| `/api/users` | Gestión integral de usuarios, asignación de roles (RBAC) y cambio administrativo de contraseñas |
+| `/api/audit-logs` | Consulta de la bitácora de auditoría y eventos del sistema |
+| `/api/facebook` | Sincronización manual con Facebook Graph API |
 
 Los archivos subidos se sirven en `/uploads`. La sincronización de Facebook es opcional y manual desde el panel o mediante `POST /api/facebook/sync`; requiere `FACEBOOK_PAGE_ID` y `FACEBOOK_ACCESS_TOKEN`.
 
@@ -313,8 +349,11 @@ erDiagram
         varchar servicio_id FK
         varchar title
         text desc
+        varchar icon
         varchar linkText
         varchar linkUrl
+        json requisitos
+        varchar departamento
     }
 
     SERVICIOS_SETTINGS {
@@ -323,6 +362,39 @@ erDiagram
         varchar title
         text description
         varchar phone
+    }
+
+    AUTORIDADES {
+        varchar id PK
+        varchar name
+        varchar role
+        text bio
+        text photo_url
+        int display_order
+        boolean is_active
+        json social_links
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ANUNCIOS {
+        varchar id PK
+        varchar title
+        text content
+        varchar link_url
+        varchar image_url
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    GALERIA {
+        varchar id PK
+        varchar title
+        text image_url
+        varchar category
+        int display_order
+        timestamp created_at
     }
 
     ACTIVITY_LOGS {
@@ -347,7 +419,7 @@ erDiagram
     SERVICIOS ||--o{ SUBSERVICIOS : "contiene (FK)"
 ```
 
-`CMS_CONTENT` guarda documentos JSON identificados por `id` (por ejemplo, `centros-atencion` y `redes-sociales`). `SERVICIOS_SETTINGS` es una configuración independiente para los textos y teléfono de la sección de servicios. `ACTIVITY_LOGS.userId` identifica al usuario asociado al evento cuando está disponible, pero no tiene FK declarada.
+`CMS_CONTENT` guarda documentos JSON identificados por `id` (por ejemplo, `centros-atencion` y `redes-sociales`). `AUTORIDADES` gestiona la nómina del gobierno local con fotos y enlaces sociales. `SERVICIOS_SETTINGS` es una configuración independiente para los textos y teléfono de la sección de servicios. `ACTIVITY_LOGS.userId` identifica al usuario asociado al evento cuando está disponible, pero no tiene FK declarada.
 
 ---
 
@@ -366,28 +438,24 @@ El middleware valida la firma y expiración del JWT, y rechaza solicitudes priva
 
 ---
 
-##  Módulo de Seguridad y Credenciales del CMS
+## 🔐 Módulo de Seguridad y Gestión de Usuarios (RBAC)
 
-La pantalla `/admin/seguridad` (también accesible desde **Mi seguridad** en el menú del usuario) permite que cada usuario autenticado administre sus propias credenciales de acceso.
+La pantalla `/admin/seguridad` (accesible también desde **Mi seguridad** en el menú superior) implementa un panel de dos pestañas que separa la autogestión de credenciales de la administración de usuarios del sistema:
 
-### Funcionalidades
+### 1. Pestaña "Mi Perfil" (Autogestión de Credenciales)
 
-- **Formulario unificado**: nombre, correo, contraseña actual obligatoria y nueva contraseña opcional con su confirmación, todo con un único botón **Guardar cambios**.
-- **Contraseña actual única**: un solo campo confirma tanto los cambios de datos como el cambio de contraseña.
-- **Indicador de seguridad**: barra visual que evalúa longitud, letras, números y símbolos.
-- **Recomendaciones**: buenas prácticas de contraseña y sesión.
-- El nombre y el rol mostrados en el encabezado del panel se actualizan sin recargar la página.
+Disponible para cualquier usuario autenticado:
+- **Formulario unificado**: nombre, correo institucional, contraseña actual obligatoria y nueva contraseña con confirmación.
+- **Contraseña actual única**: confirma la identidad del usuario antes de aplicar cualquier modificación a sus datos.
+- **Indicador visual de robustez**: evalúa en tiempo real longitud, caracteres alfanuméricos y símbolos.
+- **Actualización reactiva**: el nombre y avatar en el navbar superior se actualizan inmediatamente sin requerir recarga.
 
-### Endpoint de credenciales
-
+#### Endpoint de credenciales personales:
 ```http
 PUT /api/auth/credentials
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
-
-Cuerpo admitido (todos los campos son opcionales, pero se exige `currentPassword`):
-
 ```json
 {
   "currentPassword": "contraseña actual",
@@ -398,47 +466,44 @@ Cuerpo admitido (todos los campos son opcionales, pero se exige `currentPassword
 }
 ```
 
-Respuesta exitosa:
+### 2. Pestaña "Usuarios y Roles del Sistema" (Administración RBAC)
 
-```json
-{
-  "message": "Credenciales actualizadas correctamente.",
-  "user": { "id": "...", "name": "...", "email": "...", "role": "...", "avatar": "..." },
-  "token": "<nuevo JWT>"
-}
-```
+Visible y operable exclusivamente para usuarios con rol `superadmin`:
+- **Listado general de usuarios**: tabla con nombre, correo, rol asignado (`superadmin`, `editor`, `visor`), fecha de creación y avatar.
+- **Creación de nuevos usuarios**: modal interactivo para registrar nuevos operadores con nombre, correo, contraseña inicial y rol asignado.
+- **Edición y cambio de roles**: selector para ascender o restringir privilegios entre los 3 niveles de acceso.
+- **Reseteo administrativo de contraseñas**: permite asignar una nueva clave a cualquier usuario sin necesidad de conocer su clave previa.
+- **Eliminación segura**: eliminación con confirmación interactiva mediante SweetAlert2. Se impide que el `superadmin` se auto-elimine a sí mismo por seguridad.
+- **Revocación automática de sesiones**: cada modificación administrativa incrementa `users.token_version`, invalidando de inmediato cualquier sesión activa previa del usuario afectado.
+
+#### Endpoints de administración de usuarios:
+| Método | Ruta | Rol Requerido | Descripción |
+|---|---|---|---|
+| `GET` | `/api/users` | `superadmin` | Listado completo de usuarios registrados |
+| `POST` | `/api/users` | `superadmin` | Crear nuevo usuario con rol y contraseña |
+| `PUT` | `/api/users/{id}` | `superadmin` | Modificar nombre, rol y/o contraseña de un usuario |
+| `DELETE` | `/api/users/{id}` | `superadmin` | Eliminar definitivamente a un usuario del sistema |
 
 ### Validaciones y reglas de seguridad
 
 | Regla | Comportamiento |
 |---|---|
-| Contraseña actual obligatoria | Sin ella responde `400` |
+| Contraseña actual obligatoria (Mi Perfil) | Sin ella responde `400` |
 | Contraseña actual incorrecta | Responde `403` y registra el intento en la bitácora |
 | Correo inválido | Responde `400` |
 | Correo ya registrado por otro usuario | Responde `409` |
-| Nueva contraseña igual a la actual | Responde `400` |
-| Contraseña menor a 8 caracteres o sin letra/número | Responde `400` |
-| Sin cambios detectados | Responde `400` |
-| Cambio exitoso | Responde `200`, devuelve un JWT nuevo y registra `ACTUALIZAR_CREDENCIALES` |
+| Nueva contraseña menor a 8 caracteres o sin letra/número | Responde `400` |
+| Intento de auto-eliminación de cuenta propia | Bloqueado con alerta modal en frontend |
+| Cambio de rol o clave | Responde `200`, incrementa `token_version` y audita en `activity_logs` |
 
-- Las contraseñas se almacenan con `password_hash(..., PASSWORD_BCRYPT)`; nunca se devuelven al frontend.
-- Cada cambio de contraseña, correo o rol incrementa `users.token_version`, por lo que los tokens anteriores dejan de ser válidos (`401`).
-- La ruta anterior `PUT /api/auth/change-password` se conserva como alias compatible.
-- La sesión del frontend se guarda en `sessionStorage` (clave `alcaldia_cms_auth`), por lo que se mantiene al recargar la pestaña y se elimina al cerrar el navegador.
+- Las contraseñas se almacenan con `password_hash(..., PASSWORD_BCRYPT)`; nunca se exponen al cliente.
+- La sesión del frontend se guarda en `sessionStorage` (clave `alcaldia_cms_auth`), manteniéndose ante recargas pero cerrándose al cerrar la pestaña.
 
 ### Protección contra fuerza bruta
 
 El inicio de sesión registra cada intento fallido en `activity_logs` con la acción `LOGIN_FALLIDO`. Si un mismo correo e IP acumulan **5 intentos fallidos en 15 minutos**, el backend bloquea temporalmente el acceso:
-
-- Los intentos posteriores responden `429` con el mensaje: *"Demasiados intentos fallidos. Espera 15 minutos antes de volver a intentar."*
+- Los intentos posteriores responden `429`: *"Demasiados intentos fallidos. Espera 15 minutos antes de volver a intentar."*
 - El bloqueo se registra como `LOGIN_BLOQUEADO` en la bitácora.
-
-### Roles y permisos
-
-- Cualquier usuario autenticado puede cambiar **sus propias** credenciales.
-- Solo `superadmin` y `editor` pueden administrar usuarios y contenidos.
-- Al cambiar la contraseña o el rol de un usuario desde `/api/users/:id`, se revocan sus sesiones activas.
-- La ruta `/api/cms/anuncio-portal` ahora exige autenticación y rol autorizado para escritura.
 
 ---
 

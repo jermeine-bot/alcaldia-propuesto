@@ -12,7 +12,7 @@ import {
   Briefcase,
   Menu,
   MapPin,
-  Share2, Megaphone, Images, ShieldCheck } from 'lucide-react';
+  Share2, Megaphone, Images, ShieldCheck, Award } from 'lucide-react';
 
 const AdminSidebar = () => {
   const [isOpen, setIsOpen] = useState(false); // Por defecto cerrado en móvil/tablet
@@ -28,6 +28,7 @@ const AdminSidebar = () => {
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/hero', label: 'Portada / Hero', icon: Image },
+    { path: '/admin/autoridades', label: 'Nuestras Autoridades', icon: Award },
     { path: '/admin/anuncios', label: 'Anuncio / Flyer', icon: Megaphone },
     { path: '/admin/galeria', label: 'Galería', icon: Images },
     { path: '/admin/servicios', label: 'Trámites y Servicios', icon: Briefcase },

@@ -259,6 +259,10 @@ const DashboardOverview = () => {
                 <span>Actualizar Indicadores de León</span>
                 <ExternalLink size={14} />
               </Link>
+              <Link to="/admin/autoridades" className="btn btn-white btn-sm text-start border shadow-sm d-flex align-items-center justify-content-between">
+                <span>Gestionar Autoridades Municipales</span>
+                <ExternalLink size={14} />
+              </Link>
               <Link to="/admin/contacto" className="btn btn-white btn-sm text-start border shadow-sm d-flex align-items-center justify-content-between">
                 <span>Configurar Teléfonos y Redes Sociales</span>
                 <ExternalLink size={14} />

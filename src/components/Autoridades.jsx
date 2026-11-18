@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { useQuery } from '@tanstack/react-query';
+import { apiService } from '../services/apiService';
 
-const autoridadesData = [
+const autoridadesDefault = [
   {
-    id: 1,
+    id: 'autoridad-1',
     nombre: 'Msc. Guissela Lacayo Medrano',
     cargo: 'Alcaldesa Municipal de León',
     badge: 'Alcaldesa',
@@ -17,10 +19,10 @@ const autoridadesData = [
       'Gestión de alianzas internacionales y cooperación para el municipio.'
     ],
     contacto: 'despachoalcaldeleon@gmail.com',
-    telefono: 23113780
+    telefono: '23113780'
   },
   {
-    id: 2,
+    id: 'autoridad-2',
     nombre: 'Cro. Ariel Delgado Rojas',
     cargo: 'Vicealcalde Municipal',
     badge: 'Vicealcalde',
@@ -34,10 +36,10 @@ const autoridadesData = [
       'Atención personalizada a ciudadanas y ciudadanos leoneses.'
     ],
     contacto: 'despachoalcaldeleon@gmail.com',
-    telefono: 23113780
+    telefono: '23113780'
   },
   {
-    id: 3,
+    id: 'autoridad-3',
     nombre: 'Cra. Benita Vicenta Castillo',
     cargo: 'Secretaria del Consejo Municipal',
     badge: 'Secretaría del Consejo',
@@ -51,13 +53,25 @@ const autoridadesData = [
       'Publicación y divulgación de informes de transparencia municipal.'
     ],
     contacto: 'despachoalcaldeleon@gmail.com',
-    telefono: 23113780
+    telefono: '23113780'
   }
 ];
 
 const Autoridades = () => {
   const [selectedAutoridad, setSelectedAutoridad] = useState(null);
   const [showContactModal, setShowContactModal] = useState(false);
+
+  const { data: rawAutoridades = [] } = useQuery({
+    queryKey: ['autoridades'],
+    queryFn: apiService.getAutoridades,
+    staleTime: 1000 * 60 * 5
+  });
+
+  const activeAutoridades = Array.isArray(rawAutoridades) && rawAutoridades.length > 0
+    ? rawAutoridades.filter((item) => item.is_active !== false)
+    : autoridadesDefault;
+
+  const autoridadesData = activeAutoridades.length > 0 ? activeAutoridades : autoridadesDefault;
 
   // Bloquear el scroll del body cuando algún modal esté abierto
   useEffect(() => {
@@ -146,7 +160,7 @@ const Autoridades = () => {
 
             <h6 className="fw-bold mb-2 text-dark small text-uppercase letter-spacing-1">Principales Responsabilidades:</h6>
             <ul className="small ps-3 mb-4 text-secondary">
-              {selectedAutoridad.responsabilidades.map((resp, idx) => (
+              {(Array.isArray(selectedAutoridad.responsabilidades) ? selectedAutoridad.responsabilidades : []).map((resp, idx) => (
                 <li key={idx} className="mb-1">{resp}</li>
               ))}
             </ul>
